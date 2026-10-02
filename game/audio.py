@@ -17,6 +17,8 @@ class Audio:
                 return
             self.sounds['sweep'] = self._sound(rate, channels, 0.18, noise=True)
             self.sounds['pickup'] = self._sound(rate, channels, 0.12, notes=(440, 660))
+            self.sounds['bonus_rent'] = self._sound(rate, channels, 0.32, notes=(660, 880, 1100))
+            self.sounds['blocked'] = self._sound(rate, channels, 0.14, notes=(220, 165))
             self.sounds['milestone'] = self._sound(rate, channels, 0.5, notes=(330, 440, 550, 660))
         except pygame.error:
             self.sounds.clear()

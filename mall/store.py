@@ -10,14 +10,15 @@ class Store:
         self.cost = cost
         self.rent = rent
         self.kind = kind
+        self.upgrade_shop = None
         self.position = pygame.Vector2(self.rect.centerx, self.rect.bottom + 35)
 
     @property
     def label(self):
         if self.restored:
             if self.rent == 0:
-                return 'Enter Northgate Supplies / buy upgrades'
-            return f'{self.name}: +${self.rent} rent every 5 seconds'
+                return f'Enter {self.name} / buy upgrades'
+            return f'{self.name}: +${self.rent} base rent / 5s'
         if not self.available:
             return f'{self.name}: finish the first cleanup and reopen the previous shop'
         return f'Reopen {self.name} (${self.cost})'

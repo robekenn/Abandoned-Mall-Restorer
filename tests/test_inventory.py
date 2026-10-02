@@ -79,7 +79,7 @@ class InventoryTests(unittest.TestCase):
         self.assertNotIn('lamp_0',upgrades.decor)
         cash,message,bought = upgrades.purchase('missing',cash)
         self.assertFalse(bought)
-        for key,attribute,maximum in [('capacity','capacity',40),('value','unit_value',30)]:
+        for key,attribute,maximum in [('capacity','capacity',20),('value','unit_value',30)]:
             for _ in range(len(upgrades.CAPACITY_PRICES if key == 'capacity' else upgrades.VALUE_PRICES)):
                 _,_,bought = upgrades.purchase(key,10000)
                 self.assertTrue(bought)

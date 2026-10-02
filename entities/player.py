@@ -24,7 +24,7 @@ class Player:
                 else:
                     self.facing = 'down' if direction.y > 0 else 'up'
 
-    def move(self, direction, dt, obstacles):
+    def move(self, direction, dt, obstacles, speed_multiplier=1):
         self.action_time = max(0, self.action_time - dt)
         direction = pygame.Vector2(direction)
         if direction.length_squared() > 1:
@@ -36,7 +36,7 @@ class Player:
             else:
                 self.facing = 'down' if direction.y > 0 else 'up'
         # Small steps keep collisions reliable even during a slow frame.
-        movement = direction * PLAYER_SPEED * dt
+        movement = direction * PLAYER_SPEED * speed_multiplier * dt
         steps = max(1, int(movement.length() / 8) + 1)
         for _ in range(steps):
             for axis in (0, 1):

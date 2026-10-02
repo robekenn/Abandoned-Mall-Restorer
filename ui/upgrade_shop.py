@@ -8,6 +8,7 @@ class UpgradeShop:
 
     def __init__(self):
         self.open = False
+        self.shop = 'north'
         self.category = 0
         self.selection = 0
         self.notice = 'Choose an upgrade. Each fixture is purchased separately.'
@@ -21,7 +22,7 @@ class UpgradeShop:
 
     def rows(self, game):
         panel,_ = self.geometry(game.screen)
-        offers = game.upgrades.offers(self.categories[self.category])
+        offers = game.upgrades.offers(self.categories[self.category],self.shop)
         return [(o,pygame.Rect(panel.x+16,panel.y+116+i*44,panel.width-32,40)) for i,o in enumerate(offers)]
 
     def buy(self, game, key):
@@ -61,7 +62,7 @@ class UpgradeShop:
         panel,tabs = self.geometry(surface)
         pygame.draw.rect(surface,(30,45,47),panel)
         pygame.draw.rect(surface,(146,164,126),panel,2)
-        surface.blit(game.hud.title.render('NORTHGATE SUPPLIES',True,(235,222,170)),(panel.x+16,panel.y+14))
+        surface.blit(game.hud.title.render('EASTGATE WORKSHOP' if self.shop == 'east' else 'NORTHGATE SUPPLIES',True,(235,222,170)),(panel.x+16,panel.y+14))
         surface.blit(game.hud.small.render(f'{money(game.cash)} available / bag {game.upgrades.held}/{game.upgrades.capacity} / ${game.upgrades.unit_value} per item',True,(177,206,174)),(panel.x+16,panel.y+48))
         for i,rect in enumerate(tabs):
             pygame.draw.rect(surface,(77,100,78) if i == self.category else (44,62,62),rect)
