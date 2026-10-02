@@ -1,5 +1,6 @@
 """Mouse and keyboard upgrade-shop menu, sized for the minimum window."""
 import pygame
+from systems.economy import money
 
 
 class UpgradeShop:
@@ -61,7 +62,7 @@ class UpgradeShop:
         pygame.draw.rect(surface,(30,45,47),panel)
         pygame.draw.rect(surface,(146,164,126),panel,2)
         surface.blit(game.hud.title.render('NORTHGATE SUPPLIES',True,(235,222,170)),(panel.x+16,panel.y+14))
-        surface.blit(game.hud.small.render(f'${game.cash} available / bag {game.upgrades.held}/{game.upgrades.capacity} / ${game.upgrades.unit_value} per item',True,(177,206,174)),(panel.x+16,panel.y+48))
+        surface.blit(game.hud.small.render(f'{money(game.cash)} available / bag {game.upgrades.held}/{game.upgrades.capacity} / ${game.upgrades.unit_value} per item',True,(177,206,174)),(panel.x+16,panel.y+48))
         for i,rect in enumerate(tabs):
             pygame.draw.rect(surface,(77,100,78) if i == self.category else (44,62,62),rect)
             surface.blit(game.hud.font.render(f'{i+1} {self.categories[i]}',True,(229,222,184)),(rect.x+10,rect.y+7))

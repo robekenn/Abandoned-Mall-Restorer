@@ -1,4 +1,5 @@
 import pygame
+from systems.economy import money, cleanliness_label
 
 
 class HUD:
@@ -39,8 +40,8 @@ class HUD:
         for store in mall.stores + mall.distant_stores:
             rect = pygame.Rect(bounds.x+store.rect.x*sx,bounds.y+store.rect.y*sy,store.rect.width*sx,store.rect.height*sy)
             pygame.draw.rect(surface,(224,199,111) if store.restored else (29,43,45),rect)
-        for dumpster in mall.dumpsters:
-            point = (round(bounds.x+dumpster.position.x*sx),round(bounds.y+dumpster.position.y*sy))
+        for trash_bin in mall.trash_bins:
+            point = (round(bounds.x+trash_bin.position.x*sx),round(bounds.y+trash_bin.position.y*sy))
             pygame.draw.rect(surface,(129,196,185),(point[0]-2,point[1]-2,5,5))
         point = (round(bounds.x+player[0]*sx),round(bounds.y+player[1]*sy))
         pygame.draw.rect(surface,(235,230,191),(point[0]-2,point[1]-2,4,4))
@@ -55,9 +56,9 @@ class HUD:
         surface.blit(self.small.render('NORTH ARCADE / A SMALL BEGINNING',True,(165,184,172)),(24,45))
         next_shop = mall.next_store
         if upgrades.held == upgrades.capacity:
-            objective = 'Bag full. Sell your load at a SELL dumpster.'
+            objective = 'Bag full. Sell your load at a SELL trash bin.'
         elif not mall.stores[0].restored:
-            objective = 'Collect and sell litter. Reopen Supplies for $100.'
+            objective = f'Collect and sell litter. Reopen Supplies for ${mall.stores[0].cost}.'
         elif not mall.initial_cleanup_complete:
             objective = f'First sweep: {mall.active_litter_count} patches left. E at Supplies: upgrades.'
         elif next_shop:
@@ -69,16 +70,15 @@ class HUD:
         bag_color = (239,181,109) if upgrades.held == upgrades.capacity else (173,191,157)
         inventory = f'Bag {upgrades.held}/{upgrades.capacity} / Sale ${upgrades.unit_value} each / {upgrades.tool[0]}'
         surface.blit(self.small.render(inventory,True,bag_color),(24,95))
-        surface.blit(self.title.render(f'${game.cash}',True,(140,216,174)),(width-160,17))
-        status = f'{round(mall.cleanliness*100)}% clean / {mall.active_litter_count} litter'
+        surface.blit(self.title.render(money(game.cash),True,(140,216,174)),(width-160,17))
+        status = f'{cleanliness_label(mall.cleanliness)} clean / {mall.active_litter_count} litter'
         surface.blit(self.small.render(status,True,(214,211,188)),(width-190,49))
-        rent = sum(s.rent for s in mall.stores if s.restored)
-        surface.blit(self.small.render(f'Rent +${rent} / 5s',True,(164,186,168)),(width-190,67))
+        surface.blit(self.small.render(f'Rent +{money(game.rent_income)} / 5s ({game.rent_multiplier:g}x)',True,(164,186,168)),(width-190,67))
         bar = pygame.Rect(width-190,91,166,6)
         pygame.draw.rect(surface,(60,78,73),bar)
         pygame.draw.rect(surface,(149,176,119),(bar.x,bar.y,round(bar.width*mall.cleanliness),bar.height))
         pygame.draw.rect(surface,(24,34,39),(0,height-82,width,82))
-        text = 'E  '+target.label if target else 'Collect litter / sell at dumpsters / upgrade at Supplies.'
+        text = 'E  '+target.label if target else 'Collect litter / sell at trash bins / upgrade at Supplies.'
         surface.blit(self.font.render(text,True,(239,205,138)),(24,height-70))
         controls = f'WASD / Arrows: move   E: interact   M: sound {"off" if game.audio.muted else "on"}   Esc: quit'
         surface.blit(self.small.render(controls,True,(166,186,180)),(24,height-36))

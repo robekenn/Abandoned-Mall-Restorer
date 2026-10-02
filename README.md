@@ -6,11 +6,11 @@ A top-down 2D restoration game built with Python and pygame-ce, without a commer
 
 ## First playable prototype
 
-Restore the north arcade of Northgate Mall. Collect litter and dust into a six-item bag, then sell the load at either of two marked dumpsters for $10 per item. A full bag blocks further cleanup until sold. The HUD shows capacity, sale value, floor cleanliness and the next business goal.
+Restore the north arcade of Northgate Mall. Collect litter and dust into a one-item bag, then sell the load at either of two marked trash bins for $1 per item. A full bag blocks further cleanup until sold. The HUD shows capacity, sale value, floor cleanliness and the next business goal.
 
-Reopen **Northgate Supplies** first for $100. Return to its marker and press E to open the upgrade shop. Buy larger bags (12/24/40 slots), better recycling contracts ($15/$22/$30 per item), and tools with longer reach and multi-item pickup. Each bench, lamp, planter, fountain and mosaic is purchased separately; there is no automatic scenery restoration or Tab scene cycling.
+Reopen **Northgate Supplies** first for $10. Return to its marker and press E to open the upgrade shop. Buy larger bags (2/4/8/16/24/40 slots), better recycling contracts ($2/$4/$8/$15/$30 per item), and tools with longer reach and multi-item pickup. Each bench, lamp, planter, fountain and mosaic is purchased separately; there is no automatic scenery restoration or Tab scene cycling.
 
-The 51 starting cleanup tasks cover every walkable floor tile. Clearing all of them makes the opening floor 100% clean and unlocks the next business after Supplies: Pages Bookshop ($100, $5 rent), Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Open businesses pay their combined rent every five seconds. Supplies is an upgrade shop and does not pay rent.
+The 48 starting cleanup tasks cover every walkable floor tile. Clearing all of them makes the opening floor 100% clean and unlocks the next business after Supplies: Pages Bookshop ($100, $5 rent), Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Open businesses pay rent every five seconds according to the playable arcade’s floor cleanliness: 0% pays nothing; above 0% and below 50% pays half; 50% through less than 100% pays normal rent; exactly 100% pays 1.5 times rent. Half-dollar payouts are retained. The HUD shows the current payout and multiplier. Supplies is an upgrade shop and does not pay rent.
 
 After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve active piles. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
 
@@ -37,13 +37,13 @@ python3 -m venv .venv
 ## Controls
 
 - **WASD / Arrow keys:** move
-- **E:** collect nearby litter, sell at a dumpster, reopen a business or enter Supplies
+- **E:** collect nearby litter, sell at a trash bin, reopen a business or enter Supplies
 - **M:** toggle sound
 - **Esc:** quit (or close the upgrade menu while shopping)
 
 Inside Supplies, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay pauses while the menu is open.
 
-The camera follows the player. Walls, storefronts, dumpsters, benches, and the fountain block movement. The window is resizable (minimum 800 x 600).
+The camera follows the player. Walls, storefronts, trash bins, benches, and the fountain block movement. The window is resizable (minimum 800 x 600).
 
 ## Development
 

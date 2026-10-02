@@ -1,13 +1,14 @@
 import pygame
 from entities.player import Player
 from entities.trash import Trash
-from entities.dumpster import Dumpster
+from entities.trash_bin import TrashBin
 from game.camera import Camera
 from game.art import Art
 from game.audio import Audio
 from game.feedback import Feedback
 from systems.litter import LitterSpawner
 from systems.upgrades import Upgrades
+from systems.economy import money, rent_multiplier
 from game.settings import TITLE, WINDOW_SIZE, FPS, INTERACTION_RADIUS
 from mall.mall import Mall
 from ui.hud import HUD
@@ -33,19 +34,19 @@ class Game:
         self.shop_menu = UpgradeShop()
         self.cash = 0
         self.rent_timer = 0.0
-        self.message = 'Collect litter, sell it at a dumpster, then reopen Northgate Supplies.'
+        self.message = 'Collect litter, sell it at a trash bin, then reopen Northgate Supplies.'
         self.message_timer = 6.0
         self.running = True
 
     def target(self):
         origin = pygame.Vector2(self.player.rect.center)
-        # Selling takes priority at a dumpster when the player is carrying a load.
-        dumpsters = [d for d in self.mall.dumpsters if origin.distance_to(d.position) <= INTERACTION_RADIUS]
-        if dumpsters and self.upgrades.held:
-            return min(dumpsters,key=lambda d: origin.distance_squared_to(d.position))
+        # Selling takes priority at a trash bin when the player is carrying a load.
+        trash_bins = [d for d in self.mall.trash_bins if origin.distance_to(d.position) <= INTERACTION_RADIUS]
+        if trash_bins and self.upgrades.held:
+            return min(trash_bins,key=lambda d: origin.distance_squared_to(d.position))
         candidates = [t for t in self.mall.trash if not t.cleaned and origin.distance_to(t.position) <= self.upgrades.tool[1]]
         candidates += [s for s in self.mall.stores if s.available and origin.distance_to(s.position) <= INTERACTION_RADIUS]
-        candidates += dumpsters
+        candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
     def notify(self, message):
@@ -59,7 +60,7 @@ class Game:
             self.audio.play('milestone')
         return message
 
-    def sell_trash(self, dumpster):
+    def sell_trash(self, trash_bin):
         if not self.upgrades.held:
             self.notify('Your bag is empty. Collect some litter first.')
             return
@@ -67,13 +68,13 @@ class Game:
         payout = count*self.upgrades.unit_value
         self.cash += payout
         self.upgrades.held = 0
-        self.feedback.burst(dumpster.position,f'+${payout}',restored=True)
+        self.feedback.burst(trash_bin.position,f'+${payout}',restored=True)
         self.audio.play('pickup')
         self.notify(f'Sold {count} items for ${payout}. Bag emptied.')
 
     def collect(self, target):
         if self.upgrades.held >= self.upgrades.capacity:
-            self.notify('Bag full. Sell your load at a SELL dumpster.')
+            self.notify('Bag full. Sell your load at a SELL trash bin.')
             return
         if target.cleaned:
             return
@@ -96,7 +97,7 @@ class Game:
             self.notify('First sweep complete! Sell your load and grow the arcade.')
             self.audio.play('milestone')
         else:
-            self.notify(f'Collected {collected}. Bag {self.upgrades.held}/{self.upgrades.capacity} / sell at a dumpster.')
+            self.notify(f'Collected {collected}. Bag {self.upgrades.held}/{self.upgrades.capacity} / sell at a trash bin.')
 
     def interact(self):
         if self.shop_menu.open:
@@ -104,16 +105,17 @@ class Game:
         target = self.target()
         if isinstance(target,Trash):
             self.collect(target)
-        elif isinstance(target,Dumpster):
+        elif isinstance(target,TrashBin):
             self.sell_trash(target)
         elif target is not None:
             if target.restored:
                 if target is self.mall.stores[0]:
                     self.shop_menu.open = True
                 else:
-                    self.notify(f'{target.name}: +${target.rent} rent every 5 seconds.')
+                    self.notify(f'{target.name}: +{money(target.rent*self.rent_multiplier)} / 5s '
+                                f'({self.rent_multiplier:g}x rent at current cleanliness).')
             elif self.cash < target.cost:
-                self.notify(f'You need ${target.cost-self.cash} more to reopen {target.name}.')
+                self.notify(f'You need {money(target.cost-self.cash)} more to reopen {target.name}.')
             else:
                 self.cash -= target.cost
                 target.restored = True
@@ -142,10 +144,20 @@ class Game:
         if opened:
             self.rent_timer += dt
             while self.rent_timer >= 5:
-                self.cash += sum(s.rent for s in opened)
+                multiplier = self.rent_multiplier
+                self.cash += sum(s.rent for s in opened)*multiplier
                 self.rent_timer -= 5
                 for store in opened:
-                    self.feedback.burst(store.position,f'+${store.rent} rent',restored=True)
+                    if multiplier:
+                        self.feedback.burst(store.position,f'+{money(store.rent*multiplier)} rent',restored=True)
+
+    @property
+    def rent_multiplier(self):
+        return rent_multiplier(self.mall.cleanliness)
+
+    @property
+    def rent_income(self):
+        return sum(s.rent for s in self.mall.stores if s.restored)*self.rent_multiplier
 
     def draw(self):
         target = self.target()

@@ -100,15 +100,18 @@ def prop(name):
         box(s, 'gold' if name == 'lamp' else 'stone', (9, 3, 7, 4))
         box(s, 'cream' if name == 'lamp' else 'shadow', (10, 3, 2, 3))
         box(s, 'shadow', (9, 1, 7, 1))
-    elif name == 'dumpster':
-        box(s, 'ink', (2, 9, 20, 12))
-        box(s, 'teal', (3, 11, 18, 8))
-        box(s, 'shadow', (1, 7, 22, 4))
-        box(s, 'stone', (3, 7, 18, 1))
-        box(s, 'cream', (9, 13, 6, 4))
-        box(s, 'green', (11, 14, 2, 2))
-        box(s, 'ink', (4, 21, 3, 2))
-        box(s, 'ink', (17, 21, 3, 2))
+    elif name == 'trash_bin':
+        # Upright indoor bin: hood, disposal slot, ribbed sides and recycling badge.
+        box(s, 'ink', (6, 5, 12, 18))
+        box(s, 'teal', (7, 10, 10, 11))
+        box(s, 'stone', (7, 5, 10, 2))
+        box(s, 'shadow', (5, 7, 14, 3))
+        box(s, 'ink', (8, 7, 8, 2))
+        box(s, 'light', (7, 11, 1, 9))
+        box(s, 'shadow', (15, 11, 2, 10))
+        box(s, 'cream', (10, 13, 4, 5))
+        box(s, 'green', (11, 14, 2, 3))
+        box(s, 'shadow', (7, 21, 10, 1))
     elif name == 'trash_bags':
         for x, y in ((2, 9), (11, 5)):
             box(s, 'ink', (x, y + 3, 10, 10))
@@ -176,7 +179,7 @@ class Art:
             for state in ('dirty', 'clean'):
                 self.sprites[f'{kind}_{state}'] = store(kind, state == 'clean')
         for name in ('trash_bags', 'litter', 'dirt', 'bench_dirty', 'bench_clean',
-                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'dumpster', 'mosaic'):
+                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic'):
             self.sprites[name] = prop(name)
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):

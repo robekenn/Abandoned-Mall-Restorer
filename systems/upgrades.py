@@ -1,5 +1,6 @@
 """Inventory and priced, one-time upgrades; transactions are handled by Game."""
 from dataclasses import dataclass
+from systems.economy import money
 
 
 @dataclass(frozen=True)
@@ -12,10 +13,10 @@ class Offer:
 
 
 class Upgrades:
-    CAPACITIES = (6, 12, 24, 40)
-    CAPACITY_PRICES = (75, 180, 400)
-    VALUES = (10, 15, 22, 30)
-    VALUE_PRICES = (120, 300, 600)
+    CAPACITIES = (1, 2, 4, 8, 16, 24, 40)
+    CAPACITY_PRICES = (5, 15, 40, 90, 180, 350)
+    VALUES = (1, 2, 4, 8, 15, 30)
+    VALUE_PRICES = (8, 30, 90, 220, 500)
     TOOLS = (('Hand grabber', 72, 1), ('Long grabber', 110, 1),
              ('Cleanup kit', 135, 3), ('Pro cleanup kit', 155, 5))
     TOOL_PRICES = (100, 250, 550)
@@ -65,7 +66,7 @@ class Upgrades:
                      ('fountain','Courtyard fountain',180),('mosaic','Courtyard mosaic',150)]
         else:
             specs = [(f'lamp_{i}',f'Lamp {i+1} / '+name,40)
-                     for i,name in enumerate(('west shops','middle shops','east shops','entrance'))]
+                     for i,name in enumerate(('Supplies / Pages','Pages / Retro','Retro / Bean','Bean / Tailor'))]
             specs += [(f'plant_{i}',f'Planter {i+1} / '+name,35)
                       for i,name in enumerate(('west wall','east wall','west courtyard','east courtyard'))]
         return [Offer(key,title,'Install this individual fixture',price,key in self.decor)
@@ -76,7 +77,7 @@ class Upgrades:
         if offer is None or offer.owned:
             return cash, 'That upgrade is already installed or unavailable.', False
         if cash < offer.price:
-            return cash, f'You need ${offer.price-cash} more for {offer.title.lower()}.', False
+            return cash, f'You need {money(offer.price-cash)} more for {offer.title.lower()}.', False
         if key in ('capacity','value','tool'):
             field = key+'_level'
             setattr(self,field,getattr(self,field)+1)

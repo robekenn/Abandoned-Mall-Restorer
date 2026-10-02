@@ -17,33 +17,33 @@ class InventoryTests(unittest.TestCase):
 
     def open_shop(self):
         g = self.game
-        g.cash = 100
+        g.cash = g.mall.stores[0].cost
         g.player.rect.center = g.mall.stores[0].position
         g.interact()
         self.assertTrue(g.shop_menu.open)
 
     def test_capacity_blocks_cleanup_and_selling_pays_only_once(self):
         g = self.game
-        for trash in g.mall.trash[:6]:
+        for trash in g.mall.trash[:1]:
             g.player.rect.center = trash.position
             g.interact()
-        self.assertEqual(g.upgrades.held,6)
+        self.assertEqual(g.upgrades.held,1)
         self.assertEqual(g.cash,0)
-        blocked = g.mall.trash[6]
+        blocked = g.mall.trash[1]
         dirty = set(g.mall.dirty_tiles)
         g.player.rect.center = blocked.position
         g.interact()
         self.assertFalse(blocked.cleaned)
         self.assertEqual(g.mall.dirty_tiles,dirty)
         self.assertIn('Bag full',g.message)
-        dumpster = g.mall.dumpsters[0]
-        g.player.rect.center = dumpster.position
+        trash_bin = g.mall.trash_bins[0]
+        g.player.rect.center = trash_bin.position
         g.interact()
-        self.assertEqual(g.cash,60)
+        self.assertEqual(g.cash,1)
         self.assertEqual(g.upgrades.held,0)
-        with patch.object(g,'target',return_value=dumpster):
+        with patch.object(g,'target',return_value=trash_bin):
             g.interact()
-        self.assertEqual(g.cash,60)
+        self.assertEqual(g.cash,1)
 
     def test_first_business_is_supplies_and_shop_is_required(self):
         g = self.game
@@ -52,14 +52,14 @@ class InventoryTests(unittest.TestCase):
         g.cash = 1000
         message = g.buy_upgrade('capacity')
         self.assertIn('Visit',message)
-        self.assertEqual(g.upgrades.capacity,6)
+        self.assertEqual(g.upgrades.capacity,1)
         self.assertEqual(g.cash,1000)
         self.open_shop()
         self.assertEqual(g.cash,0)
-        g.cash = 75
+        g.cash = 5
         g.buy_upgrade('capacity')
         self.assertEqual(g.cash,0)
-        self.assertEqual(g.upgrades.capacity,12)
+        self.assertEqual(g.upgrades.capacity,2)
 
     def test_purchase_bounds_and_individual_fixtures(self):
         upgrades = Upgrades()
@@ -80,7 +80,7 @@ class InventoryTests(unittest.TestCase):
         cash,message,bought = upgrades.purchase('missing',cash)
         self.assertFalse(bought)
         for key,attribute,maximum in [('capacity','capacity',40),('value','unit_value',30)]:
-            for _ in range(3):
+            for _ in range(len(upgrades.CAPACITY_PRICES if key == 'capacity' else upgrades.VALUE_PRICES)):
                 _,_,bought = upgrades.purchase(key,10000)
                 self.assertTrue(bought)
             self.assertEqual(getattr(upgrades,attribute),maximum)
@@ -91,14 +91,14 @@ class InventoryTests(unittest.TestCase):
     def test_sale_uses_upgraded_contract(self):
         g = self.game
         self.open_shop()
-        g.cash = 120
-        g.upgrades.held = 4
+        g.cash = 8
+        g.upgrades.held = 1
         g.buy_upgrade('value')
         self.assertEqual(g.cash,0)
         g.shop_menu.open = False
-        g.player.rect.center = g.mall.dumpsters[1].position
+        g.player.rect.center = g.mall.trash_bins[1].position
         g.interact()
-        self.assertEqual(g.cash,60)
+        self.assertEqual(g.cash,2)
         self.assertEqual(g.upgrades.held,0)
 
     def test_tool_range_and_batch_obey_remaining_capacity(self):
@@ -111,9 +111,10 @@ class InventoryTests(unittest.TestCase):
         for i,t in enumerate((first,second,third)):
             t.position = pygame.Vector2(1090+i*10,800)
             g.mall.respawn_trash(t)
-        g.upgrades.held = 4
+        g.upgrades.capacity_level = 2  # four slots, with two already occupied
+        g.upgrades.held = 2
         g.interact()
-        self.assertEqual(g.upgrades.held,6)
+        self.assertEqual(g.upgrades.held,4)
         self.assertTrue(first.cleaned)
         self.assertTrue(second.cleaned)
         self.assertFalse(third.cleaned)
@@ -133,7 +134,7 @@ class InventoryTests(unittest.TestCase):
         # First gear row is the capacity upgrade.
         rect = g.shop_menu.rows(g)[0][1]
         g.shop_menu.handle(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=rect.center),g)
-        self.assertEqual(g.upgrades.capacity,12)
+        self.assertEqual(g.upgrades.capacity,2)
         g.shop_menu.handle(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_2),g)
         g.shop_menu.handle(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN),g)
         self.assertEqual(g.upgrades.decor,{'bench_0'})
@@ -155,13 +156,13 @@ class InventoryTests(unittest.TestCase):
         g.run()
         self.assertEqual(g.upgrades.decor,set())
 
-    def test_dumpsters_are_clear_reachable_and_not_inside_shops(self):
+    def test_trash_bins_are_clear_reachable_and_not_inside_shops(self):
         g = self.game
-        self.assertEqual(len(g.mall.dumpsters),2)
-        for dumpster in g.mall.dumpsters:
-            self.assertFalse(any(s.rect.colliderect(dumpster.rect) for s in g.mall.stores))
-            self.assertTrue(g.mall.opening_area.contains(dumpster.rect))
-            self.assertTrue(all(t.position.distance_to(dumpster.position)>80 for t in g.mall.trash))
+        self.assertEqual(len(g.mall.trash_bins),2)
+        for trash_bin in g.mall.trash_bins:
+            self.assertFalse(any(s.rect.colliderect(trash_bin.rect) for s in g.mall.stores))
+            self.assertTrue(g.mall.opening_area.contains(trash_bin.rect))
+            self.assertTrue(all(t.position.distance_to(trash_bin.position)>80 for t in g.mall.trash))
 
     def test_supplies_with_no_cash_or_rent_still_allows_earning(self):
         g = self.game
@@ -180,9 +181,9 @@ class InventoryTests(unittest.TestCase):
         g.interact()
         self.assertEqual(g.cash,0)
         self.assertEqual(g.upgrades.held,1)
-        g.player.rect.center = g.mall.dumpsters[0].position
+        g.player.rect.center = g.mall.trash_bins[0].position
         g.interact()
-        self.assertEqual(g.cash,10)
+        self.assertEqual(g.cash,1)
 
 
 if __name__ == '__main__':
