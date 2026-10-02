@@ -19,7 +19,7 @@ class Store:
         name = ('bookshop' if self.available else 'cafe') + ('_clean' if self.restored else '_dirty')
         art.draw(surface, name, r.center, (r.width+12,r.height+20))
         sign = font.render(self.name.upper(), True, (250,234,193) if self.restored else (188,184,166))
-        background = sign.get_rect(center=(r.centerx, r.y+22)).inflate(16,10)
+        background = sign.get_rect(center=(r.centerx, r.y+40)).inflate(16,10)
         pygame.draw.rect(surface, (35,49,47), background, border_radius=4)
         surface.blit(sign, sign.get_rect(center=background.center))
         if self.available:

@@ -1,5 +1,6 @@
 import os
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+os.environ['SDL_AUDIODRIVER'] = 'dummy'
 import unittest
 import pygame
 from game.game import Game
@@ -65,8 +66,8 @@ class PrototypeTests(unittest.TestCase):
     def test_camera_and_quit_event(self):
         g = self.game
         g.camera.update((1800, 1100), (1100, 720))
-        self.assertEqual(g.camera.offset, (700, 380))
-        g.camera.update((0, 0), (2000, 1200))
+        self.assertEqual(g.camera.offset, (1250, 740))
+        g.camera.update((0, 0), (4000, 2400))
         self.assertEqual(g.camera.offset, (0, 0))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
         g.run()
