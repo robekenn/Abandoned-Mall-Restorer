@@ -3,7 +3,7 @@ import random
 
 
 class LitterSpawner:
-    def __init__(self, interval=8.0, cap=12):
+    def __init__(self, interval=4.0, cap=12):
         self.interval = interval
         self.cap = cap
         self.elapsed = 0.0

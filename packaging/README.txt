@@ -9,5 +9,9 @@ Linux requires a desktop and SDL-compatible system graphics/audio libraries.
 macOS builds are unsigned arm64 binaries; Windows builds are also unsigned.
 These builds are intended for testing; code signing is a future release task.
 
-Move: WASD / arrows. Interact: E. Scenery: Tab. Quit: Esc.
+Move: WASD / arrows. Interact: E. Sound: M. Quit: Esc.
+Collect litter into your bag and sell it at a SELL dumpster. Reopen Northgate
+Supplies first, then visit it with E to buy gear and individual fixtures.
+Shop: click a row to buy, 1-3 or Tab to change tabs, arrows to select,
+Enter to buy, and Esc or E to close. The game pauses while shopping.
 Progress currently resets when the game closes.

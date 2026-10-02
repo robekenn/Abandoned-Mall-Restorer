@@ -5,13 +5,12 @@ class Trash:
     def __init__(self, position, kind="trash"):
         self.position = pygame.Vector2(position)
         self.kind = kind
-        self.reward = 10
         self.cleaned = False
         self.ever_cleaned = False
 
     @property
     def label(self):
-        return "Sweep dirt (+$10)" if self.kind == "dirt" else "Collect litter (+$10)"
+        return "Sweep dirt into bag (+1 item)" if self.kind == "dirt" else "Collect litter (+1 item)"
 
     def draw(self, surface, camera, art, selected=False):
         if self.cleaned:

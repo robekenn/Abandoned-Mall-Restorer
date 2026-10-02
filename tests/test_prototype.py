@@ -14,27 +14,26 @@ class PrototypeTests(unittest.TestCase):
     def tearDown(self):
         pygame.quit()
 
-    def test_complete_restoration_loop(self):
+    def test_first_shop_and_income(self):
         g = self.game
-        g.player.rect.center = (2200, 1800)
+        supplies,pages = g.mall.stores[:2]
+        g.player.rect.center = supplies.position
         g.interact()
-        self.assertEqual(g.cash, 0)
-        store = g.mall.stores[0]
-        g.player.rect.center = store.position
+        self.assertFalse(supplies.restored)
+        g.cash = supplies.cost
         g.interact()
-        self.assertFalse(store.restored)
-        for trash in g.mall.trash[:10]:
-            g.player.rect.center = trash.position
-            g.interact()
-        self.assertEqual(g.cash, 100)
-        g.player.rect.center = store.position
+        self.assertTrue(supplies.restored)
+        self.assertTrue(g.shop_menu.open)
+        g.shop_menu.open = False
+        for trash in g.mall.trash:
+            g.mall.clean_trash(trash)
+        self.assertTrue(pages.available)
+        g.cash = pages.cost
+        g.player.rect.center = pages.position
         g.interact()
-        self.assertTrue(store.restored)
-        self.assertEqual(g.cash, 0)
-        g.interact()
-        self.assertEqual(g.cash, 0)
-        g.update(10, (0, 0))
-        self.assertEqual(g.cash, 10)
+        self.assertTrue(pages.restored)
+        g.update(10,(0,0))
+        self.assertEqual(g.cash,10)
         g.draw()
 
     def test_movement_and_collision(self):
@@ -46,21 +45,6 @@ class PrototypeTests(unittest.TestCase):
         wall = pygame.Rect(150, 0, 20, 500)
         p.move((1, 0), 1, [wall])
         self.assertLessEqual(p.rect.right, wall.left)
-
-    def test_scenery_unlocks(self):
-        g = self.game
-        g.change_decor()
-        self.assertEqual(g.decor, 0)
-        for t in g.mall.trash[:5]: g.mall.clean_trash(t)
-        g.change_decor()
-        self.assertEqual(g.decor, 1)
-        g.change_decor()
-        self.assertEqual(g.decor, 0)
-        for t in g.mall.trash[:10]: g.mall.clean_trash(t)
-        g.change_decor()
-        g.change_decor()
-        self.assertEqual(g.decor, 2)
-        g.draw()
 
     def test_camera_and_quit_event(self):
         g = self.game
@@ -106,7 +90,7 @@ class PrototypeTests(unittest.TestCase):
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_TAB))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
         g.run()
-        self.assertEqual(g.decor, 1)
+        self.assertEqual(g.upgrades.decor, set())
 
 
 if __name__ == '__main__':

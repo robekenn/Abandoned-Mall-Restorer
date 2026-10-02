@@ -23,9 +23,12 @@ def main():
             for store in game.mall.stores:
                 store.restored = True
             game.mall.refresh_businesses()
-            game.change_decor()
-            game.change_decor()
+            game.upgrades.decor.update(o.key for c in ('Furniture','Garden') for o in game.upgrades.offers(c))
             game.draw()
+            game.shop_menu.open = True
+            for category in range(3):
+                game.shop_menu.category = category
+                game.draw()
         finally:
             pygame.quit()
         return
