@@ -1,5 +1,6 @@
 import os
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
+os.environ['SDL_AUDIODRIVER'] = 'dummy'
 import unittest
 import pygame
 from game.game import Game
@@ -15,7 +16,7 @@ class PrototypeTests(unittest.TestCase):
 
     def test_complete_restoration_loop(self):
         g = self.game
-        g.player.rect.center = (1700, 950)
+        g.player.rect.center = (2200, 1800)
         g.interact()
         self.assertEqual(g.cash, 0)
         store = g.mall.stores[0]
@@ -24,7 +25,6 @@ class PrototypeTests(unittest.TestCase):
         self.assertFalse(store.restored)
         for trash in g.mall.trash[:10]:
             g.player.rect.center = trash.position
-            g.interact()
             g.interact()
         self.assertEqual(g.cash, 100)
         g.player.rect.center = store.position
@@ -51,12 +51,12 @@ class PrototypeTests(unittest.TestCase):
         g = self.game
         g.change_decor()
         self.assertEqual(g.decor, 0)
-        for t in g.mall.trash[:5]: t.cleaned = True
+        for t in g.mall.trash[:5]: g.mall.clean_trash(t)
         g.change_decor()
         self.assertEqual(g.decor, 1)
         g.change_decor()
         self.assertEqual(g.decor, 0)
-        for t in g.mall.trash[:10]: t.cleaned = True
+        for t in g.mall.trash[:10]: g.mall.clean_trash(t)
         g.change_decor()
         g.change_decor()
         self.assertEqual(g.decor, 2)
@@ -65,8 +65,8 @@ class PrototypeTests(unittest.TestCase):
     def test_camera_and_quit_event(self):
         g = self.game
         g.camera.update((1800, 1100), (1100, 720))
-        self.assertEqual(g.camera.offset, (700, 380))
-        g.camera.update((0, 0), (2000, 1200))
+        self.assertEqual(g.camera.offset, (1250, 740))
+        g.camera.update((0, 0), (4000, 2400))
         self.assertEqual(g.camera.offset, (0, 0))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
         g.run()
@@ -101,7 +101,7 @@ class PrototypeTests(unittest.TestCase):
                 g.player.facing, g.player.animation_frame = facing, frame
                 g.draw()
         for trash in g.mall.trash[:5]:
-            trash.cleaned = True
+            g.mall.clean_trash(trash)
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_w))
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_TAB))
         pygame.event.post(pygame.event.Event(pygame.QUIT))

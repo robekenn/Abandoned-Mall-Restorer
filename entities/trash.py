@@ -7,6 +7,7 @@ class Trash:
         self.kind = kind
         self.reward = 10
         self.cleaned = False
+        self.ever_cleaned = False
 
     @property
     def label(self):

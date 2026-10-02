@@ -3,6 +3,9 @@ from entities.player import Player
 from entities.trash import Trash
 from game.camera import Camera
 from game.art import Art
+from game.audio import Audio
+from game.feedback import Feedback
+from systems.litter import LitterSpawner
 from game.settings import TITLE, WINDOW_SIZE, FPS, INTERACTION_RADIUS
 from mall.mall import Mall
 from ui.hud import HUD
@@ -16,15 +19,18 @@ class Game:
         pygame.display.set_caption(TITLE)
         self.clock = pygame.time.Clock()
         self.mall = Mall()
-        self.player = Player((240, 380))
+        self.player = Player((240, 430))
         self.camera = Camera(self.mall.size)
         self.hud = HUD()
         self.art = Art()
+        self.audio = Audio()
+        self.feedback = Feedback()
+        self.litter_spawner = LitterSpawner()
         self.decor = 0
         self.cash = 0
         self.rent_timer = 0.0
-        self.message = "Welcome back to Northgate. Let's bring it to life."
-        self.message_timer = 4.0
+        self.message = 'A whole mall ahead. Start with the dust at your feet.'
+        self.message_timer = 6.0
         self.running = True
 
     def target(self):
@@ -40,19 +46,43 @@ class Game:
     def interact(self):
         target = self.target()
         if isinstance(target, Trash):
-            target.cleaned = True
+            first_sweep_was_done = self.mall.initial_cleanup_complete
+            if not self.mall.clean_trash(target):
+                return
             self.cash += target.reward
-            self.notify("Cleaned up! +$10")
+            self.player.use_tool(target.kind, target.position)
+            self.feedback.burst(target.position, '+$10')
+            self.audio.play('sweep' if target.kind == 'dirt' else 'pickup')
+            count = self.mall.cleaned_count
+            milestones = {1: 'One small patch. A real beginning.',
+                          5: 'A place to sit again. Greenery unlocked / Tab.',
+                          10: 'Ten small steps. You can reopen Pages now.'}
+            if not first_sweep_was_done and self.mall.initial_cleanup_complete:
+                self.notify('The first sweep is finished. Water returns; the next shop can follow Pages.')
+                self.audio.play('milestone')
+            elif not first_sweep_was_done and count in milestones:
+                self.notify(milestones[count])
+                self.audio.play('milestone')
+            else:
+                self.notify(f'{self.mall.active_litter_count} cleanup tasks left. Every patch helps.')
         elif target is not None:
             if target.restored:
-                self.notify("Pages Bookshop is open. Rent arrives every 5 seconds.")
+                self.notify(f'{target.name} is open. +${target.rent} rent every 5 seconds.')
             elif self.cash < target.cost:
                 self.notify(f"You need ${target.cost-self.cash} more to reopen this shop.")
             else:
                 self.cash -= target.cost
                 target.restored = True
-                self.rent_timer = 0.0
-                self.notify("Pages Bookshop is open! +$5 rent every 5 seconds.")
+                self.mall.refresh_businesses()
+                self.feedback.burst(target.position, 'OPEN', restored=True)
+                self.audio.play('milestone')
+                next_shop = self.mall.next_store
+                if next_shop and next_shop.available:
+                    self.notify(f'{target.name} is open. Next: {next_shop.name} (${next_shop.cost}).')
+                elif next_shop:
+                    self.notify(f'{target.name} is open. Finish the first sweep to unlock {next_shop.name}.')
+                else:
+                    self.notify('All four shops are open. Keep the arcade welcoming.')
 
     def change_decor(self):
         if self.mall.cleaned_count < 5:
@@ -64,21 +94,31 @@ class Game:
 
     def update(self, dt, direction):
         self.player.move(direction, dt, self.mall.obstacles)
-        self.camera.update((self.player.rect.centerx, self.player.rect.centery-70), self.screen.get_size())
+        viewport = self.screen.get_size()
+        # Preserve the opening's storefront framing in shorter windows.
+        framing = 70 + max(0, (720 - viewport[1]) / 2)
+        self.camera.update((self.player.rect.centerx, self.player.rect.centery-framing), viewport)
         self.message_timer = max(0, self.message_timer-dt)
-        if self.mall.stores[0].restored:
+        self.feedback.update(dt)
+        self.litter_spawner.update(dt, self.mall, self.player.rect.center)
+        opened = [s for s in self.mall.stores if s.restored]
+        if opened:
             self.rent_timer += dt
             while self.rent_timer >= 5:
-                self.cash += 5
+                self.cash += sum(s.rent for s in opened)
                 self.rent_timer -= 5
+                for store in opened:
+                    self.feedback.burst(store.position, f'+${store.rent} rent', restored=True)
 
     def draw(self):
         target = self.target()
         self.mall.draw(self.screen, self.camera, self.hud.font, self.art, target, self.decor)
         self.player.draw(self.screen, self.camera, self.art)
+        self.feedback.draw(self.screen, self.camera, self.hud.font)
         self.hud.draw(self.screen, self.cash, sum(t.cleaned for t in self.mall.trash),
                       len(self.mall.trash), target, self.message if self.message_timer else "",
-                      self.mall.stores[0].restored, self.mall.cleaned_count, self.decor)
+                      self.mall.stores[0].restored, self.mall.cleaned_count, self.decor,
+                      self.mall, self.player.rect.center, self.audio.muted)
         pygame.display.flip()
 
     def run(self):
@@ -95,6 +135,9 @@ class Game:
                             self.interact()
                         elif event.key == pygame.K_TAB:
                             self.change_decor()
+                        elif event.key == pygame.K_m:
+                            muted = self.audio.toggle()
+                            self.notify('Sound muted.' if muted else 'Sound on.')
                     elif event.type == pygame.VIDEORESIZE:
                         self.screen = pygame.display.set_mode((max(800,event.w), max(600,event.h)), pygame.RESIZABLE)
                 keys = pygame.key.get_pressed()

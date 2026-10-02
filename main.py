@@ -19,8 +19,10 @@ def main():
             game.update(0.13, (1, 0))
             game.draw()
             for trash in game.mall.trash:
-                trash.cleaned = True
-            game.mall.stores[0].restored = True
+                game.mall.clean_trash(trash)
+            for store in game.mall.stores:
+                store.restored = True
+            game.mall.refresh_businesses()
             game.change_decor()
             game.change_decor()
             game.draw()
