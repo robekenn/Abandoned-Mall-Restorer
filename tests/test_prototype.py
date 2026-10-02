@@ -47,6 +47,21 @@ class PrototypeTests(unittest.TestCase):
         p.move((1, 0), 1, [wall])
         self.assertLessEqual(p.rect.right, wall.left)
 
+    def test_scenery_unlocks(self):
+        g = self.game
+        g.change_decor()
+        self.assertEqual(g.decor, 0)
+        for t in g.mall.trash[:5]: t.cleaned = True
+        g.change_decor()
+        self.assertEqual(g.decor, 1)
+        g.change_decor()
+        self.assertEqual(g.decor, 0)
+        for t in g.mall.trash[:10]: t.cleaned = True
+        g.change_decor()
+        g.change_decor()
+        self.assertEqual(g.decor, 2)
+        g.draw()
+
     def test_camera_and_quit_event(self):
         g = self.game
         g.camera.update((1800, 1100), (1100, 720))

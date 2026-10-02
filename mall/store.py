@@ -14,25 +14,16 @@ class Store:
     def label(self):
         return "Shop open - earning $5 every 5 seconds" if self.restored else "Reopen Pages Bookshop ($100)"
 
-    def draw(self, surface, camera, font, selected=False):
+    def draw(self, surface, camera, font, art, selected=False):
         r = camera.rect(self.rect)
-        pygame.draw.rect(surface, (60, 92, 85) if self.restored else (66, 69, 69), r)
-        pygame.draw.rect(surface, (154, 185, 164) if self.restored else (118, 116, 105), r, 8)
-        sign = pygame.Rect(r.x + 15, r.y + 14, r.width-30, 42)
-        pygame.draw.rect(surface, (36, 66, 62) if self.restored else (47, 49, 49), sign)
-        text = font.render(self.name.upper(), True, (240, 224, 183))
-        surface.blit(text, text.get_rect(center=sign.center))
-        for x in range(r.x+25, r.right-25, 65):
-            window = pygame.Rect(x, r.y+76, 48, r.height-105)
-            pygame.draw.rect(surface, (161, 203, 183) if self.restored else (36, 45, 48), window)
-            if self.restored:
-                for y in range(window.y+15, window.bottom, 30):
-                    pygame.draw.rect(surface, (113, 78, 57), (x+5, y, 38, 7))
-            else:
-                pygame.draw.line(surface, (140, 109, 77), window.topleft, window.bottomright, 12)
-                pygame.draw.line(surface, (140, 109, 77), window.topright, window.bottomleft, 12)
+        name = ('bookshop' if self.available else 'cafe') + ('_clean' if self.restored else '_dirty')
+        art.draw(surface, name, r.center, (r.width+12,r.height+20))
+        sign = font.render(self.name.upper(), True, (250,234,193) if self.restored else (188,184,166))
+        background = sign.get_rect(center=(r.centerx, r.y+22)).inflate(16,10)
+        pygame.draw.rect(surface, (35,49,47), background, border_radius=4)
+        surface.blit(sign, sign.get_rect(center=background.center))
         if self.available:
-            p = camera.point(self.position)
-            pygame.draw.circle(surface, (105, 181, 147) if self.restored else (216, 177, 104), p, 14)
+            point = camera.point(self.position)
+            pygame.draw.circle(surface, (105,181,147) if self.restored else (216,177,104), point, 12)
             if selected:
-                pygame.draw.circle(surface, (245, 218, 156), p, 22, 2)
+                pygame.draw.circle(surface, (245,218,156), point, 21, 2)

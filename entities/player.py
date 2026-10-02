@@ -30,10 +30,6 @@ class Player:
                             if delta > 0: self.rect.bottom = wall.top
                             elif delta < 0: self.rect.top = wall.bottom
 
-    def draw(self, surface, camera):
-        r = camera.rect(self.rect)
-        pygame.draw.ellipse(surface, (42, 48, 47), r.move(0, 8))
-        pygame.draw.rect(surface, (75, 173, 165), r, border_radius=7)
-        pygame.draw.circle(surface, (240, 197, 149), (r.centerx, r.y + 3), 10)
-        pygame.draw.line(surface, (35, 65, 69), (r.x + 5, r.bottom), (r.x + 5, r.bottom + 4), 4)
-        pygame.draw.line(surface, (35, 65, 69), (r.right - 5, r.bottom), (r.right - 5, r.bottom + 4), 4)
+    def draw(self, surface, camera, art):
+        point = camera.point(self.rect.center)
+        art.draw(surface, 'player', (point.x, point.y-12), (48, 70))

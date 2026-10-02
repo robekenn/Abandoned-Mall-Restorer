@@ -2,6 +2,7 @@ import pygame
 from entities.player import Player
 from entities.trash import Trash
 from game.camera import Camera
+from game.art import Art
 from game.settings import TITLE, WINDOW_SIZE, FPS, INTERACTION_RADIUS
 from mall.mall import Mall
 from ui.hud import HUD
@@ -18,6 +19,8 @@ class Game:
         self.player = Player((240, 380))
         self.camera = Camera(self.mall.size)
         self.hud = HUD()
+        self.art = Art()
+        self.decor = 0
         self.cash = 0
         self.rent_timer = 0.0
         self.message = "Welcome back to Northgate. Let's bring it to life."
@@ -51,9 +54,17 @@ class Game:
                 self.rent_timer = 0.0
                 self.notify("Pages Bookshop is open! +$5 rent every 5 seconds.")
 
+    def change_decor(self):
+        if self.mall.cleaned_count < 5:
+            self.notify("Clean 5 spots to unlock scenery choices.")
+            return
+        choices = 3 if self.mall.cleaned_count >= 10 else 2
+        self.decor = (self.decor + 1) % choices
+        self.notify(["Scenery: original mall", "Scenery: greenery and warm lamps", "Scenery: welcoming mosaic courtyard"][self.decor])
+
     def update(self, dt, direction):
         self.player.move(direction, dt, self.mall.obstacles)
-        self.camera.update(self.player.rect.center, self.screen.get_size())
+        self.camera.update((self.player.rect.centerx, self.player.rect.centery-70), self.screen.get_size())
         self.message_timer = max(0, self.message_timer-dt)
         if self.mall.stores[0].restored:
             self.rent_timer += dt
@@ -63,11 +74,11 @@ class Game:
 
     def draw(self):
         target = self.target()
-        self.mall.draw(self.screen, self.camera, self.hud.font, target)
-        self.player.draw(self.screen, self.camera)
+        self.mall.draw(self.screen, self.camera, self.hud.font, self.art, target, self.decor)
+        self.player.draw(self.screen, self.camera, self.art)
         self.hud.draw(self.screen, self.cash, sum(t.cleaned for t in self.mall.trash),
                       len(self.mall.trash), target, self.message if self.message_timer else "",
-                      self.mall.stores[0].restored)
+                      self.mall.stores[0].restored, self.mall.cleaned_count, self.decor)
         pygame.display.flip()
 
     def run(self):
@@ -82,6 +93,8 @@ class Game:
                             self.running = False
                         elif event.key == pygame.K_e:
                             self.interact()
+                        elif event.key == pygame.K_tab:
+                            self.change_decor()
                     elif event.type == pygame.VIDEORESIZE:
                         self.screen = pygame.display.set_mode((max(800,event.w), max(600,event.h)), pygame.RESIZABLE)
                 keys = pygame.key.get_pressed()
