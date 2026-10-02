@@ -93,7 +93,7 @@ class Game:
                             self.running = False
                         elif event.key == pygame.K_e:
                             self.interact()
-                        elif event.key == pygame.K_tab:
+                        elif event.key == pygame.K_TAB:
                             self.change_decor()
                     elif event.type == pygame.VIDEORESIZE:
                         self.screen = pygame.display.set_mode((max(800,event.w), max(600,event.h)), pygame.RESIZABLE)
