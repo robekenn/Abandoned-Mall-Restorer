@@ -1,1 +1,6 @@
-"""Shared game settings and constants."""
+TITLE = "Abandoned Mall Restorer"
+WINDOW_SIZE = (1100, 720)
+WORLD_SIZE = (1800, 1100)
+FPS = 60
+PLAYER_SPEED = 240
+INTERACTION_RADIUS = 72

@@ -1,17 +1,47 @@
 # Abandoned Mall Restorer
 
-A 2D mall restoration and management game built with Python and pygame-ce.
+A top-down 2D restoration game built with Python and pygame-ce, without a commercial game engine.
 
-## Planned core loop
+## First playable prototype
 
-Clean and repair an abandoned mall, renovate storefronts, attract tenants and shoppers, earn income, and expand into new areas.
+Explore Northgate Mall, collect litter and sweep dirt for $10 each, then spend $100 at the gold marker outside Pages Bookshop. The boarded storefront becomes an open shop and earns $5 every five seconds. There are 15 cleanup spots, three future storefronts, benches, and a fountain.
 
-## Development setup
+This prototype uses drawn placeholder graphics. Progress resets when you close the game; saving, tenants, shoppers, audio, and additional wings are future milestones.
+
+## Run on Windows
+
+Install Python 3.12 or newer. Download this repository or pull the latest changes, open a terminal in its folder, then run:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe main.py
+```
+
+## Run on macOS / Linux
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # macOS/Linux
-# .venv\Scripts\activate  # Windows
-pip install -r requirements.txt
-python main.py
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python main.py
 ```
+
+## Controls
+
+- **WASD / Arrow keys:** move
+- **E:** interact with the closest nearby cleanup spot or shop marker
+- **Esc:** quit
+
+The camera follows the player. Walls, storefronts, benches, and the fountain block movement. The window is resizable (minimum 800 x 600).
+
+## Development
+
+`game/` owns the loop, settings, and camera; `entities/` owns the player and litter; `mall/` owns the layout and storefronts; `ui/` owns the HUD. Remaining starter modules are placeholders for later systems.
+
+Run the movement, collision, camera, shutdown, and restoration-loop checks:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests use SDL's dummy display driver, so they also run without a desktop.

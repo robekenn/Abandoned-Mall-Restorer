@@ -1,9 +1,9 @@
-"""Entry point for Abandoned Mall Restorer."""
+"""Launch from any working directory with Python 3.12+."""
+from game.game import Game
 
 
-def main() -> None:
-    """Start the game."""
-    pass
+def main():
+    Game().run()
 
 
 if __name__ == "__main__":
