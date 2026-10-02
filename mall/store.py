@@ -1,0 +1,1 @@
+"""Storefront restoration and operation."""
