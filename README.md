@@ -6,7 +6,7 @@ A top-down 2D restoration game built with Python and pygame-ce, without a commer
 
 Explore Northgate Mall, collect litter and sweep dirt for $10 each, then spend $100 at the gold marker outside Pages Bookshop. The boarded storefront becomes an open shop and earns $5 every five seconds. There are 15 cleanup spots, three future storefronts, benches, and a fountain.
 
-The game now uses a 16-sprite illustrated atlas: dirty/restored bookstores and cafés, litter, dirt, benches, fountains, planters, lamps, the player, and a mosaic. Cleaning five spots unlocks greenery and lamps; ten unlocks the mosaic courtyard. Press Tab to cycle scenery. Benches recover after five spots and the fountain is restored when all fifteen are clean. Progress resets when you close the game; saving, tenants, shoppers, audio, and additional wings are future milestones.
+The game now uses crisp retro pixel sprites (24x24 props, a 16x24 worker, and 48x40 storefronts): dirty/restored bookstores and cafés, litter, dirt, benches, fountains, planters, lamps, the player, and a mosaic. Cleaning five spots unlocks greenery and lamps; ten unlocks the mosaic courtyard. The worker has four-direction walking animations and returns to idle when stopped. Press Tab to cycle scenery. Benches recover after five spots and the fountain is restored when all fifteen are clean. Progress resets when you close the game; saving, tenants, shoppers, audio, and additional wings are future milestones.
 
 ## Run on Windows
 

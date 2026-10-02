@@ -72,6 +72,42 @@ class PrototypeTests(unittest.TestCase):
         g.run()
         self.assertFalse(g.running)
 
+    def test_walking_animation_and_idle(self):
+        p = Player((100, 100))
+        for direction, facing in (((1, 0), 'right'), ((-1, 0), 'left'),
+                                  ((0, -1), 'up'), ((0, 1), 'down')):
+            p.move((0, 0), 0, [])
+            p.move(direction, 0.13, [])
+            self.assertEqual(p.facing, facing)
+            self.assertTrue(p.walking)
+            self.assertEqual(p.animation_frame, 1)
+            p.move(direction, 0.13, [])
+            self.assertEqual(p.animation_frame, 2)
+        p.move((0, 0), 0.13, [])
+        self.assertFalse(p.walking)
+        self.assertEqual(p.animation_frame, 0)
+        p.rect.right = 150
+        p.move((1, 0), 0.13, [pygame.Rect(150, 0, 20, 500)])
+        self.assertFalse(p.walking)
+        self.assertEqual(p.animation_frame, 0)
+
+    def test_pixel_sprites_and_keyboard_events(self):
+        g = self.game
+        for facing in ('down', 'up', 'left', 'right'):
+            for frame in range(4):
+                sprite = g.art.sprites[f'player_{facing}_{frame}']
+                self.assertEqual(sprite.get_size(), (16, 24))
+                self.assertGreater(sprite.get_bounding_rect().width, 0)
+                g.player.facing, g.player.animation_frame = facing, frame
+                g.draw()
+        for trash in g.mall.trash[:5]:
+            trash.cleaned = True
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_w))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_TAB))
+        pygame.event.post(pygame.event.Event(pygame.QUIT))
+        g.run()
+        self.assertEqual(g.decor, 1)
+
 
 if __name__ == '__main__':
     unittest.main()
