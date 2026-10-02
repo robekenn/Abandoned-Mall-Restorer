@@ -1,0 +1,1 @@
+"""Trash and cleanup objects."""
