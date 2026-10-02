@@ -6,13 +6,15 @@ A top-down 2D restoration game built with Python and pygame-ce, without a commer
 
 ## First playable prototype
 
-Restore the north arcade of Northgate Mall. The 49 starting cleanup tasks cover every walkable floor tile; collecting them all leaves the entire playable floor clean. Each task gives $10 and adds a brief tool stroke, pixel dust, a reward popup and a quiet sound. The freestanding directory prop and floor area labels have been removed; the HUD map shows the larger mall beyond the closed galleries.
+Restore the north arcade of Northgate Mall. Collect litter and dust into a six-item bag, then sell the load at either of two marked dumpsters for $10 per item. A full bag blocks further cleanup until sold. The HUD shows capacity, sale value, floor cleanliness and the next business goal.
 
-The game uses crisp retro pixel sprites (24x24 props, a 16x24 worker displayed at 48x72, and 48x40 storefronts) with four-direction walking animations. Five cleanup tasks restore benches and unlock greenery; ten unlock a mosaic; the complete first sweep restores the fountain. Tab cycles unlocked scenery.
+Reopen **Northgate Supplies** first for $100. Return to its marker and press E to open the upgrade shop. Buy larger bags (12/24/40 slots), better recycling contracts ($15/$22/$30 per item), and tools with longer reach and multi-item pickup. Each bench, lamp, planter, fountain and mosaic is purchased separately; there is no automatic scenery restoration or Tab scene cycling.
 
-Reopen Pages Bookshop for $100 and earn $5 every five seconds. Completing the first sweep unlocks sequential business restoration: Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Rent adds together across open shops. After the first sweep and the first reopening, fresh litter returns every eight seconds, capped at twelve active piles. Reclean it to restore the floor and keep earning.
+The 51 starting cleanup tasks cover every walkable floor tile. Clearing all of them makes the opening floor 100% clean and unlocks the next business after Supplies: Pages Bookshop ($100, $5 rent), Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Open businesses pay their combined rent every five seconds. Supplies is an upgrade shop and does not pay rent.
 
-Progress resets when you close the game; saving, shoppers and additional playable wings remain future milestones. See [the opening arcade guide](docs/opening-arcade.md) for progression details and a review checklist.
+After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve active piles. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
+
+The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving, shoppers and additional playable wings remain future milestones. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
 
 ## Run on Windows
 
@@ -35,12 +37,13 @@ python3 -m venv .venv
 ## Controls
 
 - **WASD / Arrow keys:** move
-- **E:** interact with the closest nearby cleanup spot or shop marker
-- **Tab:** cycle unlocked scenery
+- **E:** collect nearby litter, sell at a dumpster, reopen a business or enter Supplies
 - **M:** toggle sound
-- **Esc:** quit
+- **Esc:** quit (or close the upgrade menu while shopping)
 
-The camera follows the player. Walls, storefronts, benches, and the fountain block movement. The window is resizable (minimum 800 x 600).
+Inside Supplies, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay pauses while the menu is open.
+
+The camera follows the player. Walls, storefronts, dumpsters, benches, and the fountain block movement. The window is resizable (minimum 800 x 600).
 
 ## Development
 

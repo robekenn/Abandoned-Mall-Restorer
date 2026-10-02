@@ -1,5 +1,6 @@
 import pygame
 from entities.trash import Trash
+from entities.dumpster import Dumpster
 from mall.store import Store
 from game.settings import WORLD_SIZE
 
@@ -9,25 +10,30 @@ class Mall:
         self.size = WORLD_SIZE
         self.opening_area = pygame.Rect(40, 40, 1720, 1020)
         w, h = self.size
-        business_specs = [('Pages Bookshop', 100, 5, 'bookshop'),
+        business_specs = [('Northgate Supplies', 100, 0, 'bookshop'),
+                          ('Pages Bookshop', 100, 5, 'bookshop'),
                           ('Retro Replay', 250, 8, 'bookshop'),
                           ('Bean Street', 450, 12, 'cafe'),
                           ('The Tailor', 700, 16, 'bookshop')]
-        self.stores = [Store((100+i*410, 100, 350, 240), name, i == 0, cost, rent, kind)
+        self.stores = [Store((100+i*328, 100, 280, 240), name, i == 0, cost, rent, kind)
                        for i, (name, cost, rent, kind) in enumerate(business_specs)]
         self.fountain = pygame.Rect(700, 600, 220, 100)
         self.benches = [pygame.Rect(280, 700, 120, 35), pygame.Rect(1220, 700, 120, 35)]
+        self.lamps = [(470,370),(880,370),(1290,370),(160,950)]
+        self.plants = [(100,600),(1670,600),(500,920),(1250,920)]
+        self.dumpsters = [Dumpster((140,580),'West dumpster'), Dumpster((1600,850),'East dumpster')]
         self.gates = [pygame.Rect(1760, 40, 32, 1020), pygame.Rect(40, 1060, 1752, 32)]
         self.obstacles = [pygame.Rect(0, 0, w, 40), pygame.Rect(0, h-40, w, 40),
                           pygame.Rect(0, 0, 40, h), pygame.Rect(w-40, 0, 40, h)]
         self.back_wall = pygame.Rect(40, 40, 1720, 300)
-        self.obstacles += [s.rect for s in self.stores] + [self.fountain] + self.benches + self.gates + [self.back_wall]
+        self.obstacles += [s.rect for s in self.stores] + [self.fountain] + self.benches + self.gates + [self.back_wall] + [d.rect for d in self.dumpsters]
         self.distant_stores = [Store((2000+i*400, 100, 340, 240), name)
                                for i, name in enumerate(['CINEMA', 'RECORDS', 'DEPARTMENT STORE'])]
         self.distant_stores += [Store((100+i*410, 1250, 350, 240), 'SOUTH GALLERY') for i in range(4)]
         positions = [(240,480),(370,550),(500,440),(620,510),(830,450),(1040,480),
                      (1150,560),(1410,450),(1540,620),(1450,820),(1110,870),(940,790),
                      (680,870),(500,780),(220,840)]
+        positions = [p for p in positions if not any(d.position.distance_squared_to(p) < 100**2 for d in self.dumpsters)]
         self.floor_tiles = tuple((x+31, y+31)
                                  for x in range(40, 1760, 64)
                                  for y in range(40, 1060, 64)
@@ -46,7 +52,8 @@ class Mall:
                       if self.opening_area.contains(pygame.Rect(p[0]-16, p[1]-16, 32, 32))
                       and not any(w.colliderect(pygame.Rect(p[0]-16, p[1]-16, 32, 32)) for w in self.obstacles)
                       and (p[0]-240)**2+(p[1]-430)**2 > 120**2
-                      and all((p[0]-s.position.x)**2+(p[1]-s.position.y)**2 > 90**2 for s in self.stores)]
+                      and all((p[0]-s.position.x)**2+(p[1]-s.position.y)**2 > 90**2 for s in self.stores)
+                      and all(d.position.distance_squared_to(p) > 80**2 for d in self.dumpsters)]
         coverage = [(p, {i for i,tile in enumerate(floor)
                          if (p[0]-tile[0])**2+(p[1]-tile[1])**2 < 115**2}) for p in candidates]
         uncovered = {i for i,tile in enumerate(floor)
@@ -117,7 +124,7 @@ class Mall:
         key = ((int(center[0])-40)//64*64+71, (int(center[1])-40)//64*64+71)
         return key not in self.dirty_tiles
 
-    def draw(self, surface, camera, font, art, target, decor):
+    def draw(self, surface, camera, font, art, target, upgrades):
         surface.fill((27, 36, 40))
         cleaned = self.cleaned_count
         view = surface.get_rect().move(round(camera.offset.x), round(camera.offset.y))
@@ -158,21 +165,22 @@ class Mall:
             else:
                 for x in range(r.left, r.right, 12):
                     pygame.draw.line(surface, (100,108,96), (x,r.top), (x,r.bottom), 3)
-        if decor == 2:
+        if 'mosaic' in upgrades.decor:
             art.draw(surface,'mosaic',camera.point((810,790)),(210,125))
         for store in self.stores:
             if store.restored:
                 glow = camera.rect(store.rect.inflate(24,40).move(0,20))
                 pygame.draw.rect(surface, (172,151,95), glow, 3)
             store.draw(surface,camera,font,art,target is store)
-        art.draw(surface,'fountain_clean' if self.initial_cleanup_complete else 'fountain_dirty',
+        art.draw(surface,'fountain_clean' if 'fountain' in upgrades.decor else 'fountain_dirty',
                  camera.point(self.fountain.center),(245,165))
-        for bench in self.benches:
-            art.draw(surface,'bench_clean' if cleaned>=5 else 'bench_dirty',camera.point(bench.center),(145,85))
-        for point in [(100,600),(1670,600),(500,920),(1250,920)]:
-            art.draw(surface,'plant_clean' if decor else 'plant_dirty',camera.point(point),(65,90))
-        if decor:
-            for point in [(470,370),(880,370),(1290,370),(160,950)]:
-                art.draw(surface,'lamp',camera.point(point),(55,95))
+        for i,bench in enumerate(self.benches):
+            art.draw(surface,'bench_clean' if f'bench_{i}' in upgrades.decor else 'bench_dirty',camera.point(bench.center),(145,85))
+        for i,point in enumerate(self.plants):
+            art.draw(surface,'plant_clean' if f'plant_{i}' in upgrades.decor else 'plant_dirty',camera.point(point),(65,90))
+        for i,point in enumerate(self.lamps):
+            art.draw(surface,'lamp' if f'lamp_{i}' in upgrades.decor else 'lamp_off',camera.point(point),(55,95))
+        for dumpster in self.dumpsters:
+            dumpster.draw(surface,camera,art,font,target is dumpster)
         for trash in self.trash:
             trash.draw(surface,camera,art,target is trash)

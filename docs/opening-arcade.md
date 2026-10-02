@@ -1,40 +1,62 @@
-# North arcade: cleanup and business progression
+# Collect, sell and reinvest
 
-The north arcade is the first playable corner of a 3600x2200 mall. Closed east and south grilles and distant storefronts imply more to restore later. The character uses the previous 48x72 display size and 26x30 collision footprint. The freestanding directory prop and world-space area labels are removed; the small HUD map remains.
+## First goal: Northgate Supplies
 
-## A complete first sweep
+The worker starts with a hand grabber, six bag slots and a $10-per-item recycling contract. Dust and litter both count as one carried item. Pickup cleans the floor and fills the bag; it no longer pays cash immediately. Walk to either SELL dumpster and press E to sell the whole load. Empty loads pay nothing; full bags prevent further pickup and leave the blocked task unchanged.
 
-The layout currently contains 49 starting cleanup tasks. Fifteen familiar positions are supplemented by a deterministic coverage pass that places enough reachable tasks to cover every walkable floor tile within the 115-pixel cleanup radius. The backs of the storefronts are solid, so no task can hide behind shops or above the visible play area. Starting tasks avoid door markers and the player's immediate spawn.
+Reopen Northgate Supplies for $100. It is the first business in the storefront row and the sole place to buy upgrades. Press E at its open marker to enter. Supplies does not pay rent. Completing the initial sweep then unlocks Pages, followed by Retro Replay, Bean Street and The Tailor.
 
-Each task gives $10, removes debris, brightens its local floor patch, briefly animates a broom/grabber, emits pixel dust and displays a reward popup. The HUD reports floor cleanliness and remaining litter. Collecting all starting tasks makes the playable floor 100% clean and permanently completes the first sweep. Benches recover at five tasks; greenery unlocks at five and mosaic at ten; the fountain returns after the entire first sweep.
+## Shop controls
 
-## Businesses
+Use the mouse to click an upgrade row. Keys 1/2/3 select Gear/Furniture/Garden; left/right or Tab switch menu tabs; up/down select a row; Enter/Space purchase; Esc/E close the menu. Esc closes the menu before it quits the game. Gameplay, litter and rent timers pause while shopping.
 
-| Order | Business | Reopening cost | Rent every 5 seconds |
+Unaffordable purchases and already installed fixtures do not deduct money. Gear advances one tier at a time and cannot exceed its last tier. The menu reports the purchase result and updates its prices/stats immediately.
+
+## Gear prices
+
+| Track | Starting equipment | Tier 1 | Tier 2 | Tier 3 |
+| --- | --- | --- | --- | --- |
+| Carry capacity | 6 items | 12 items / $75 | 24 items / $180 | 40 items / $400 |
+| Recycling contract | $10 per item | $15 per item / $120 | $22 per item / $300 | $30 per item / $600 |
+| Pickup tool | Hand grabber / 72px / 1 item | Long grabber / 110px / 1 item / $100 | Cleanup kit / 135px / up to 3 items / $250 | Pro kit / 155px / up to 5 items / $550 |
+
+Tool batches collect the nearest tasks within reach, capped by remaining bag space. Store and dumpster interaction stays at 72px, regardless of tool reach. Sales use the current recycling contract, including items already in the bag when a contract is upgraded.
+
+## Individual scenery purchases
+
+| Fixture | Count | Price each |
+| --- | --- | --- |
+| West/east bench restoration | 2 | $70 |
+| Lamps by west/middle/east shops and entrance | 4 | $40 |
+| Planters by west/east walls and courtyard | 4 | $35 |
+| Courtyard fountain | 1 | $180 |
+| Courtyard mosaic | 1 | $150 |
+
+Scenery is installed immediately at its named location. Each item is a one-time purchase. There are no free fixture unlocks or world-scene cycling; Tab only switches tabs inside the shop.
+
+## Businesses and recurring work
+
+| Order | Business | Cost | Rent every 5 seconds |
 | --- | --- | --- | --- |
-| 1 | Pages Bookshop | $100 | $5 |
-| 2 | Retro Replay | $250 | $8 |
-| 3 | Bean Street | $450 | $12 |
-| 4 | The Tailor | $700 | $16 |
+| 1 | Northgate Supplies | $100 | Upgrade shop / no rent |
+| 2 | Pages Bookshop | $100 | $5 |
+| 3 | Retro Replay | $250 | $8 |
+| 4 | Bean Street | $450 | $12 |
+| 5 | The Tailor | $700 | $16 |
 
-Pages can reopen while the initial cleanup is in progress. The other businesses require completing the first sweep and reopening the previous business. Gold markers identify shops ready to reopen. Each reopening deducts its own price, restores that storefront and enables the next business. Rent from all open businesses adds together; opening another shop does not reset the rent timer. The HUD names the next business, its cost and rent.
+There are currently 51 reachable starting tasks, with tile-coverage checks ensuring the entire playable floor can be cleaned. Starting positions avoid storefront entrances and dumpsters. Once the first sweep is complete and Supplies is open, fresh litter returns every four seconds instead of eight, capped at twelve active piles. The pool stays bounded and spawns stay away from the player.
 
-## Recurring litter
-
-Once the first sweep is complete and at least one shop is open, fresh litter returns every eight seconds, up to twelve active piles. The spawner reuses cleaned starting positions, stays more than 100 pixels from the player, and preserves the initial door clearance. It produces at most one pile per update and does not accumulate a catch-up burst when capped. There is no unbounded growth in trash objects.
-
-New litter dirties nearby floor tiles. Cleaning it gives another $10 and restores the patch; overlapping piles retain the dirt belonging to piles still present. When all active litter is collected, the playable floor is again 100% clean. Fresh litter does not relock businesses, scenery, benches or the fountain.
+Returning litter permits earning more money even if all initial proceeds were spent on upgrades before opening a rent-paying business. Clearing fresh litter restores its dirty floor patch; overlapping piles retain their remaining dirt. Dumpster sales and rents fund both equipment and business progression. The two current dumpsters serve the playable north arcade; other galleries remain closed.
 
 ## Review checklist
 
-1. Start fresh. Press E at the first dust patch; check the tool stroke, sound, popup and floor change.
-2. Confirm the previous character size and absence of the freestanding directory/area signs.
-3. Clean the arcade and optionally open Pages after earning $100. Follow the remaining-litter count until the floor reaches 100%.
-4. After the first sweep and Pages reopening, visit Retro Replay's gold marker and pay $250. Confirm rent now totals $13 every five seconds.
-5. Wait eight seconds and find the returning litter. Clean it, confirm its $10 reward and watch its floor patch recover.
-6. Continue earning and reopen Bean Street and The Tailor in order. All four businesses together earn $41 every five seconds.
-7. Try M for sound, Tab for scenery, resize to 800x600, and walk against the future-gallery grilles.
+1. Fill the initial six-slot bag. Confirm further pickup is blocked, with no money awarded yet.
+2. Sell at the west dumpster. Confirm $60 payout and an empty bag; retry selling an empty bag.
+3. Earn $100 and reopen Supplies before any other business. Buy capacity or a tool with mouse and keyboard controls.
+4. Buy just one bench or lamp. Confirm that only that fixture changes and that repeat purchases do not charge again.
+5. Clear the first sweep and sell your load. Confirm 100% floor cleanliness and Pages availability.
+6. After closing the menu, wait four seconds for fresh litter. Collect it, test both dumpsters, and grow toward later businesses.
+7. Buy a recycling contract, then sell carried items and verify the higher payout. Try a multi-item tool with only one or two bag slots free.
+8. Resize to 800x600 and inspect all three menu tabs. Try Esc/E to close, M for audio, and Tab outside the menu (it should not change scenery).
 
-Audio effects are synthesized at startup with no downloaded audio assets or extra dependencies. Missing audio devices fall back to silent play. The tests cover full floor coverage, reachability/door clearance, one-time and repeated cleanup, bounded spawns, overlapping dirt patches, ordered shop unlocks, affordability and summed rents alongside movement, animation, effects, shutdown and minimum-size rendering.
-
-Progress resets on close. Saving, shoppers, new playable wings, distinctive art for every business and further economic balancing remain future work.
+Progress still resets on close. Saving, shoppers, additional wings and further economic balancing remain future work. Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.

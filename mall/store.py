@@ -15,6 +15,8 @@ class Store:
     @property
     def label(self):
         if self.restored:
+            if self.rent == 0:
+                return 'Enter Northgate Supplies / buy upgrades'
             return f'{self.name}: +${self.rent} rent every 5 seconds'
         if not self.available:
             return f'{self.name}: finish the first cleanup and reopen the previous shop'

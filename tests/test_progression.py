@@ -16,9 +16,15 @@ class ProgressionTests(unittest.TestCase):
 
     def finish_sweep(self):
         g = self.game
+        g.shop_menu.open = False
         for trash in g.mall.trash:
+            if g.upgrades.held == g.upgrades.capacity:
+                g.player.rect.center = g.mall.dumpsters[0].position
+                g.interact()
             g.player.rect.center = trash.position
             g.interact()
+        g.player.rect.center = g.mall.dumpsters[0].position
+        g.interact()
 
     def test_initial_tasks_cover_every_walkable_tile(self):
         mall = self.game.mall
@@ -35,31 +41,35 @@ class ProgressionTests(unittest.TestCase):
 
     def test_business_order_costs_and_combined_rent(self):
         g = self.game
-        pages, retro, cafe, tailor = g.mall.stores
+        supplies,pages,retro,cafe,tailor = g.mall.stores
+        supplies.restored = True
+        g.mall.refresh_businesses()
         g.cash = 100
         g.player.rect.center = pages.position
         g.interact()
-        self.assertTrue(pages.restored)
-        self.assertFalse(retro.available)
-        g.update(8, (0, 0))
-        self.assertEqual(g.mall.active_litter_count, g.mall.initial_litter_count)
+        self.assertFalse(pages.restored)
         self.finish_sweep()
+        self.assertTrue(pages.available)
+        self.assertFalse(retro.available)
+        g.cash = pages.cost
+        g.player.rect.center = pages.position
+        g.interact()
+        self.assertTrue(pages.restored)
         self.assertTrue(retro.available)
         self.assertFalse(cafe.available)
-        g.cash = 250
+        g.cash = retro.cost
         g.player.rect.center = retro.position
         g.interact()
-        self.assertEqual(g.cash, 0)
+        self.assertEqual(g.cash,0)
         self.assertTrue(retro.restored)
         self.assertTrue(cafe.available)
-        self.assertFalse(tailor.available)
         g.player.rect.center = cafe.position
         g.interact()
         self.assertFalse(cafe.restored)
-        self.assertIn('450', g.message)
+        self.assertIn('450',g.message)
         g.rent_timer = 0
-        g.update(5, (0, 0))
-        self.assertEqual(g.cash, pages.rent + retro.rent)
+        g.update(5,(0,0))
+        self.assertEqual(g.cash,pages.rent+retro.rent)
         g.cash = cafe.cost
         g.interact()
         self.assertTrue(cafe.restored)
@@ -70,8 +80,8 @@ class ProgressionTests(unittest.TestCase):
         self.assertTrue(all(s.restored for s in g.mall.stores))
         self.assertIsNone(g.mall.next_store)
         g.rent_timer = 0
-        g.update(5, (0, 0))
-        self.assertEqual(g.cash, sum(s.rent for s in g.mall.stores))
+        g.update(5,(0,0))
+        self.assertEqual(g.cash,sum(s.rent for s in g.mall.stores))
 
     def test_new_litter_waits_then_is_bounded_and_recleanable(self):
         g = self.game
@@ -84,7 +94,7 @@ class ProgressionTests(unittest.TestCase):
         self.assertEqual(g.mall.active_litter_count, 0)
         g.mall.stores[0].restored = True
         g.player.rect.center = g.mall.stores[0].position
-        spawner.update(7.9, g.mall, g.player.rect.center)
+        spawner.update(3.9, g.mall, g.player.rect.center)
         self.assertEqual(g.mall.active_litter_count, 0)
         spawner.update(0.2, g.mall, g.player.rect.center)
         self.assertEqual(g.mall.active_litter_count, 1)
@@ -95,6 +105,10 @@ class ProgressionTests(unittest.TestCase):
         self.assertGreater(active.position.distance_to(g.player.rect.center), 100)
         g.player.rect.center = active.position
         cash = g.cash
+        g.interact()
+        self.assertEqual(g.cash, cash)
+        self.assertEqual(g.upgrades.held, 1)
+        g.player.rect.center = g.mall.dumpsters[0].position
         g.interact()
         self.assertEqual(g.cash, cash+10)
         self.assertEqual(g.mall.cleanliness, 1)
