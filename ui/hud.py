@@ -49,22 +49,25 @@ class HUD:
         pygame.draw.rect(surface, (24,34,39),(0,0,width,118))
         surface.blit(self.title.render('NORTHGATE',True,(237,225,199)),(24,14))
         surface.blit(self.small.render('NORTH ARCADE / A SMALL BEGINNING',True,(165,184,172)),(24,45))
-        if restored:
-            objective = 'Keep tending this corner. Bring the fountain back.' if cleaned < total else 'A welcoming corner. The rest of Northgate awaits.'
-        elif cleaned < 3:
-            objective = 'Start here: clear three patches near Pages Bookshop.'
-        elif cash < 100:
-            objective = f'A little at a time: earn ${100-cash} more to reopen Pages.'
+        next_shop = mall.next_store if mall else None
+        if mall and not mall.initial_cleanup_complete:
+            if not mall.stores[0].restored and cash >= mall.stores[0].cost:
+                objective = 'Reopen Pages at its gold marker, then finish the first sweep.'
+            else:
+                objective = f'First sweep: {mall.active_litter_count} patches left to clear.'
+        elif next_shop:
+            objective = f'Next: {next_shop.name} / ${next_shop.cost} / +${next_shop.rent} rent.'
         else:
-            objective = 'Your first light: reopen Pages at its gold door marker.'
+            objective = 'Four lights on. Keep this corner of Northgate welcoming.'
         surface.blit(self.font.render(objective,True,(191,204,183)),(24,67))
         unlock = 'Greenery at 5 steps / Mosaic at 10' if cleaned_count < 5 else ('Tab: greenery / Mosaic at 10' if cleaned_count < 10 else 'Tab: choose this corner\'s scenery')
         surface.blit(self.small.render(unlock,True,(173,191,157)),(24,95))
         surface.blit(self.title.render(f'${cash}',True,(140,216,174)),(width-160,17))
-        surface.blit(self.font.render(f'{cleaned}/{total} small steps',True,(214,211,188)),(width-190,49))
+        status = f'{round(mall.cleanliness*100)}% clean / {mall.active_litter_count} litter' if mall else f'{cleaned}/{total} cleared'
+        surface.blit(self.small.render(status,True,(214,211,188)),(width-190,49))
         bar = pygame.Rect(width-190,83,166,6)
         pygame.draw.rect(surface,(60,78,73),bar)
-        pygame.draw.rect(surface,(149,176,119),(bar.x,bar.y,round(bar.width*cleaned/max(1,total)),bar.height))
+        pygame.draw.rect(surface,(149,176,119),(bar.x,bar.y,round(bar.width*(mall.cleanliness if mall else cleaned/max(1,total))),bar.height))
         pygame.draw.rect(surface,(24,34,39),(0,height-82,width,82))
         text = 'E  ' + target.label if target else 'Find a small patch of litter or dust. Every one helps.'
         surface.blit(self.font.render(text,True,(239,205,138)),(24,height-70))

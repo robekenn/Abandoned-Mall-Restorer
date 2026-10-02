@@ -42,7 +42,7 @@ class OpeningTests(unittest.TestCase):
         near = mall.trash[0].position
         far = mall.trash[-1].position
         self.assertFalse(mall.tile_restored(near))
-        mall.trash[0].cleaned = True
+        mall.clean_trash(mall.trash[0])
         self.assertTrue(mall.tile_restored(near))
         self.assertFalse(mall.tile_restored(far))
         self.assertFalse(mall.tile_restored((2200, 700)))

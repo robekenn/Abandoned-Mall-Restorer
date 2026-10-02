@@ -2,21 +2,27 @@ import pygame
 
 
 class Store:
-    def __init__(self, rect, name, available=False):
+    def __init__(self, rect, name, available=False, cost=100, rent=5, kind='cafe'):
         self.rect = pygame.Rect(rect)
         self.name = name
         self.available = available
         self.restored = False
-        self.cost = 100
+        self.cost = cost
+        self.rent = rent
+        self.kind = kind
         self.position = pygame.Vector2(self.rect.centerx, self.rect.bottom + 35)
 
     @property
     def label(self):
-        return "Shop open - earning $5 every 5 seconds" if self.restored else "Reopen Pages Bookshop ($100)"
+        if self.restored:
+            return f'{self.name}: +${self.rent} rent every 5 seconds'
+        if not self.available:
+            return f'{self.name}: finish the first cleanup and reopen the previous shop'
+        return f'Reopen {self.name} (${self.cost})'
 
     def draw(self, surface, camera, font, art, selected=False):
         r = camera.rect(self.rect)
-        name = ('bookshop' if self.available else 'cafe') + ('_clean' if self.restored else '_dirty')
+        name = self.kind + ('_clean' if self.restored else '_dirty')
         art.draw(surface, name, r.center, (r.width+12,r.height+20))
         sign = font.render(self.name.upper(), True, (250,234,193) if self.restored else (188,184,166))
         background = sign.get_rect(center=(r.centerx, r.y+40)).inflate(16,10)

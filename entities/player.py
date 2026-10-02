@@ -4,7 +4,7 @@ from game.settings import PLAYER_SPEED
 
 class Player:
     def __init__(self, position):
-        self.rect = pygame.FRect(0, 0, 20, 20)
+        self.rect = pygame.FRect(0, 0, 26, 30)
         self.rect.center = position
         self.facing = 'down'
         self.animation_time = 0.0
@@ -65,7 +65,7 @@ class Player:
     def draw(self, surface, camera, art):
         point = camera.point(self.rect.center)
         art.draw(surface, f'player_{self.facing}_{self.animation_frame}',
-                 (point.x, point.y-12), (32, 48))
+                 (point.x, point.y-12), (48, 72))
         if self.action_time > 0:
             offsets = {'down': (0, 16), 'up': (0, -24), 'left': (-18, 0), 'right': (18, 0)}
             end = point + offsets[self.facing]

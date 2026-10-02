@@ -5,6 +5,7 @@ from game.camera import Camera
 from game.art import Art
 from game.audio import Audio
 from game.feedback import Feedback
+from systems.litter import LitterSpawner
 from game.settings import TITLE, WINDOW_SIZE, FPS, INTERACTION_RADIUS
 from mall.mall import Mall
 from ui.hud import HUD
@@ -24,6 +25,7 @@ class Game:
         self.art = Art()
         self.audio = Audio()
         self.feedback = Feedback()
+        self.litter_spawner = LitterSpawner()
         self.decor = 0
         self.cash = 0
         self.rent_timer = 0.0
@@ -44,7 +46,9 @@ class Game:
     def interact(self):
         target = self.target()
         if isinstance(target, Trash):
-            target.cleaned = True
+            first_sweep_was_done = self.mall.initial_cleanup_complete
+            if not self.mall.clean_trash(target):
+                return
             self.cash += target.reward
             self.player.use_tool(target.kind, target.position)
             self.feedback.burst(target.position, '+$10')
@@ -52,25 +56,33 @@ class Game:
             count = self.mall.cleaned_count
             milestones = {1: 'One small patch. A real beginning.',
                           5: 'A place to sit again. Greenery unlocked / Tab.',
-                          10: 'Ten small steps. You can reopen Pages now.',
-                          15: 'Water in the fountain again. This corner is coming back.'}
-            if count in milestones:
+                          10: 'Ten small steps. You can reopen Pages now.'}
+            if not first_sweep_was_done and self.mall.initial_cleanup_complete:
+                self.notify('The first sweep is finished. Water returns; the next shop can follow Pages.')
+                self.audio.play('milestone')
+            elif not first_sweep_was_done and count in milestones:
                 self.notify(milestones[count])
                 self.audio.play('milestone')
             else:
-                self.notify(f'North arcade: {count}/{len(self.mall.trash)} small steps.')
+                self.notify(f'{self.mall.active_litter_count} cleanup tasks left. Every patch helps.')
         elif target is not None:
             if target.restored:
-                self.notify("Pages Bookshop is open. Rent arrives every 5 seconds.")
+                self.notify(f'{target.name} is open. +${target.rent} rent every 5 seconds.')
             elif self.cash < target.cost:
                 self.notify(f"You need ${target.cost-self.cash} more to reopen this shop.")
             else:
                 self.cash -= target.cost
                 target.restored = True
-                self.rent_timer = 0.0
-                self.feedback.burst(target.position, 'PAGES / OPEN', restored=True)
+                self.mall.refresh_businesses()
+                self.feedback.burst(target.position, 'OPEN', restored=True)
                 self.audio.play('milestone')
-                self.notify('One light on in a quiet mall. Pages earns $5 every 5 seconds.')
+                next_shop = self.mall.next_store
+                if next_shop and next_shop.available:
+                    self.notify(f'{target.name} is open. Next: {next_shop.name} (${next_shop.cost}).')
+                elif next_shop:
+                    self.notify(f'{target.name} is open. Finish the first sweep to unlock {next_shop.name}.')
+                else:
+                    self.notify('All four shops are open. Keep the arcade welcoming.')
 
     def change_decor(self):
         if self.mall.cleaned_count < 5:
@@ -88,12 +100,15 @@ class Game:
         self.camera.update((self.player.rect.centerx, self.player.rect.centery-framing), viewport)
         self.message_timer = max(0, self.message_timer-dt)
         self.feedback.update(dt)
-        if self.mall.stores[0].restored:
+        self.litter_spawner.update(dt, self.mall, self.player.rect.center)
+        opened = [s for s in self.mall.stores if s.restored]
+        if opened:
             self.rent_timer += dt
             while self.rent_timer >= 5:
-                self.cash += 5
+                self.cash += sum(s.rent for s in opened)
                 self.rent_timer -= 5
-                self.feedback.burst(self.mall.stores[0].position, '+$5 rent', restored=True)
+                for store in opened:
+                    self.feedback.burst(store.position, f'+${store.rent} rent', restored=True)
 
     def draw(self):
         target = self.target()
