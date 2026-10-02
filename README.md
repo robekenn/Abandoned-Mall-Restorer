@@ -1,5 +1,7 @@
 # Abandoned Mall Restorer
 
+[![CI](https://github.com/robekenn/Abandoned-Mall-Restorer/actions/workflows/ci.yml/badge.svg)](https://github.com/robekenn/Abandoned-Mall-Restorer/actions/workflows/ci.yml)
+
 A top-down 2D restoration game built with Python and pygame-ce, without a commercial game engine.
 
 ## First playable prototype
@@ -46,3 +48,7 @@ python -m unittest discover -s tests -v
 ```
 
 Tests use SDL's dummy display driver, so they also run without a desktop.
+
+## CI and downloadable builds
+
+GitHub Actions tests Windows, Linux and macOS with Python 3.12/3.13, then builds and smoke-tests standalone packages. Download development builds from the CI run artifacts. Pushing a `v` version tag prepares a draft release after all checks pass. See [CI and release guide](docs/ci-and-releases.md) for local packaging and publishing steps.
