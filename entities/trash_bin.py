@@ -1,11 +1,11 @@
 import pygame
 
 
-class Dumpster:
+class TrashBin:
     def __init__(self, position, name):
         self.position = pygame.Vector2(position)
         self.name = name
-        self.rect = pygame.Rect(0, 0, 64, 42)
+        self.rect = pygame.Rect(0, 0, 32, 34)
         self.rect.center = position
 
     @property
@@ -14,7 +14,7 @@ class Dumpster:
 
     def draw(self, surface, camera, art, font, selected=False):
         point = camera.point(self.position)
-        art.draw(surface, 'dumpster', point, (72, 48))
+        art.draw(surface, 'trash_bin', point, (48, 48))
         label = font.render('SELL', True, (211, 222, 167))
         surface.blit(label, label.get_rect(center=(round(point.x), round(point.y)-34)))
         if selected:

@@ -19,11 +19,11 @@ class ProgressionTests(unittest.TestCase):
         g.shop_menu.open = False
         for trash in g.mall.trash:
             if g.upgrades.held == g.upgrades.capacity:
-                g.player.rect.center = g.mall.dumpsters[0].position
+                g.player.rect.center = g.mall.trash_bins[0].position
                 g.interact()
             g.player.rect.center = trash.position
             g.interact()
-        g.player.rect.center = g.mall.dumpsters[0].position
+        g.player.rect.center = g.mall.trash_bins[0].position
         g.interact()
 
     def test_initial_tasks_cover_every_walkable_tile(self):
@@ -37,7 +37,7 @@ class ProgressionTests(unittest.TestCase):
         self.assertEqual(mall.cleanliness, 1)
         self.assertTrue(all(mall.tile_restored(p) for p in mall.floor_tiles))
         self.assertTrue(mall.initial_cleanup_complete)
-        self.assertEqual(self.game.cash, mall.initial_litter_count * 10)
+        self.assertEqual(self.game.cash, mall.initial_litter_count)
 
     def test_business_order_costs_and_combined_rent(self):
         g = self.game
@@ -108,9 +108,9 @@ class ProgressionTests(unittest.TestCase):
         g.interact()
         self.assertEqual(g.cash, cash)
         self.assertEqual(g.upgrades.held, 1)
-        g.player.rect.center = g.mall.dumpsters[0].position
+        g.player.rect.center = g.mall.trash_bins[0].position
         g.interact()
-        self.assertEqual(g.cash, cash+10)
+        self.assertEqual(g.cash, cash+1)
         self.assertEqual(g.mall.cleanliness, 1)
         for _ in range(30):
             spawner.update(8, g.mall, g.player.rect.center)
