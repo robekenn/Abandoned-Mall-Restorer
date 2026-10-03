@@ -12,7 +12,7 @@ J → Story → R gives a clue for each missing object and its original narrativ
 
 ## Lanterns on businesses
 
-After confirming “Bring the neighbors together,” four lanterns hang across the front of each restored business in that court. Strings attach below the upper row's awnings. The north-facing row uses separate round paper lantern sprites viewed downwards at an angle, with broad oval tops, curved ribs, shaded near sides and diagonal rear brackets mounted to its front coping rail; the doorway stays between the middle pair. Newly reopened businesses in a completed court also receive lanterns. Unfinished chapters and closed stores have none. The board's floating lantern string is removed; brief celebration confetti remains there.
+After confirming “Bring the neighbors together,” four lanterns hang across the front of each restored business in that court. Strings attach below the upper row's awnings. The north-facing row uses separately drawn rectangular paper lanterns with the same gold panels, wooden caps and tassels as the upper row. A visible top plane and shaded side give them a downward viewing angle. Front-corner uprights hold their string above the low roof, with the lamps centered 64 pixels above its front edge; the doorway stays between the middle pair. Newly reopened businesses in a completed court also receive lanterns. Unfinished chapters and closed stores have none. The board's floating lantern string is removed; brief celebration confetti remains there.
 
 Gathering destinations stay around the community board, independent of the distant keepsake positions. Ordinary visitors walk there from the shared entrance or their current position. They remain within the usual population limit.
 
