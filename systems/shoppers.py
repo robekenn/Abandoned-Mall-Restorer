@@ -2,6 +2,7 @@
 from collections import deque
 import random
 import pygame
+from game.lore import SHOPPER_LINES
 
 
 class Walkways:
@@ -11,7 +12,7 @@ class Walkways:
         self.edges = {}
 
     def refresh(self, mall):
-        signature = mall.east.unlocked
+        signature = tuple(r.unlocked for r in mall.regions)
         if self.signature == signature:
             return
         self.signature = signature
@@ -58,6 +59,8 @@ class Shopper:
         self.animation_time = 0.0
         self.done = False
         self.greeted = False
+        self.speech = ''
+        self.speech_time = 0
 
     @property
     def label(self):
@@ -68,6 +71,10 @@ class Shopper:
         return self.state != 'inside' and not self.done
 
     def update(self, dt, manager, mall, upgrades):
+        if self.speech_time and self.visible:
+            self.speech_time=max(0,self.speech_time-dt)
+            self.frame=0
+            return
         if self.state == 'inside':
             self.wait += dt
             self.frame = 0
@@ -93,7 +100,7 @@ class Shopper:
         if self.path:
             return
         if self.state == 'arriving':
-            self.path = [self.store.position.copy(),pygame.Vector2(self.store.rect.centerx,self.store.rect.bottom-28)]
+            self.path = [self.store.position.copy(),pygame.Vector2(self.store.rect.centerx,self.store.rect.bottom-28 if self.store.facing=='down' else self.store.rect.top+28)]
             self.state = 'entering'
         elif self.state == 'entering':
             self.state,self.wait = 'inside',0
@@ -135,8 +142,9 @@ class Shoppers:
         points = [(b.centerx,b.bottom+40) for i,b in enumerate(mall.benches) if f'bench_{i}' in upgrades.decor]
         if 'fountain' in upgrades.decor:
             points.append((mall.fountain.centerx,mall.fountain.bottom+45))
-        if mall.east.unlocked and 'fountain_east' in upgrades.decor:
-            points.append((mall.east.fountain.centerx,mall.east.fountain.bottom+45))
+        for region in mall.active_regions:
+            if f'fountain_{region.key}' in upgrades.decor:
+                points.append((region.fountain.centerx,region.fountain.bottom+45))
         return points
 
     def update(self, dt, mall, upgrades, preferred_store=None):
@@ -147,24 +155,23 @@ class Shoppers:
         self.people = [p for p in self.people if not p.done]
         for store in mall.stores:
             store.door_open = any(p.store is store and p.state in ('entering','exiting') for p in self.people)
-        desired = min(12,len(opened)+(2 if mall.cleanliness >= 0.5 else 0)+len(self.amenities(mall,upgrades))//2) if opened else 0
+        limit=12+4*max(0,len(mall.active_regions)-1)
+        desired = min(limit,len(opened)+(2 if mall.cleanliness >= 0.5 else 0)+len(self.amenities(mall,upgrades))//2) if opened else 0
         self.elapsed += dt
         if self.elapsed >= 8 and len(self.people)<desired:
             self.elapsed = 0
             store = preferred_store if preferred_store in opened else self.random.choice(opened)
-            origin = (1860,1000) if store in mall.east.stores else (160,1000)
+            region=mall.region_for_store(store)
+            origin=region.entrance if region else (160,1000)
             self.people.append(Shopper(self.next_identity,origin,store,self.walkways))
             self.next_identity += 1
 
     def greet(self, person):
-        if person.greeted:
-            return f'{person.name}: Good to see you again!'
-        person.greeted = True
-        return f'{person.name}: '+self.random.choice([
-            'It feels good to see this place coming back.',
-            'I used to come here when I was little.',
-            'Thanks for looking after our mall.',
-            'One little change makes a big difference.'])
+        for other in self.people:other.speech_time=0
+        person.speech='Good to see you again. These halls feel more like home.' if person.greeted else self.random.choice(SHOPPER_LINES)
+        person.greeted=True
+        person.speech_time=max(5,min(10,len(person.speech)/14))
+        return f'{person.name}: '+person.speech
 
     def draw(self, surface, camera, art, font, target):
         for person in sorted(self.people,key=lambda p:p.position.y):

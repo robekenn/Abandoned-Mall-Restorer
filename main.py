@@ -8,6 +8,7 @@ def main():
     parser.add_argument('--smoke-test', action='store_true',
                         help='Render a frame and exit using a headless display')
     parser.add_argument('--windowed', action='store_true',help='Start in a resizable window instead of fullscreen')
+    parser.add_argument('--dev',action='store_true',help='Enable F3 developer playtest shortcuts')
     args = parser.parse_args()
     if args.smoke_test:
         os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -15,7 +16,7 @@ def main():
     from game.game import Game
     if args.smoke_test:
         import pygame
-        game = Game(start_screen=True)
+        game = Game(start_screen=True,developer=args.dev)
         try:
             game.update(.7,(0,0))
             game.draw()
@@ -36,14 +37,20 @@ def main():
             for store in game.mall.stores:
                 store.restored = True
             game.mall.refresh_businesses()
-            for shop in ('north','east'):
+            for region in (game.mall.garden,game.mall.commons):
+                if not game.mall.unlock_section(region):raise RuntimeError('Later area did not unlock')
+                for trash in region.trash:game.mall.clean_trash(trash)
+                for store in region.stores:store.restored=True
+                game.mall.refresh_businesses()
+            game.tutorial.skip()
+            for shop in ('north','east','garden','commons'):
                 game.upgrades.decor.update(o.key for c in ('Furniture','Garden') for o in game.upgrades.offers(c,shop))
             game.upgrades.capacity_level = len(game.upgrades.CAPACITY_PRICES)
             game.upgrades.advanced_capacity_level = len(game.upgrades.ADVANCED_CAPACITY_PRICES)
             game.upgrades.speed_level = len(game.upgrades.SPEED_PRICES)
             game.upgrades.value_level = len(game.upgrades.VALUE_PRICES)
             game.upgrades.advanced_value_level = len(game.upgrades.ADVANCED_VALUE_PRICES)
-            for store in (game.mall.stores[0],game.mall.east.stores[0]):
+            for store in (s for s in game.mall.stores if s.upgrade_shop):
                 game.shop_menu.open = False
                 game.player.rect.center = store.position
                 game.update(0.13,(1,0))
@@ -78,25 +85,49 @@ def main():
                     for index in game.owner_requests.display_plan:
                         game.display_menu.choose(index,game)
                 if level == 2:
-                    for _ in range(3):
+                    for _ in range(18):
                         game.shoppers.update(8,game.mall,game.upgrades,owner_store)
-                    for person in game.shoppers.people[:3]:
-                        game.owner_requests.greet(person)
+                        for person in game.shoppers.people:
+                            game.owner_requests.greet(person)
+                        if len(game.owner_requests.greetings)==3:break
                 game.player.rect.center = owner_store.position
                 game.update(0,(0,0))
                 game.owner_menu.visit(owner_store)
                 game.draw()
                 game.owner_menu.action(game)
+            game.owner_requests.update(180,game.mall)
+            game.owner_requests.accept(owner_store,game.mall)
+            game.owner_menu.visit(owner_store);game.draw();game.owner_menu.open=False
+            for spot in game.owner_requests.visible_spots:
+                game.player.rect.center=spot.position;game.update(0,(0,0));game.draw()
             game.journal.open = True
+            for page in range((len([s for s in game.mall.stores if not s.upgrade_shop])+5)//6):game.journal.page=page;game.draw()
+            game.cash=10000000
+            for key,*_ in game.janitors.courts(game.mall):
+                if not game.janitors.purchase(key,'hire',game)[0]:raise RuntimeError('Janitor hire failed')
+                game.janitors.purchase(key,'walk',game);game.janitors.purchase(key,'clean',game)
+            game.journal.tab=1;game.draw()
+            game.journal.open=False
+            for key,_,_,_,pool,_,_ in game.janitors.courts(game.mall):
+                janitor=game.janitors.people[key]
+                trash=next(t for t in pool if tuple(t.position) in janitor.paths.nodes)
+                game.mall.respawn_trash(trash);janitor.position=trash.position.copy()
+            game.janitors.update(4,game)
+            if not all(j.cleaned for j in game.janitors.people.values()):raise RuntimeError('Janitor cleanup failed')
             game.draw()
             game.journal.open = False
+            if args.dev:
+                game.developer.open=True
+                game.developer.act('cash_10000',game)
+                game.draw()
+                game.developer.open=False
             if owner_store.request_level != 3:
                 raise RuntimeError('Owner request smoke test did not earn all improvements')
             game.draw()
         finally:
             pygame.quit()
         return
-    Game(fullscreen=not args.windowed,start_screen=True).run()
+    Game(fullscreen=not args.windowed,start_screen=True,developer=args.dev).run()
 
 
 if __name__ == "__main__":

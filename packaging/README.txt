@@ -23,3 +23,8 @@ Deliver supplies, hold E while still to water seedlings or set up a welcome sign
 and greet visitors. Return to the owner for permanent shop improvements and rent.
 Blue directory markers and the request tracker show where to go; no deadlines.
 Progress currently resets when the game closes.
+
+Developer playtesting: launch MallRestorer with --dev, then press F3
+after starting to add money, clean the current court or jump to the next.
+The panel pauses gameplay; close it with F3 or Esc. Normal launches keep
+these shortcuts disabled. On Windows: MallRestorer.exe --dev

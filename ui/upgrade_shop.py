@@ -61,7 +61,7 @@ class UpgradeShop:
         theme.dim(surface)
         panel,tabs = self.geometry(surface)
         theme.frame(surface,panel)
-        title = 'Eastgate Workshop' if self.shop == 'east' else 'Northgate Supplies'
+        title={'north':'Northgate Supplies','east':'Eastgate Workshop','garden':'Garden Supply','commons':'Commons Exchange'}[self.shop]
         surface.blit(game.hud.title.render(title,True,theme.TEXT),(panel.x+20,panel.y+18))
         surface.blit(game.hud.small.render(f'{money(game.cash)} available',True,theme.GOLD),(panel.x+20,panel.y+56))
         for i,rect in enumerate(tabs):

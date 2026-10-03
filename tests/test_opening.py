@@ -22,7 +22,7 @@ class OpeningTests(unittest.TestCase):
         self.assertIs(g.target(), trash)
         with patch.object(g.audio, 'play') as sound:
             g.interact()
-            self.assertIn('Collected 1', g.message)
+            self.assertEqual(g.message_timer,0)
             sound.assert_any_call('sweep')
         self.assertEqual(g.cash, 0)
         self.assertEqual(len(g.feedback.popups), 1)

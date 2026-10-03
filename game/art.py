@@ -137,6 +137,20 @@ def prop(name):
         box(s,'cream',(3,5,18,11))
         box(s,'teal',(5,8,14,2))
         box(s,'gold',(8,12,8,2))
+    elif name in ('request_keepsake','request_plaque','request_notice','request_toolkit','request_lantern','request_chalk'):
+        box(s,'ink',(3,5,18,16))
+        color={'request_keepsake':'cream','request_plaque':'gold','request_notice':'cream',
+               'request_toolkit':'wood','request_lantern':'shadow','request_chalk':'teal'}[name]
+        box(s,color,(4,6,16,14))
+        if name=='request_toolkit':
+            box(s,'light',(8,11,9,3));box(s,'rust',(10,4,5,3))
+        elif name=='request_lantern':
+            box(s,'gold',(8,8,8,8));box(s,'cream',(10,9,3,5))
+        elif name=='request_keepsake':
+            box(s,'teal',(7,9,10,7));box(s,'gold',(10,10,3,3))
+        else:
+            box(s,'wood' if name=='request_plaque' else 'light',(7,10,10,2))
+            box(s,'wood' if name=='request_plaque' else 'light',(7,14,7,2))
     elif name == 'trash_bags':
         for x, y in ((2, 9), (11, 5)):
             box(s, 'ink', (x, y + 3, 10, 10))
@@ -162,6 +176,37 @@ def prop(name):
                 box(s, 'teal' if (x + y) % 8 else 'gold', (x, y, 2, 2))
         box(s, 'rust', (9, 9, 6, 6))
         box(s, 'gold', (11, 11, 2, 2))
+    return s
+
+
+def north_store(kind, clean, door_open=False):
+    """A shallow roof seen from above, with its court-facing edge at the top."""
+    s=canvas((48,24))
+    box(s,'ink',(1,1,46,23))
+    box(s,'teal' if clean else 'shadow',(3,8,42,13))
+    box(s,'light' if clean else 'stone',(3,1,42,2))
+    # Narrow glazing reads as an edge, rather than an upside-down tall facade.
+    for x in (5,28):
+        box(s,'ink',(x,3,15,5))
+        box(s,'gold' if clean else 'stone',(x+1,4,13,3))
+        if not clean:box(s,'wood',(x,5,15,2))
+        elif kind=='cafe':
+            for dx in range(0,13,4):box(s,'rust',(x+1+dx,4,2,2))
+        else:
+            for dx in (2,6,10):box(s,'wood',(x+dx,5,2,2))
+    box(s,'ink',(21,0,6,8))
+    box(s,'water' if clean else 'shadow',(22,1,4,6))
+    if door_open:
+        box(s,'ink',(22,1,4,6));box(s,'water',(24,1,2,6))
+        box(s,'light',(26,0,1,8))
+    else:box(s,'cream',(22,2,1,1))
+    box(s,'stone',(4,9,40,1))
+    box(s,'ink',(7,12,9,6));box(s,'stone',(8,13,7,4))
+    for y in (13,15):box(s,'shadow',(9,y,5,1))
+    box(s,'ink',(34,13,7,5));box(s,'light' if clean else 'stone',(35,14,5,3))
+    box(s,'shadow',(4,21,40,2))
+    if not clean:
+        box(s,'rust',(24,13,4,2));box(s,'wood',(19,19,5,1))
     return s
 
 
@@ -246,12 +291,20 @@ class Art:
                 self.sprites[f'{kind}_{state}'] = store(kind, state == 'clean')
             self.sprites[f'{kind}_clean_open'] = store(kind,True,True)
         for name in ('trash_bags', 'litter', 'dirt', 'bench_dirty', 'bench_clean',
-                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign'):
+                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign', 'request_keepsake', 'request_plaque', 'request_notice', 'request_toolkit', 'request_lantern', 'request_chalk'):
             self.sprites[name] = prop(name)
+        for kind in ('bookshop','cafe'):
+            for state in ('dirty','clean','clean_open'):
+                self.sprites[f'{kind}_{state}_up']=north_store(kind,state!='dirty',state=='clean_open')
         self.sprites['delivery_station'] = delivery_station()
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):
                 self.sprites[f'player_{facing}_{frame}'] = worker(facing, frame)
+                uniform=worker(facing,frame)
+                for x in range(16):
+                    for y in range(24):
+                        if uniform.get_at((x,y))==pygame.Color(PALETTE['gold']):uniform.set_at((x,y),PALETTE['blue'])
+                self.sprites[f'janitor_{facing}_{frame}']=uniform
 
         for variant in range(4):
             for facing in ('down','up','left','right'):

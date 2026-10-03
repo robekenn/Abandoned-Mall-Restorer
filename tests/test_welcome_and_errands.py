@@ -88,7 +88,7 @@ class WelcomeAndErrandsTests(unittest.TestCase):
             g.display_menu.visit();g.draw();g.display_menu.open=False
             self.assertTrue(g.owner_requests.arrange_display(g.owner_requests.display_plan))
             g.claim_request(store)
-        self.assertEqual(len(catalogs),6)
+        self.assertEqual(len(catalogs),len([s for s in g.mall.stores if not s.upgrade_shop]))
 
     def test_benches_and_fountains_allow_walking_through_the_old_empty_margins(self):
         self.unlock();g=self.game
@@ -202,8 +202,8 @@ class WelcomeAndErrandsTests(unittest.TestCase):
 
     def test_launcher_defaults_fullscreen_with_optional_windowed_mode(self):
         import main
-        for args,fullscreen in (([],True),(['--windowed'],False)):
+        for args,fullscreen,developer in (([],True,False),(['--windowed'],False,False),(['--dev','--windowed'],False,True)):
             with patch('sys.argv',['main.py']+args),patch('game.game.Game') as game:
                 main.main()
-                game.assert_called_once_with(fullscreen=fullscreen,start_screen=True)
+                game.assert_called_once_with(fullscreen=fullscreen,start_screen=True,developer=developer)
                 game.return_value.run.assert_called_once()
