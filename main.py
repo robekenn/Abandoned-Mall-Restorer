@@ -157,7 +157,13 @@ def main():
                 game.player.rect.center=game.life.spot.position;game.frame_camera(game.screen.get_size())
                 game.community_menu.open=True;game.draw()
                 for _ in range(3):
-                    game.life.choose(game,game.life.event.guests[game.life.round][2]);game.draw()
+                    if game.life.tasks:
+                        task=game.life.visible_tasks[0];game.player.rect.center=task.position
+                        game.community_menu.open=False
+                        if task.duration:game.life.work(task.duration,game,True,True)
+                        else:game.life.touch(game,task)
+                    else:game.life.choose(game,game.life.round if game.life.activity=='recipe' else game.life.event.guests[game.life.round][2])
+                    game.draw()
                 game.life.choose(game,0);game.community_menu.open=False
             game.life.cooldowns['north']=0
             if not game.life.start(game,'north'):raise RuntimeError('Recurring event did not start')

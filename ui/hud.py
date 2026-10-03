@@ -26,7 +26,7 @@ class HUD:
         if requests.store:
             return f'{OWNERS[requests.store.name]}: {requests.project[0]}',requests.objective
         if game.life.spot and game.mall.area_for_store(game.life.court(game,game.life.active)[3][0]).collidepoint(game.player.rect.center):
-            return game.life.event.title,'Visit the community table · '+str(game.life.round)+'/3 little connections'
+            return game.life.event.title,(game.life.visible_tasks[0].label if game.life.visible_tasks else 'Visit the community table')+' · '+str(game.life.round)+'/3'
         if game.upgrades.held == game.upgrades.capacity:
             return 'Bag full','Sell your trash at a mall bin.'
         if not mall.stores[0].restored:
@@ -85,6 +85,8 @@ class HUD:
             pygame.draw.rect(surface,theme.GOLD,(p[0]-3,p[1]-3,6,6),1)
         for point in getattr(mall,'event_spots',()):
             pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),4)
+        for point in getattr(mall,'event_task_markers',()):
+            pygame.draw.circle(surface,theme.ACCENT,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),4)
         for point in getattr(mall,'story_markers',()):
             pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),3)
         if requests and requests.store:

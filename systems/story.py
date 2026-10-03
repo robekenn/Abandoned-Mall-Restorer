@@ -77,6 +77,7 @@ class Story:
     def __init__(self):
         self.seed=random.SystemRandom().randrange(2**31)
         self.started=[False]*4;self.memories=[[False]*3 for _ in range(4)];self.completed=[False]*4
+        self.layout=2
         self.festival=False;self.elapsed=0.;self.celebrations=[0.]*4;self.points=[]
 
     @property
@@ -90,7 +91,10 @@ class Story:
             stores=mall.north_stores if i==0 else mall.regions[i-1].stores
             safe=[p for p in floor if area.contains(pygame.Rect(p[0]-16,p[1]-16,32,32)) and
                   not any(w.colliderect(pygame.Rect(p[0]-16,p[1]-16,32,32)) for w in mall.obstacles)]
-            board=min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to((area.left+488,area.top+760)))
+            goals=((area.left+340,area.top+680),(area.right-330,area.top+520),
+                   (area.left+300,area.bottom-480),(area.right-360,area.bottom-450))
+            goal=goals[i] if self.layout>=2 else (area.left+488,area.top+760)
+            board=min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(goal))
             self.points.append(StoryPoint(i,pygame.Vector2(board),-1,'board'))
             keeper=rng.randrange(3);ground=0;chosen=[board]
             for memory in range(3):
@@ -220,7 +224,7 @@ class Story:
         for point in self.visible_points(game.mall):
             pixel=game.camera.point(point.position)
             if point.memory<0:
-                game.art.draw(game.screen,'community_board',(pixel.x,pixel.y-16),(72,72))
+                game.art.draw(game.screen,'chapter_board_'+str(point.chapter) if self.completed[point.chapter] else 'community_board',(pixel.x,pixel.y-16),(72,72))
                 if point.chapter==self.current:pygame.draw.circle(game.screen,(230,194,124),pixel,16,2)
             else:
                 game.art.draw(game.screen,'story_'+CHAPTERS[point.chapter].key,(pixel.x,pixel.y-8),(48,48))

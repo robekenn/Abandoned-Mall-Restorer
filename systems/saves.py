@@ -14,7 +14,7 @@ from systems.requests import OwnerRequests
 from systems.shoppers import Shoppers
 from systems.janitors import Janitors, Janitor
 from systems.story import Story
-from systems.mall_life import MallLife, EventSpot
+from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.tutorial import Tutorial
 
 
@@ -58,7 +58,8 @@ def snapshot(game):
                       'progress':j.progress if target else 0}
     life=game.life
     community={'completed':life.completed,'cooldowns':life.cooldowns,'owner_chats':life.owner_chats,
-               'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants}
+               'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants,'activity':life.activity,
+               'tasks':[[list(t.position),t.title,t.kind,t.duration,t.progress,t.completed] for t in life.tasks]}
     return {'life':community,'cash':game.cash,'player':list(game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
@@ -70,8 +71,8 @@ def snapshot(game):
             'litter_turn':getattr(game.litter_spawner,'turn',0),'visitor_identity':game.shoppers.next_identity,
             'collected':game.total_collected,'sold':game.total_sold,'muted':game.audio.muted,
             'tutorial':{'active':tutorial.active,'step':tutorial.step,'origin':list(getattr(tutorial,'origin',game.player.rect.center)),
-                        'collected':getattr(tutorial,'collected',0),'sold':getattr(tutorial,'sold',0),'journal':tutorial.journal_seen},
-            'story':{'seed':game.story.seed,'started':game.story.started,'memories':game.story.memories,'completed':game.story.completed,
+                        'collected':getattr(tutorial,'collected',0),'sold':getattr(tutorial,'sold',0),'journal':tutorial.journal_seen,'explaining':tutorial.explaining},
+            'story':{'layout':game.story.layout,'seed':game.story.seed,'started':game.story.started,'memories':game.story.memories,'completed':game.story.completed,
                      'festival':game.story.festival,'elapsed':game.story.elapsed,'celebrations':game.story.celebrations}}
 
 
@@ -89,7 +90,7 @@ def restore_state(data, game):
     for s in mall.stores:
         restored,level,bonus,recurring,wait=data['stores'][s.name]
         s.restored=flag(restored);s.request_level=number(level,0,3,True);s.request_bonus=number(bonus,0,10**9)
-        s.recurring_completed=number(recurring,0,10**9,True);s.request_wait=number(wait,0,180)
+        s.recurring_completed=number(recurring,0,10**9,True);s.request_wait=number(wait,0,600)
         if s.request_level and (not s.restored or s.upgrade_shop):raise ValueError('Invalid owner progression')
     for t,row in zip(mall.trash,data['trash']):
         cleaned,ever,revision=row;t.cleaned=flag(cleaned);t.ever_cleaned=flag(ever);t.revision=number(revision,0,10**12,True)
@@ -155,6 +156,7 @@ def restore_state(data, game):
     if any((story.started[i] or story.completed[i]) and i>len(mall.active_regions) for i in range(4)):raise ValueError('Story in a closed court')
     if any(story.completed[i] and (not story.started[i] or not all(story.memories[i])) for i in range(4)):raise ValueError('Incomplete chapter memory state')
     story.seed=number(saved_story.get('seed',0),0,2**31-1,True)
+    story.layout=number(saved_story.get('layout',1),1,2,True)
     story.setup(mall);story.update(0,mall)
     life=MallLife()
     if data.get('life') is not None:
@@ -175,8 +177,24 @@ def restore_state(data, game):
             point=vector(row['position']);footprint=pygame.Rect(point.x-90,point.y-82,180,162)
             if not court[5] or not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles):raise ValueError('Unsafe community table')
             life.spot=EventSpot(point,life.event.title)
+            life.activity=row.get('activity','match')
+            if life.activity not in ('match','recipe','plant','hunt'):raise ValueError('Unknown event activity')
+            tasks=row.get('tasks',[])
+            if not isinstance(tasks,list) or len(tasks)!=(3 if life.activity in ('plant','hunt') else 0):raise ValueError('Invalid event tasks')
+            for saved_task in tasks:
+                pos,title,kind,duration,progress,completed=saved_task
+                pos=vector(pos);duration=number(duration,0,2);progress=number(progress,0,duration);completed=flag(completed)
+                footprint=pygame.Rect(pos.x-24,pos.y-32,48,64)
+                if not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles):raise ValueError('Unsafe event task')
+                if not isinstance(title,str) or len(title)>80 or kind not in ('plant','toolkit'):raise ValueError('Invalid event prop')
+                if duration!=(2 if life.activity=='plant' else 0):raise ValueError('Invalid event duration')
+                life.tasks.append(EventTask(pos,title,kind,duration,progress,completed))
+            if tasks and sum(t.completed for t in life.tasks)!=life.round:raise ValueError('Invalid event progress')
         elif life.round or row['position'] is not None or life.participants:raise ValueError('Community progress without a gathering')
     life.sync_spots(mall)
+    if life.tasks:
+        paths=Shoppers().walkways;paths.refresh(mall)
+        if any(paths.route(mall.entrance,t.position) is None for t in life.tasks):raise ValueError('Unreachable event task')
     player=Player(vector(data['player']))
     if not any(a.collidepoint(player.rect.center) for a in mall.playable_areas) or any(w.colliderect(player.rect) for w in mall.obstacles):
         # A checkpoint on a grille threshold is moved to the nearest safe floor node.
@@ -187,7 +205,7 @@ def restore_state(data, game):
     row=data['tutorial'];tutorial.active=flag(row['active']);tutorial.step=number(row['step'],0,5,True)
     if tutorial.active and tutorial.step==5:raise ValueError('Invalid guide stage')
     tutorial.origin=vector(row['origin']);tutorial.collected=number(row['collected'],integer=True);tutorial.sold=number(row['sold'],integer=True)
-    tutorial.journal_seen=flag(row['journal'])
+    tutorial.journal_seen=flag(row['journal']);tutorial.explaining=flag(row.get('explaining',tutorial.active))
     shoppers=Shoppers();shoppers.next_identity=number(data['visitor_identity'],integer=True)
     if requests.greetings:shoppers.next_identity=max(shoppers.next_identity,max(requests.greetings)+1)
     state={'mall':mall,'upgrades':u,'owner_requests':requests,'janitors':workers,'story':story,'tutorial':tutorial,

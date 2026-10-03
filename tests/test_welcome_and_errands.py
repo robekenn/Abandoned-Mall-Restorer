@@ -169,6 +169,8 @@ class WelcomeAndErrandsTests(unittest.TestCase):
         g.update(.4,(1,0));self.assertTrue(g.welcome.open)
         g.update(.5,(1,0));self.assertFalse(g.welcome.open)
         self.assertEqual(g.player.rect.center,before[1])
+        self.assertTrue(g.tutorial.paused)
+        g.handle_event(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         g.update(.1,(1,0))
         self.assertGreater(g.player.rect.centerx,before[1][0])
         self.assertLess(g.mall.stores[1].request_wait,180)

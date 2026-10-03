@@ -169,7 +169,9 @@ class ExpansionTests(unittest.TestCase):
             self.assertFalse(g.claim_request(store));self.assertEqual(g.cash,cash+reward)
             self.assertFalse(g.owner_requests.accept(store,g.mall))
             g.owner_requests.update(179,g.mall);self.assertFalse(g.owner_requests.accept(store,g.mall))
-            g.owner_requests.update(1,g.mall)
+            self.assertGreaterEqual(store.request_wait,1)
+            self.assertLessEqual(store.request_wait,421)
+            g.owner_requests.update(store.request_wait,g.mall)
         self.assertEqual(len(set(seen[:12])),12)
         self.assertEqual(seen[:12],seen[12:])
         self.assertEqual(store.recurring_completed,24)
@@ -242,14 +244,16 @@ class ExpansionTests(unittest.TestCase):
 
     def test_tutorial_follows_real_actions_and_never_grants_money(self):
         g=self.game;g.tutorial.start(g)
+        g.tutorial.handle(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN),g)
         g.update(.15,(1,0));self.assertEqual(g.tutorial.step,1)
+        g.tutorial.explaining=False
         g.player.rect.center=g.mall.trash[0].position;g.interact();g.update(0,(0,0))
-        self.assertEqual(g.tutorial.step,2);self.assertEqual(g.cash,0)
+        self.assertEqual(g.tutorial.step,2);self.assertEqual(g.cash,0);g.tutorial.explaining=False
         g.sell_trash(g.mall.trash_bins[0]);g.update(0,(0,0));self.assertEqual(g.tutorial.step,3)
-        self.assertEqual(g.cash,1)
+        self.assertEqual(g.cash,1);g.tutorial.explaining=False
         g.cash=15;g.player.rect.center=g.mall.stores[0].position;g.interact();g.buy_upgrade('capacity')
         g.shop_menu.open=False;g.update(0,(0,0));self.assertEqual(g.tutorial.step,4)
-        g.tutorial.journal_seen=True;g.update(0,(0,0));self.assertFalse(g.tutorial.active)
+        g.tutorial.explaining=False;g.tutorial.journal_seen=True;g.update(0,(0,0));self.assertFalse(g.tutorial.active)
         self.assertEqual(g.cash,0)
         g.tutorial.start(g);g.tutorial.handle(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_t),g)
         self.assertFalse(g.tutorial.active)
