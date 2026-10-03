@@ -8,7 +8,7 @@ Reopen Northgate Supplies for $10. It is the first business in the storefront ro
 
 ## Shop controls
 
-Use the mouse to click an upgrade row. Keys 1/2/3 select Gear/Furniture/Garden; left/right or Tab switch menu tabs; up/down select a row; Enter/Space purchase; Esc/E close the menu. Esc closes the menu before it quits the game. Gameplay, litter and rent timers pause while shopping.
+Use the mouse to click an upgrade row. Keys 1/2/3 select Gear/Furniture/Garden; left/right or Tab switch menu tabs; up/down select a row; Enter/Space purchase; Esc/E close the menu. Esc closes the menu; in the mall it opens a pause screen with a separate exit confirmation. Gameplay, litter and rent timers pause while shopping.
 
 Unaffordable purchases and already installed fixtures do not deduct money. Gear advances one tier at a time and cannot exceed its last tier. Successful purchases update prices/stats immediately without a notice; unavailable purchases explain their prerequisite.
 

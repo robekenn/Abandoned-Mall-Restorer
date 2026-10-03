@@ -203,7 +203,8 @@ class StoryAndSaveTests(unittest.TestCase):
 
     def test_manual_f5_and_exit_checkpoint(self):
         g=self.game;g.cash=45
-        events=[[pygame.event.Event(pygame.KEYDOWN,key=pygame.K_F5)],[pygame.event.Event(pygame.QUIT)]]
+        events=[[pygame.event.Event(pygame.KEYDOWN,key=pygame.K_F5)],[pygame.event.Event(pygame.QUIT)],
+                 [pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN),pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN)]]
         with patch('pygame.event.get',side_effect=events),patch.object(g,'draw'),patch.object(g,'update'):g.run()
         h=self.clone();self.assertTrue(h.save_store.load(h));self.assertEqual(h.cash,45)
 

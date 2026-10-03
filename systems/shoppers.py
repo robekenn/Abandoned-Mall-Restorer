@@ -13,7 +13,7 @@ class Walkways:
         self.walls=[]
 
     def refresh(self, mall):
-        signature = tuple(r.unlocked for r in mall.regions)
+        signature = (tuple(r.unlocked for r in mall.regions),tuple(tuple(w) for w in mall.obstacles))
         if self.signature == signature:
             return
         self.signature = signature
@@ -27,8 +27,16 @@ class Walkways:
     def nearest(self, point):
         return min(self.nodes,key=lambda p:pygame.Vector2(p).distance_squared_to(point))
 
+    def join(self, point):
+        if not self.nodes:return None
+        closest=self.nearest(point)
+        if not any(w.clipline(point,closest) for w in self.walls):return closest
+        candidates=sorted(self.nodes,key=lambda p:pygame.Vector2(p).distance_squared_to(point))[:12]
+        return next((p for p in candidates if not any(w.clipline(point,p) for w in self.walls)),None)
+
     def route(self, origin, destination):
-        start,end = self.nearest(origin),self.nearest(destination)
+        start,end = self.join(origin),self.join(destination)
+        if start is None or end is None:return None
         # Use a regular BFS with parents; it also detects sealed/disconnected paths.
         queue = deque([start]); previous = {start:None}
         while queue and end not in previous:
@@ -65,6 +73,7 @@ class Shopper:
         self.greeted = False
         self.speech = ''
         self.speech_time = 0
+        self.visits=0;self.carrying=False;self.activity='';self.rest_seconds=4;self.seat=None;self.friend_name='';self.goal=None;self.event_clue=''
 
     @property
     def label(self):
@@ -85,6 +94,7 @@ class Shopper:
             if self.wait >= 10+self.identity%3*2:
                 self.path = [self.store.position.copy()]
                 self.state,self.wait = 'exiting',0
+                self.carrying=True
             return
         moving = False
         budget = 86*dt
@@ -112,34 +122,65 @@ class Shopper:
         elif self.state == 'entering':
             self.state,self.wait = 'inside',0
         elif self.state == 'exiting':
-            amenities = manager.amenities(mall,upgrades)
-            goals=list(amenities);manager.random.shuffle(goals)
-            goal=next((p for p in goals if manager.walkways.route(self.position,p) is not None),self.entrance)
+            self.visits+=1
+            if self.visits==1 and self.identity%3==1 and mall.cleanliness>=.75:
+                neighbors=sorted((s for s in mall.stores if s.restored and s is not self.store
+                                  and mall.area_for_store(self.store).collidepoint(s.position)),
+                                 key=lambda s:self.position.distance_squared_to(s.position))
+                for store in neighbors:
+                    path=manager.walkways.route(self.position,store.position)
+                    if path is not None:
+                        self.store=store;self.path=path;self.state='arriving';return
+            goals=manager.amenities(mall,upgrades)
+            manager.random.shuffle(goals)
+            # Visitors enjoy amenities in their own court, keeping trips manageable.
+            local=[p for p in goals if mall.area_for_store(self.store).collidepoint(p)]
+            goal=next((p for p in local if manager.walkways.route(self.position,p) is not None),self.entrance)
+            friend=next((p for p in manager.people if p is not self and p.state=='resting' and p.activity in ('fountain','gathering') and mall.area_for_store(self.store).collidepoint(p.position)),None) if self.identity%4==2 else None
+            if friend is not None:
+                meeting=manager.walkways.nearest(friend.position+pygame.Vector2(64,0))
+                if manager.walkways.route(self.position,meeting) is not None:goal=meeting;self.friend_name=friend.name
+                else:friend=None
             path=manager.walkways.route(self.position,goal)
             if path is None:return
-            self.path=path
+            self.path=path;self.goal=pygame.Vector2(goal);self.activity='meeting' if friend is not None else manager.activity(goal,mall,upgrades)
+            self.seat=next((b for b in mall.benches if pygame.Vector2(goal).distance_to((b.centerx,b.bottom+40))<1),None) if self.activity=='bench' else None
+            self.rest_seconds=(8 if self.activity=='bench' else 12 if self.activity=='fountain' else 20 if self.activity in ('gathering','meeting') else 4)
+            self.rest_seconds*=1.5 if mall.cleanliness>=.75 and self.identity%3==1 else 1
             self.state,self.wait = ('leaving' if pygame.Vector2(goal)==self.entrance else 'strolling'),0
         elif self.state == 'strolling':
+            if self.goal is not None and self.position.distance_to(self.goal)>1:
+                self.path=manager.walkways.route(self.position,self.goal) or [];return
+            if self.activity!='meeting':self.activity=manager.activity(self.position,mall,upgrades)
+            if self.activity=='gathering':self.rest_seconds=max(self.rest_seconds,20)
             self.state,self.wait = 'resting',0
         elif self.state == 'resting':
             self.wait += dt
-            community=getattr(mall,'community_spots',())
-            linger=12 if any(self.position.distance_to(p)<32 for p in community) else 4
-            if self.wait >= linger:
+            if self.wait >= self.rest_seconds:
                 path=manager.walkways.route(self.position,self.entrance)
                 if path is None:return
-                self.path=path
+                self.path=path;self.activity=''
                 self.state,self.wait = 'leaving',0
         elif self.state == 'leaving':
             # An exhausted/failed route never counts as leaving in mid-concourse.
             if self.position.distance_to(self.entrance)<1:self.done = True
             else:self.path=manager.walkways.route(self.position,self.entrance) or []
 
+    @property
+    def display_position(self):
+        return pygame.Vector2(self.seat.centerx,self.seat.centery+22) if self.state=='resting' and self.activity=='bench' and self.seat else self.position
+
     def draw(self, surface, camera, art, font, selected):
         if not self.visible:
             return
-        point = camera.point(self.position)
-        art.draw(surface,f'shopper_{self.variant}_{self.facing}_{self.frame}',(point.x,point.y-12),(48,72))
+        point = camera.point(self.display_position)
+        pose='sit' if self.state=='resting' and self.activity=='bench' else str(self.frame)
+        art.draw(surface,f'shopper_{self.variant}_{self.facing}_{pose}',(point.x,point.y-12),(48,72))
+        if self.carrying:
+            side=-21 if self.facing=='left' else 21
+            art.draw(surface,'purchase_bag',(point.x+side,point.y+4),(24,24))
+        if self.state=='resting' and self.activity in ('fountain','gathering'):
+            art.draw(surface,'visitor_'+('cup' if self.activity=='fountain' else 'book'),(point.x+18,point.y-9),(18,18))
         if selected:
             pygame.draw.ellipse(surface,(175,210,186),(point.x-14,point.y+8,28,10),2)
             label = font.render(self.name,True,(218,225,191))
@@ -150,19 +191,27 @@ class Shoppers:
     def __init__(self):
         self.people = []
         self.walkways = Walkways()
+        self.path_signature=None
         self.random = random.Random(97)
         self.elapsed = 8.0
         self.next_identity = 0
 
     def amenities(self, mall, upgrades):
-        points = [(b.centerx,b.bottom+40) for i,b in enumerate(mall.benches) if f'bench_{i}' in upgrades.decor]
+        points = [(b.centerx,b.bottom+40) for i,b in enumerate(mall.benches) if f'bench_{i}' in upgrades.decor and not any(p.activity=='bench' and p.state in ('strolling','resting') and pygame.Vector2(p.goal if p.state=='strolling' and p.goal is not None else p.position).distance_to((b.centerx,b.bottom+40))<1 for p in self.people)]
         if 'fountain' in upgrades.decor:
             points.append((mall.fountain.centerx,mall.fountain.bottom+45))
         for region in mall.active_regions:
             if f'fountain_{region.key}' in upgrades.decor:
                 points.append((region.fountain.centerx,region.fountain.bottom+45))
         points.extend(getattr(mall,'community_spots',()))
+        points.extend(getattr(mall,'event_spots',()))
         return points
+
+    def activity(self, goal, mall, upgrades):
+        point=pygame.Vector2(goal)
+        if any(point.distance_to(p)<32 for p in list(getattr(mall,'community_spots',()))+list(getattr(mall,'event_spots',()))):return 'gathering'
+        if any(point.distance_to((b.centerx,b.bottom+40))<32 for i,b in enumerate(mall.benches) if f'bench_{i}' in upgrades.decor):return 'bench'
+        return 'fountain' if any(point.distance_to(p)<32 for p in self.amenities(mall,upgrades)) else ''
 
     def gather(self, area, goals, mall):
         """Invite a few real visitors along safe routes, respecting the population cap."""
@@ -179,10 +228,16 @@ class Shoppers:
             self.next_identity+=1;self.people.append(person);neighbors.append(person)
         for person,goal in zip(neighbors,goals):
             path=self.walkways.route(person.position,goal)
-            if path is not None:person.path=path;person.state='strolling';person.wait=0
+            if path is not None:person.path=path;person.goal=pygame.Vector2(goal);person.state='strolling';person.wait=0;person.activity='gathering';person.rest_seconds=20
+        return neighbors
 
     def update(self, dt, mall, upgrades, preferred_store=None):
         self.walkways.refresh(mall)
+        if self.path_signature!=self.walkways.signature:
+            self.path_signature=self.walkways.signature
+            for person in self.people:
+                if person.path and person.state not in ('inside','entering','exiting'):
+                    person.path=self.walkways.route(person.position,person.path[-1]) or []
         opened = [s for s in mall.stores if s.restored]
         for person in self.people:
             person.update(dt,self,mall,upgrades)
@@ -208,6 +263,13 @@ class Shoppers:
                 'Mara saved a chair for me at the reading circle. I had forgotten how that feels.',
                 'Someone has started folding lanterns again. They are all different, just like before.',
                 'I brought a neighbor today. Next time, maybe we will bring two.'))
+        if person.state=='resting':
+            person.speech={'bench':'I meant to leave, but this is a lovely place to sit and catch up.',
+                           'fountain':'Listen to the water. I remember that sound from when I was small.',
+                           'gathering':'Someone saved a place for me at the table. I brought something to share.',
+                           'meeting':f'I bumped into {person.friend_name}. We used to meet here after school. It is good to have our spot back.'}.get(person.activity,person.speech)
+        elif person.carrying and person.greeted:person.speech='I found a little something to take home. It is nice to shop close to my neighbors again.'
+        if person.event_clue:person.speech=person.event_clue
         person.greeted=True
         person.speech_time=max(5,min(10,len(person.speech)/14))
         return f'{person.name}: '+person.speech

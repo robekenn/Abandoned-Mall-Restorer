@@ -184,7 +184,8 @@ class WelcomeAndErrandsTests(unittest.TestCase):
         g.update(.3,(0,0));g.draw()
         g.welcome.leaving=False
         g.welcome.handle(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=quit.center),g)
-        self.assertFalse(g.running)
+        self.assertTrue(g.running);self.assertTrue(g.pause.confirm)
+        g.pause.activate(g,1);self.assertFalse(g.running)
 
     def test_fullscreen_start_and_toggle_preserve_the_session(self):
         g=Game(fullscreen=True,start_screen=True)

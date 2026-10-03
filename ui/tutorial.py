@@ -8,7 +8,7 @@ class Tutorial:
         ('Pick up one piece','Press E near litter. Your first bag holds one piece. Small work still counts.'),
         ('Make your first sale','Walk to a SELL bin and press E. The cash can help reopen Northgate.'),
         ('Give yourself room','Reopen Supplies ($10), then buy its 2-slot bag ($5). Keep collecting and selling.'),
-        ('Find the next chapter','Press J for the map and owner countdowns. Their requests help bring neighbors back.'),
+        ('Find the next chapter','Press J for the map, owner requests and Mall life gatherings. Little things bring neighbors back.'),
     )
     def __init__(self):self.active=False;self.step=0;self.journal_seen=False
 

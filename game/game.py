@@ -27,6 +27,9 @@ from ui.developer import Developer
 from ui.story_menu import StoryMenu
 from systems.story import Story, StoryPoint
 from systems.saves import SaveStore
+from systems.mall_life import MallLife, EventSpot
+from ui.pause import PauseMenu
+from ui.community_menu import CommunityMenu
 
 
 class Game:
@@ -62,6 +65,7 @@ class Game:
         self.janitors = Janitors()
         self.story=Story();self.story.setup(self.mall)
         self.story_menu=StoryMenu()
+        self.life=MallLife();self.pause=PauseMenu();self.community_menu=CommunityMenu();self.skip_exit_save=False
         self.save_store=SaveStore(save_dir,developer,persistence)
         self.save_started=persistence and not start_screen
         self.welcome.has_save=self.save_store.available()
@@ -88,6 +92,7 @@ class Game:
         candidates += [spot for spot in self.owner_requests.visible_spots if origin.distance_to(spot.position)<=72]
         candidates += [p for p in self.story.visible_neighbors(self.mall) if origin.distance_to(p.position)<=64]
         candidates += [p for p in self.story.visible_points(self.mall) if origin.distance_to(p.position)<=72]
+        if self.life.spot and origin.distance_to(self.life.spot.position)<=72:candidates.append(self.life.spot)
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
@@ -153,7 +158,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         target = self.target()
         if isinstance(target,Trash):
@@ -167,6 +172,8 @@ class Game:
             self.speech.timer=0
             self.shoppers.greet(target,self.story)
             self.audio.play('pickup')
+        elif isinstance(target,EventSpot):
+            self.community_menu.open=True;self.community_menu.selection=0
         elif isinstance(target,RequestSpot):
             if target.kind == 'display':
                 self.display_menu.visit()
@@ -226,7 +233,8 @@ class Game:
 
     def say_owner(self, store, text):
         for person in self.shoppers.people:person.speech_time=0
-        self.speech.say(OWNERS[store.name],text,store.position)
+        self.life.show_owner(store)
+        self.speech.say(OWNERS[store.name],text,self.life.owner_position(store))
 
     def open_upgrade_shop(self, store):
         self.shop_menu.shop = store.upgrade_shop
@@ -267,6 +275,7 @@ class Game:
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         self.frame_camera(viewport)
+        if self.pause.open:return
         if self.welcome.open:
             self.welcome.update(dt)
             if not self.welcome.open:
@@ -274,7 +283,7 @@ class Game:
                 if self.welcome.tutorial_enabled and not self.welcome.continuing:self.tutorial.start(self)
                 if not self.welcome.continuing:self.save_checkpoint()
             return
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.frame_camera(viewport)
@@ -283,6 +292,7 @@ class Game:
         self.tutorial.update(self)
         self.feedback.update(dt)
         self.story.update(dt,self.mall)
+        self.life.update(dt,self)
         self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
         self.janitors.update(dt,self)
         ready = self.owner_requests.update(dt,self.mall)
@@ -323,18 +333,25 @@ class Game:
         target = self.target()
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
         self.story.draw(self)
+        self.life.draw(self)
         for spot in self.owner_requests.scene_spots:
             spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
         # Tall furniture and people share depth, so walking behind a prop looks natural.
         layers=[(depth,'furniture',(name,center,size)) for depth,name,center,size in self.mall.furniture(self.upgrades)]
+        if self.life.spot:
+            p=self.life.spot.position
+            layers.append((p.y-10,'furniture',('community_table_'+str(self.life.event_index(self.life.active)),(p.x,p.y-40),(96,72))))
         layers += [(p.position.y,'neighbor',p) for p in self.story.visible_neighbors(self.mall)]
-        layers += [(p.position.y,'shopper',p) for p in self.shoppers.people if p.visible]
+        layers += [(p.display_position.y,'shopper',p) for p in self.shoppers.people if p.visible]
         layers += [(p.position.y,'janitor',p) for p in self.janitors.people.values()]
+        if self.life.owner and self.life.owner_time:layers.append((self.life.owner_position(self.life.owner).y,'owner',self.life.owner))
         layers.append((self.player.rect.centery,'player',self.player))
         for _,kind,item in sorted(layers,key=lambda entry:entry[0]):
             if kind == 'furniture':
                 name,center,size=item
                 self.art.draw(self.screen,name,self.camera.point(center),size)
+            elif kind=='owner':
+                self.life.draw_owner(self)
             elif kind=='neighbor':
                 self.story.draw_neighbor(self,item)
             elif kind=='janitor':
@@ -358,7 +375,9 @@ class Game:
             if self.developer.enabled:
                 badge=self.hud.small.render('DEV · F3',True,(230,194,124))
                 self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
-            if self.story_menu.open:
+            if self.community_menu.open:
+                self.community_menu.draw(self)
+            elif self.story_menu.open:
                 self.story_menu.draw(self)
             elif self.developer.open:
                 self.developer.draw(self)
@@ -370,64 +389,50 @@ class Game:
                 self.journal.draw(self)
             elif self.display_menu.open:
                 self.display_menu.draw(self)
+        if self.pause.open:self.pause.draw(self)
         pygame.display.flip()
+
+    def handle_event(self, event):
+        if event.type==pygame.QUIT:
+            if not self.pause.open or not self.pause.confirm:self.pause.show(True)
+        elif event.type==pygame.VIDEORESIZE and not self.fullscreen:
+            self.window_size=(max(800,event.w),max(600,event.h))
+            self.screen=pygame.display.set_mode(self.window_size,pygame.RESIZABLE)
+        elif event.type==pygame.KEYDOWN and event.key==pygame.K_F11:self.toggle_fullscreen()
+        elif event.type==pygame.KEYDOWN and event.key==pygame.K_m:
+            muted=self.audio.toggle();self.notify('Music and effects muted.' if muted else 'Music and effects on.')
+            if self.shop_menu.open:self.shop_menu.notice=self.message
+        elif self.pause.open:self.pause.handle(event,self)
+        elif self.welcome.open:self.welcome.handle(event,self)
+        elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:self.save_checkpoint()
+        elif self.community_menu.open:self.community_menu.handle(event,self)
+        elif self.story_menu.open:self.story_menu.handle(event,self)
+        elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
+            if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):self.developer.open=not self.developer.open
+        elif self.developer.open:self.developer.handle(event,self)
+        elif self.display_menu.open:self.display_menu.handle(event,self)
+        elif self.shop_menu.open:self.shop_menu.handle(event,self)
+        elif self.owner_menu.open:self.owner_menu.handle(event,self)
+        elif self.journal.open:self.journal.handle(event,self)
+        elif self.tutorial.active and self.tutorial.handle(event,self):pass
+        elif event.type==pygame.KEYDOWN:
+            if event.key==pygame.K_h:self.tutorial.start(self)
+            elif event.key==pygame.K_j:self.tutorial.journal_seen=True;self.journal.open=True
+            elif event.key==pygame.K_ESCAPE:self.pause.show()
+            elif event.key==pygame.K_e:self.interact()
 
     def run(self):
         try:
             while self.running:
-                dt = min(self.clock.tick(FPS)/1000,0.05)
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self.running = False
-                    elif event.type == pygame.VIDEORESIZE and not self.fullscreen:
-                        self.window_size=(max(800,event.w),max(600,event.h))
-                        self.screen = pygame.display.set_mode(self.window_size,pygame.RESIZABLE)
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
-                        self.toggle_fullscreen()
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_m:
-                        muted = self.audio.toggle()
-                        message = 'Music and effects muted.' if muted else 'Music and effects on.'
-                        self.notify(message)
-                        if self.shop_menu.open:
-                            self.shop_menu.notice = message
-                    elif self.welcome.open:
-                        self.welcome.handle(event,self)
-                    elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:
-                        self.save_checkpoint()
-                    elif self.story_menu.open:
-                        self.story_menu.handle(event,self)
-                    elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
-                        if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):
-                            self.developer.open=not self.developer.open
-                    elif self.developer.open:
-                        self.developer.handle(event,self)
-                    elif self.display_menu.open:
-                        self.display_menu.handle(event,self)
-                    elif self.shop_menu.open:
-                        self.shop_menu.handle(event,self)
-                    elif self.owner_menu.open:
-                        self.owner_menu.handle(event,self)
-                    elif self.journal.open:
-                        self.journal.handle(event,self)
-                    elif self.tutorial.active and self.tutorial.handle(event,self):
-                        pass
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_h:
-                            self.tutorial.start(self)
-                        elif event.key == pygame.K_j:
-                            self.tutorial.journal_seen=True
-                            self.journal.open = True
-                        elif event.key == pygame.K_ESCAPE:
-                            self.running = False
-                        elif event.key == pygame.K_e:
-                            self.interact()
-                keys = pygame.key.get_pressed()
-                direction = (int(keys[pygame.K_d] or keys[pygame.K_RIGHT])-int(keys[pygame.K_a] or keys[pygame.K_LEFT]),
-                             int(keys[pygame.K_s] or keys[pygame.K_DOWN])-int(keys[pygame.K_w] or keys[pygame.K_UP]))
-                if not pygame.key.get_focused():
-                    direction = (0,0)
+                dt=min(self.clock.tick(FPS)/1000,0.05)
+                for event in pygame.event.get():self.handle_event(event)
+                if not self.running:break
+                keys=pygame.key.get_pressed()
+                direction=(int(keys[pygame.K_d] or keys[pygame.K_RIGHT])-int(keys[pygame.K_a] or keys[pygame.K_LEFT]),
+                           int(keys[pygame.K_s] or keys[pygame.K_DOWN])-int(keys[pygame.K_w] or keys[pygame.K_UP]))
+                if not pygame.key.get_focused():direction=(0,0)
                 self.update(dt,direction,keys[pygame.K_e] and pygame.key.get_focused())
                 self.draw()
         finally:
-            self.save_checkpoint()
+            if not self.skip_exit_save:self.save_checkpoint()
             pygame.quit()

@@ -153,6 +153,8 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(g.upgrades.decor,set())
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_TAB))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         g.run()
         self.assertEqual(g.upgrades.decor,set())
 

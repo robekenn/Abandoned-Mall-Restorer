@@ -112,7 +112,8 @@ def main():
                 janitor=game.janitors.people[key]
                 trash=next(t for t in pool if tuple(t.position) in janitor.paths.nodes)
                 game.mall.respawn_trash(trash);janitor.position=trash.position.copy()
-            game.janitors.update(4,game)
+            game.janitors.update(.21,game);game.draw()
+            game.janitors.update(3.79,game)
             if not all(j.cleaned for j in game.janitors.people.values()):raise RuntimeError('Janitor cleanup failed')
             game.draw()
             game.journal.open = False
@@ -148,12 +149,27 @@ def main():
                 game.journal.chapter=i
                 for memories in (False,True):game.journal.memories_view=memories;game.draw()
             game.journal.open=False
+            # Optional life content and pause UI are also exercised in frozen builds.
+            game.life.chat(game,owner_store)
+            game.journal.open=True;game.journal.tab=3;game.draw();game.journal.open=False
+            for key,*_ in game.janitors.courts(game.mall):
+                if not game.life.start(game,key):raise RuntimeError('Community event did not start: '+key)
+                game.player.rect.center=game.life.spot.position;game.frame_camera(game.screen.get_size())
+                game.community_menu.open=True;game.draw()
+                for _ in range(3):
+                    game.life.choose(game,game.life.event.guests[game.life.round][2]);game.draw()
+                game.life.choose(game,0);game.community_menu.open=False
+            game.life.cooldowns['north']=0
+            if not game.life.start(game,'north'):raise RuntimeError('Recurring event did not start')
+            game.life.choose(game,game.life.event.guests[0][2])
+            game.pause.show();game.draw();game.pause.activate(game,2);game.draw()
+            game.pause.activate(game,0);game.pause.open=False
             with TemporaryDirectory() as directory:
                 game.save_store=SaveStore(directory,developer=args.dev,enabled=True)
                 cash=game.cash
                 if not game.save_store.save(game):raise RuntimeError('Checkpoint write failed')
                 game.cash=0
-                if not game.save_store.load(game) or game.cash!=cash or not game.story.festival:
+                if not game.save_store.load(game) or game.cash!=cash or not game.story.festival or game.life.round!=1 or game.life.active!='north':
                     raise RuntimeError('Checkpoint roundtrip failed')
             game.draw()
         finally:

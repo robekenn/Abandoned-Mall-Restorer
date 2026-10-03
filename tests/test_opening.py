@@ -69,6 +69,8 @@ class OpeningTests(unittest.TestCase):
             self.assertLessEqual(g.hud.font.size(line)[0], 496)
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_m))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         g.run()
         self.assertTrue(g.audio.muted)
 

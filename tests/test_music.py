@@ -55,6 +55,8 @@ class MusicTests(unittest.TestCase):
         game.shop_menu.open = True
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_m))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         game.run()
         self.assertTrue(game.audio.muted)
         self.assertIn('muted',game.shop_menu.notice)

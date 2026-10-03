@@ -49,6 +49,9 @@ def store(kind, clean, door_open=False):
             for x in (9, 33):
                 box(s, 'cream', (x, 25, 5, 3))
                 box(s, 'rust', (x, 28, 5, 1))
+                box(s, 'wood', (x-2, 30, 9, 1))
+                box(s, 'cream', (x+5, 26, 3, 3))
+                box(s, 'rust', (x+6, 27, 1, 1))
     else:
         for x in (5, 28):
             box(s, 'wood', (x, 20, 15, 4))
@@ -252,61 +255,58 @@ def delivery_station():
     return s
 
 
-def worker(facing, frame):
-    """16x24 worker: idle, left stride, passing pose, right stride."""
-    s = canvas((16, 24))
-    stride = (0, -1, 0, 1)[frame]
-    bob = 1 if frame in (1, 3) else 0
-    # Legs are separate so each stride visibly alternates boots.
-    for x, offset in ((5, stride), (9, -stride)):
-        box(s, 'blue', (x, 16 + bob, 3, 5 + offset))
-        box(s, 'ink', (x - (1 if facing == 'left' else 0), 20 + bob + offset, 4, 2))
-    box(s, 'ink', (4, 9 + bob, 8, 8))
-    box(s, 'teal', (5, 10 + bob, 6, 6))
-    box(s, 'gold', (5, 11 + bob, 1, 4))
-    box(s, 'gold', (10, 11 + bob, 1, 4))
-    for x, offset in ((2, -stride), (12, stride)):
-        box(s, 'teal', (x, 10 + bob + offset, 2, 5))
-        box(s, 'skin', (x, 14 + bob + offset, 2, 2))
-    box(s, 'ink', (4, 2 + bob, 8, 8))
-    box(s, 'skin' if facing != 'up' else 'wood', (5, 4 + bob, 6, 5))
-    box(s, 'rust', (4, 2 + bob, 8, 3))
-    box(s, 'gold', (5, 2 + bob, 5, 1))
-    if facing == 'down':
-        box(s, 'ink', (6, 6 + bob, 1, 1))
-        box(s, 'ink', (9, 6 + bob, 1, 1))
-    elif facing in ('left', 'right'):
-        x = 4 if facing == 'left' else 11
-        box(s, 'skin', (x, 5 + bob, 2, 3))
-        box(s, 'ink', (x, 5 + bob, 1, 1))
-        box(s, 'rust', (x, 3 + bob, 2, 1))
+def person(facing, frame, shirt, hair, work=False):
+    """Soft silhouettes and shaded clothes on the established 16x24 pixel grid."""
+    s=canvas((16,24));stride=(0,-1,0,1)[frame];bob=frame%2
+    for x,step in ((5,stride),(9,-stride)):
+        box(s,'ink',(x,16+bob,3,6+step));box(s,'blue' if work else 'shadow',(x,17+bob,2,3+step))
+        box(s,'ink',(x-1,21+bob+step,4,1));box(s,'stone',(x,20+bob+step,2,1))
+    # Rounded shoulders, a collar, pockets, and a warm seam highlight.
+    box(s,'ink',(4,10+bob,8,7));box(s,'ink',(5,9+bob,6,9))
+    box(s,shirt,(5,10+bob,6,6));box(s,'shadow',(10,11+bob,1,5))
+    box(s,'cream',(6,10+bob,4,1));box(s,'wood',(5,16+bob,6,1))
+    for x,step in ((2,-stride),(12,stride)):
+        box(s,'ink',(x,11+bob+step,2,5));box(s,shirt,(x,11+bob+step,2,3))
+        box(s,'skin',(x,14+bob+step,2,2))
+    if work:
+        for x in (5,10):box(s,'gold',(x,11+bob,1,4))
+        box(s,'blue',(7,13+bob,2,2));box(s,'light',(7,13+bob,2,1))
+    elif facing=='down':box(s,'light',(6,12+bob,1,3))
+    # Cut corners and a visible neck replace the old square head block.
+    box(s,'ink',(5,2+bob,6,8));box(s,'ink',(4,3+bob,8,6))
+    box(s,hair,(5,2+bob,6,3));box(s,'skin' if facing!='up' else hair,(5,5+bob,6,4))
+    if facing=='up':
+        box(s,hair,(4,3+bob,8,5));box(s,'shadow',(5,7+bob,6,1))
+    elif facing=='down':
+        box(s,hair,(4,3+bob,8,2));box(s,hair,(5,5+bob,1,1))
+        box(s,'ink',(6,6+bob,1,1));box(s,'ink',(9,6+bob,1,1));box(s,'rust',(8,8+bob,2,1))
+    else:
+        x=3 if facing=='left' else 11
+        box(s,'skin',(x,5+bob,2,3));box(s,'ink',(x,5+bob,1,1))
+        box(s,hair,(9 if facing=='left' else 4,4+bob,3,4))
+    if work:
+        box(s,'rust',(5,2+bob,6,2));box(s,'gold',(5,2+bob,5,1))
+        box(s,'wood',(3 if facing=='left' else 9,4+bob,4,1))
     return s
 
 
+def worker(facing, frame):return person(facing,frame,'teal','wood',True)
+
+
 def shopper(variant, facing, frame):
-    """Friendly 16x24 visitors, distinct clothing and hair, four directional strides."""
-    s = canvas((16,24))
-    stride = (0,-1,0,1)[frame]
-    shirt = ('rust','green','blue','cream')[variant]
-    hair = ('wood','ink','rust','stone')[variant]
-    for x,offset in ((5,stride),(9,-stride)):
-        box(s,'shadow',(x,16,3,5+offset))
-        box(s,'ink',(x-1,20+offset,4,2))
-    box(s,'ink',(4,9,8,8))
-    box(s,shirt,(5,10,6,7))
-    for x,offset in ((2,-stride),(12,stride)):
-        box(s,shirt,(x,10+offset,2,4))
-        box(s,'skin',(x,14+offset,2,2))
-    box(s,'ink',(4,2,8,8))
-    box(s,'skin' if facing != 'up' else hair,(5,4,6,5))
-    box(s,hair,(4,2,8,3))
-    if facing == 'down':
-        box(s,'ink',(6,6,1,1));box(s,'ink',(9,6,1,1))
-    elif facing in ('left','right'):
-        x = 4 if facing == 'left' else 11
-        box(s,'skin',(x,5,2,3));box(s,'ink',(x,5,1,1))
-    # A shopping bag replaces the worker's reflective vest and hat.
-    box(s,'wood',(12,16,3,5));box(s,'gold',(12,15,2,1))
+    s=person(facing,frame,('rust','green','blue','cream')[variant],('wood','ink','rust','stone')[variant])
+    if variant==0:box(s,'gold',(6,10+frame%2,2,3))  # knitted scarf
+    if variant==1:box(s,'ink',(11,3+frame%2,2,5))   # tied hair
+    if variant==2:box(s,'teal',(5,11+frame%2,2,4))  # jacket panels
+    if variant==3:box(s,'wood',(9,11+frame%2,1,5))  # long coat seam
+    return s
+
+
+def seated_shopper(variant, facing):
+    s=shopper(variant,'down',0);s.fill((0,0,0,0),(0,17,16,7))
+    for x in (4,9):
+        box(s,'ink',(x,17,4,3));box(s,'shadow',(x+1,17,2,2))
+        box(s,'ink',(x+1,20,3,2));box(s,'stone',(x+1,20,2,1))
     return s
 
 
@@ -357,12 +357,40 @@ def cleaning_tool(kind, facing, frame):
 
 def cleaning_worker(facing, frame):
     s=worker(facing,0)
-    # The reaching arm changes with the tool stroke, without changing body scale.
-    x=2 if facing=='left' else 12
-    s.fill((0,0,0,0),(x,10,2,7))
-    y=(10,12,13,11)[frame]
-    box(s,'teal',(x,y,2,4));box(s,'skin',(x,y+4,2,2))
+    # Reach and retract the tool-side hand in time with the four tool strokes.
+    x=2 if facing in ('left','up') else 12
+    s.fill((0,0,0,0),(x,10,2,8))
+    y=(10,11,13,11)[frame]
+    box(s,'ink',(x,y,2,6));box(s,'teal',(x,y,2,3));box(s,'cream',(x,y+3,2,1))
+    box(s,'skin',(x,y+4,2,2))
     return s
+
+
+def janitor_uniform(s):
+    s=s.copy()
+    for x in range(16):
+        for y in range(24):
+            if s.get_at((x,y))==pygame.Color(PALETTE['gold']):s.set_at((x,y),PALETTE['light'])
+    return s
+
+
+def community_table(variant):
+    s=canvas((32,24))
+    box(s,'ink',(3,9,26,10));box(s,'wood',(4,10,24,8));box(s,'cream',(4,10,24,2))
+    box(s,('teal','rust','green','blue')[variant],(4,12,24,6))
+    for x in (5,25):box(s,'ink',(x,18,2,5));box(s,'wood',(x,18,1,4))
+    for x in (7,14,21):
+        if variant==0:
+            box(s,'gold',(x,6,5,4));box(s,'cream',(x+1,7,3,1))
+        elif variant==1:
+            box(s,'ink',(x,7,4,3));box(s,'cream',(x+1,6,3,3));box(s,'rust',(x+1,8,2,1))
+        elif variant==2:
+            box(s,'rust',(x,7,4,3));box(s,'green',(x+1,3,2,4));box(s,'leaf',(x-1,4,3,2))
+        else:
+            box(s,'wood',(x,5,4,5));box(s,'gold',(x+1,6,2,3))
+    return s
+
+
 
 
 class Art:
@@ -390,16 +418,22 @@ class Art:
                 self.sprites[f'player_{facing}_clean_{frame}']=cleaning_worker(facing,frame)
                 for tool in ('broom','grabber','water','setup'):
                     self.sprites[f'{tool}_{facing}_{frame}']=cleaning_tool(tool,facing,frame)
-                uniform=worker(facing,frame)
-                for x in range(16):
-                    for y in range(24):
-                        if uniform.get_at((x,y))==pygame.Color(PALETTE['gold']):uniform.set_at((x,y),PALETTE['blue'])
-                self.sprites[f'janitor_{facing}_{frame}']=uniform
+                self.sprites[f'janitor_{facing}_{frame}']=janitor_uniform(worker(facing,frame))
+                self.sprites[f'janitor_{facing}_clean_{frame}']=janitor_uniform(cleaning_worker(facing,frame))
 
         for variant in range(4):
+            self.sprites[f'community_table_{variant}']=community_table(variant)
             for facing in ('down','up','left','right'):
                 for frame in range(4):
                     self.sprites[f'shopper_{variant}_{facing}_{frame}'] = shopper(variant,facing,frame)
+                    owner=shopper(variant,facing,frame);box(owner,'teal',(5,13,6,4));box(owner,'cream',(5,13,6,1))
+                    self.sprites[f'owner_{variant}_{facing}_{frame}']=owner
+                self.sprites[f'shopper_{variant}_{facing}_sit']=seated_shopper(variant,facing)
+
+        bag=canvas((8,8));box(bag,'ink',(1,2,6,6));box(bag,'wood',(2,3,4,4));box(bag,'cream',(3,4,2,2));box(bag,'gold',(3,1,2,2))
+        self.sprites['purchase_bag']=bag
+        cup=canvas((6,6));box(cup,'cream',(1,1,4,4));box(cup,'rust',(2,2,2,2));self.sprites['visitor_cup']=cup
+        book=canvas((6,6));box(book,'ink',(0,1,6,4));box(book,'gold',(1,1,4,4));box(book,'cream',(3,1,1,4));self.sprites['visitor_book']=book
 
     def draw(self, surface, name, center, size):
         key = name, tuple(size)
