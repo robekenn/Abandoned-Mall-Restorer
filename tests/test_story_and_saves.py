@@ -60,10 +60,10 @@ class StoryAndSaveTests(unittest.TestCase):
 
     def test_keepsakes_do_not_use_bag_and_all_markers_have_safe_routes(self):
         g=self.game;g.story.confirm(g,0,'begin');g.upgrades.held=1
-        points=[p for p in g.story.visible_points(g.mall) if p.memory>=0]
+        points=[p for p in g.story.visible_points(g.mall)+g.story.visible_neighbors(g.mall) if p.memory>=0]
         for point in points:self.assertTrue(g.story.action(point,g));g.story_menu.open=False
         self.assertEqual(g.upgrades.held,1);self.assertEqual(g.story.memories[0],[True]*3)
-        self.assertFalse(g.story.action(points[0],g))
+        self.assertFalse(g.story.action(next(p for p in points if p.source=='ground'),g))
         self.finish_story();g.shoppers.walkways.refresh(g.mall)
         for point in g.story.points:
             footprint=pygame.FRect(point.position.x-13,point.position.y-15,26,30)

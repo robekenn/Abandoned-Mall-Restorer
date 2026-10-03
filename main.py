@@ -130,6 +130,12 @@ def main():
             from systems.story import CHAPTERS
             enabled=game.developer.enabled;game.developer.enabled=True
             for i in range(4):
+                while i>len(game.mall.active_regions):game.developer.act('next',game)
+                game.story.confirm(game,i,'begin')
+                for point in (p for p in game.story.points if p.chapter==i and p.memory>=0):
+                    game.player.rect.center=point.position
+                    game.story.action(point,game);game.draw();game.story_menu.open=False
+                if not all(game.story.memories[i]):raise RuntimeError('Keepsake discovery failed')
                 if not game.story.prepare(game):raise RuntimeError('Story preparation failed')
                 game.story_menu.visit(i,CHAPTERS[i].ending,'claim')
                 game.draw();game.story_menu.open=False

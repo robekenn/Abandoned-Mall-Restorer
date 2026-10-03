@@ -6,7 +6,7 @@ The story runs alongside normal business progression. Court gates keep their exi
 
 ## Four chapters
 
-Find the gold community board in each court and press E, then Enter to begin. Three small keepsakes appear on safe concourse tiles in that court. E recovers them without taking bag space. They remain readable in **J → Story → R**. Gold dots on the journal map mark the boards and visible keepsakes; outlined gold squares mark deliveries. Left/Right selects chapters.
+Find the gold community board in each court and press E, then Enter to begin. Two small keepsakes appear in distant corners of that court; a neighbor near the west seating area holds the third. Exact positions and the held item vary between new games and persist in checkpoints. E recovers them without taking bag space. They remain readable in **J → Story → R**. Gold dots on the journal map mark community boards; outlined gold squares mark deliveries. Left/Right selects chapters.
 
 | Court | Neighbor and chapter | What the court contributes | One-time thank-you |
 | --- | --- | --- | --- |
@@ -17,7 +17,7 @@ Find the gold community board in each court and press E, then Enter to begin. Th
 
 Each chapter asks for three recovered keepsakes, that court's first sweep, six reopened businesses, two claimed owner requests and three purchased local fixtures. Any combination of initial projects or recurring favors counts. The Story journal shows the checklist; the HUD keeps a single current action. Return to the community board and confirm to complete a chapter. Claims pay once; repeating a conversation cannot pay again.
 
-A completed chapter hangs five animated paper lanterns over its board and invites a few real shoppers to gather along normal obstacle-safe paths. Brief confetti celebrates the opening. Gathering destinations return for thirty seconds every two and a half minutes of active play. Read a completed board to invite neighbors again without generating money. Visitor counts remain bounded.
+A completed chapter hangs four animated paper lanterns on each restored business’s front and invites a few real shoppers to gather along normal obstacle-safe paths. Brief confetti celebrates the opening. Gathering destinations return for thirty seconds every two and a half minutes of active play. Read a completed board to invite neighbors again without generating money. Visitor counts remain bounded.
 
 After all four chapters, read the Commons board to begin the lantern walk and its epilogue. All courts gather; normal cleanup, store progression and owner favors remain playable. This is a moment of belonging, rather than a requirement to finish every purchase. The story's question is whether small acts can keep making room for others.
 

@@ -18,5 +18,6 @@ class Trash:
         point = camera.point(self.position)
         if selected:
             pygame.draw.ellipse(surface, (239, 197, 109), (point.x-28,point.y-16,56,32), 2)
-        name = 'dirt' if self.kind == 'dirt' else ('trash_bags' if int(self.position.x)%3 else 'litter')
-        art.draw(surface, name, point, (62, 42) if self.kind == 'dirt' else (48, 45))
+        variant=(int(self.position.x)//64*31+int(self.position.y)//64*17)%4
+        name='dirt' if self.kind=='dirt' else ('trash_bags','litter_paper','litter_cup','litter_bottle')[variant]
+        art.draw(surface,name,point,(48,48))

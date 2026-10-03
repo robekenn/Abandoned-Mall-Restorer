@@ -122,7 +122,7 @@ class Journal:
         if self.memories_view:
             y=panel.y+329
             for n,text in enumerate(chapter.memories):
-                text=text if game.story.memories[i][n] else 'A keepsake waiting to be found.'
+                text=text if game.story.memories[i][n] else game.story.clue(i,n)
                 lines=theme.wrap(game.hud.small,text,panel.width-44)
                 for line in lines:
                     game.screen.blit(game.hud.small.render(line,True,theme.TEXT),(panel.x+22,y));y+=19

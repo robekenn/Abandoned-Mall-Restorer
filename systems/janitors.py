@@ -40,7 +40,7 @@ class Janitor:
         end=self.paths.nearest(destination)
         path=self.paths.route(self.position,end)
         start=self.paths.nearest(self.position)
-        if start!=end and not path:return None
+        if path is None:return None
         # Both off-grid joins must fit the cleaner's footprint.
         joins=[(self.position,start),(end,destination)]
         if any(w.inflate(20,24).clipline(a,b) for a,b in joins for w in mall.obstacles):return None
@@ -83,7 +83,7 @@ class Janitor:
                 if self.idle_wait>=3:
                     nodes=sorted(self.paths.nodes)
                     self.wander_index=(self.wander_index+7)%len(nodes)
-                    self.path=self.paths.route(self.position,nodes[self.wander_index]);self.idle_wait=0
+                    self.path=self.paths.route(self.position,nodes[self.wander_index]) or [];self.idle_wait=0
             self.move(dt);return
         remaining=self.move(dt)
         if self.path:return

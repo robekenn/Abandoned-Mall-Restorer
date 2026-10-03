@@ -26,7 +26,7 @@ The game uses crisp pixel sprites with a four-direction animated worker displaye
 
 ## A mall coming back to life
 
-Shoppers begin returning when stores reopen. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
+Shoppers begin returning when stores reopen. Every visitor uses one visible main entrance on the North arcade’s exterior west wall and walks through the connected courts. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
 
 Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
@@ -34,7 +34,7 @@ These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 
 
 ## The winter lantern walk
 
-You return to the mall you visited as a child. Mara, Remy, Fern and Wren help recover its neighborhood festival through four chapters: reading, music, lantern-making and a shared table. Find the gold community boards, recover three keepsakes per court, reopen six businesses, help owners twice and restore three local fixtures. Earlier work counts. Chapters bring new pixel lanterns, gatherings of real shoppers and one-time rewards; the final lantern walk leaves the mall playable. **J → Story** tracks goals; **R** reads your keepsakes. See [saving and the lantern story](docs/saving-and-lantern-story.md) for the narrative, save locations and review guide.
+You return to the mall you visited as a child. Mara, Remy, Fern and Wren help recover its neighborhood festival through four chapters: reading, music, lantern-making and a shared table. Find the gold community boards, discover two scattered keepsakes and talk to a neighbor holding a third in each court, reopen six businesses, help owners twice and restore three local fixtures. Earlier work counts. Chapters hang pixel lanterns on restored storefronts and bring gatherings of real shoppers and one-time rewards; the final lantern walk leaves the mall playable. **J → Story** tracks goals; **R** reads your keepsakes. See [discovery and court transitions](docs/court-transitions-and-discovery.md) for the new search mechanics and entrance, and [saving and the lantern story](docs/saving-and-lantern-story.md) for the narrative, save locations and review guide.
 
 ## Run on Windows
 

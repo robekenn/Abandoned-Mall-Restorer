@@ -1,6 +1,7 @@
 """Four neighborhood chapters; memories and care make a festival possible."""
 from dataclasses import dataclass
 import pygame
+import random
 
 
 @dataclass(frozen=True)
@@ -60,13 +61,21 @@ class StoryPoint:
     chapter: int
     position: pygame.Vector2
     memory: int = -1
+    source: str = 'ground'
+    name: str = ''
+    variant: int = 0
+    clue: str = ''
 
     @property
-    def label(self):return 'Read the community board' if self.memory<0 else 'Recover a Northgate keepsake'
+    def label(self):
+        if self.memory<0:return 'Read the community board'
+        if self.source=='neighbor':return 'Talk to '+self.name
+        return 'Recover a Northgate keepsake'
 
 
 class Story:
     def __init__(self):
+        self.seed=random.SystemRandom().randrange(2**31)
         self.started=[False]*4;self.memories=[[False]*3 for _ in range(4)];self.completed=[False]*4
         self.festival=False;self.elapsed=0.;self.celebrations=[0.]*4;self.points=[]
 
@@ -74,22 +83,48 @@ class Story:
     def current(self):return next((i for i,done in enumerate(self.completed) if not done),4)
 
     def setup(self, mall):
-        self.points=[]
+        self.points=[];rng=random.Random(self.seed)
         areas=[mall.opening_area]+[r.area for r in mall.regions]
         for i,area in enumerate(areas):
             floor=mall.north_floor_tiles if i==0 else mall.regions[i-1].floor_tiles
-            safe=[p for p in floor if not any(w.colliderect(pygame.Rect(p[0]-16,p[1]-16,32,32)) for w in mall.obstacles)]
-            desired=[(area.left+488,area.top+760),(area.left+350,area.top+800),
-                     (area.left+850,area.top+820),(area.left+1350,area.top+800)]
-            chosen=[]
-            for memory,goal in enumerate(desired):
-                point=min((p for p in safe if p not in chosen),key=lambda p:pygame.Vector2(p).distance_squared_to(goal))
-                chosen.append(point);self.points.append(StoryPoint(i,pygame.Vector2(point),memory-1))
+            stores=mall.north_stores if i==0 else mall.regions[i-1].stores
+            safe=[p for p in floor if area.contains(pygame.Rect(p[0]-16,p[1]-16,32,32)) and
+                  not any(w.colliderect(pygame.Rect(p[0]-16,p[1]-16,32,32)) for w in mall.obstacles)]
+            board=min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to((area.left+488,area.top+760)))
+            self.points.append(StoryPoint(i,pygame.Vector2(board),-1,'board'))
+            keeper=rng.randrange(3);ground=0;chosen=[board]
+            for memory in range(3):
+                neighbor=memory==keeper
+                if neighbor:
+                    goal=(area.left+300,area.top+800);name=('Lena','Ash','Tess','Mo')[i]
+                    clue='Ask '+name+' near the west seating area.'
+                else:
+                    goal=(area.left+110,area.top+410) if ground==0 else (area.right-120,area.bottom-380)
+                    clue='Look in the quiet northwest corner.' if ground==0 else 'Look along the far southeast storefront edge.'
+                    ground+=1;name=''
+                candidates=[p for p in safe if p not in chosen and
+                            all(store.position.distance_squared_to(p)>85**2 for store in stores) and
+                            (neighbor or pygame.Vector2(p).distance_squared_to(board)>300**2)]
+                nearest=sorted(candidates,key=lambda p:pygame.Vector2(p).distance_squared_to(goal))[:6 if neighbor else 12]
+                point=rng.choice(nearest);chosen.append(point)
+                self.points.append(StoryPoint(i,pygame.Vector2(point),memory,'neighbor' if neighbor else 'ground',name,i,clue))
+        self.update(0,mall)
 
     def visible_points(self, mall):
         unlocked=1+len(mall.active_regions)
-        return [p for p in self.points if p.chapter<unlocked and (p.memory<0 or
+        return [p for p in self.points if p.source!='neighbor' and p.chapter<unlocked and (p.memory<0 or
                 p.chapter==self.current and self.started[p.chapter] and not self.memories[p.chapter][p.memory])]
+
+    def visible_neighbors(self, mall):
+        return [p for p in self.points if p.source=='neighbor' and p.chapter<=len(mall.active_regions) and self.started[p.chapter]]
+
+    def clue(self, chapter, memory):
+        return next(p.clue for p in self.points if p.chapter==chapter and p.memory==memory)
+
+    @staticmethod
+    def lantern_positions(store):
+        y=store.rect.top+110 if store.facing=='down' else store.rect.top+22
+        return [(store.rect.left+dx,y) for dx in (40,100,store.rect.width-100,store.rect.width-40)]
 
     def requirements(self, game, i):
         court=game.janitors.courts(game.mall)[i]
@@ -107,6 +142,17 @@ class Story:
 
     def action(self, point, game):
         i=point.chapter
+        if point.source=='neighbor':
+            if point not in self.visible_neighbors(game.mall):return False
+            if not self.memories[i][point.memory]:
+                self.memories[i][point.memory]=True
+                item=(('photograph','fountain drawing','festival program'),('record sleeve','cassette','old ticket'),
+                      ('flower pattern','spool of thread','lantern sketch'),('guest book','table plan','invitation'))[i][point.memory]
+                text=f'I found this {item} lying around while I was walking here. I thought {CHAPTERS[i].speaker} might know its story. Here, take it back to the community board.'
+                game.feedback.burst(point.position,'KEEPSAKE',restored=True)
+                game.save_checkpoint()
+            else:text='I am glad that little keepsake found its way home. Come say hello whenever you pass.'
+            game.speech.say(point.name,text,point.position);game.audio.play('pickup');return True
         if point.memory>=0:
             if point not in self.visible_points(game.mall):return False
             self.memories[i][point.memory]=True
@@ -125,7 +171,9 @@ class Story:
     def invite(self, game, i):
         self.update(0,game.mall)
         area=game.janitors.courts(game.mall)[i][2]
-        goals=[p.position for p in self.points if p.chapter==i and p.memory>=0]
+        # Gather around the board, rather than sending neighbors to distant finds.
+        board=next(p.position for p in self.points if p.chapter==i and p.memory<0)
+        goals=[board+pygame.Vector2(dx,dy) for dx,dy in ((-64,64),(64,64),(0,128))]
         game.shoppers.gather(area,goals,game.mall)
 
     def confirm(self, game, i, action):
@@ -164,9 +212,9 @@ class Story:
         self.elapsed+=dt
         self.celebrations=[max(0,t-dt) for t in self.celebrations]
         # Neighbors meet regularly after a chapter, without generating free income.
-        mall.story_markers=[tuple(p.position) for p in self.visible_points(mall)]
-        mall.community_spots=[tuple(p.position) for p in self.points if p.memory>=0 and self.completed[p.chapter]
-                              and (self.celebrations[p.chapter]>0 or self.elapsed%150<30)]
+        mall.story_markers=[tuple(p.position) for p in self.visible_points(mall) if p.memory<0]
+        mall.community_spots=[tuple(p.position+pygame.Vector2(dx,dy)) for p in self.points if p.memory<0 and self.completed[p.chapter]
+                              and (self.celebrations[p.chapter]>0 or self.elapsed%150<30) for dx,dy in ((-64,64),(64,64),(0,128))]
 
     def draw(self, game):
         for point in self.visible_points(game.mall):
@@ -176,18 +224,29 @@ class Story:
                 if point.chapter==self.current:pygame.draw.circle(game.screen,(230,194,124),pixel,16,2)
             else:
                 game.art.draw(game.screen,'story_'+CHAPTERS[point.chapter].key,(pixel.x,pixel.y-8),(48,48))
-                pygame.draw.circle(game.screen,(230,194,124),pixel,20,1)
+                if point.position.distance_squared_to(game.player.rect.center)<180**2:
+                    pygame.draw.rect(game.screen,(230,194,124),(pixel.x+15,pixel.y-14,3,3))
         for i,done in enumerate(self.completed):
             if not done:continue
             board=next(p for p in self.points if p.chapter==i and p.memory<0)
-            for n in range(5):
-                p=game.camera.point(board.position+pygame.Vector2((n-2)*46,-95))
-                game.art.draw(game.screen,'festival_lantern_'+str((int(self.elapsed*2)+n)%2),p,(36,36))
-                if n:pygame.draw.line(game.screen,(125,136,118),(p.x-46,p.y-12),(p.x,p.y-12),2)
+            stores=game.mall.north_stores if i==0 else game.mall.regions[i-1].stores
+            for store in stores:
+                if not store.restored:continue
+                lanterns=[game.camera.point(p) for p in self.lantern_positions(store)]
+                pygame.draw.line(game.screen,(133,110,76),(lanterns[0].x-22,lanterns[0].y-24),
+                                 (lanterns[-1].x+22,lanterns[-1].y-24),2)
+                for n,p in enumerate(lanterns):
+                    game.art.draw(game.screen,'festival_lantern_'+str((int(self.elapsed*2)+n)%2),p,(48,48))
             if self.celebrations[i]>0:
                 for n in range(15):
                     p=game.camera.point(board.position+pygame.Vector2((n*31)%210-105,(n*17+self.elapsed*24)%100-70))
                     pygame.draw.rect(game.screen,((223,180,94),(130,196,180),(228,216,164))[n%3],(p.x,p.y,3,4))
+
+    def draw_neighbor(self, game, point):
+        pixel=game.camera.point(point.position)
+        game.art.draw(game.screen,f'shopper_{point.variant}_down_0',(pixel.x,pixel.y-12),(48,72))
+        if not self.memories[point.chapter][point.memory]:
+            game.art.draw(game.screen,'story_'+CHAPTERS[point.chapter].key,(pixel.x+20,pixel.y-4),(24,24))
 
     def prepare(self, game):
         """Opt-in developer shortcut prepares the next chapter for its real claim."""

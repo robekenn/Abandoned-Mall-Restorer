@@ -67,7 +67,7 @@ def snapshot(game):
             'collected':game.total_collected,'sold':game.total_sold,'muted':game.audio.muted,
             'tutorial':{'active':tutorial.active,'step':tutorial.step,'origin':list(getattr(tutorial,'origin',game.player.rect.center)),
                         'collected':getattr(tutorial,'collected',0),'sold':getattr(tutorial,'sold',0),'journal':tutorial.journal_seen},
-            'story':{'started':game.story.started,'memories':game.story.memories,'completed':game.story.completed,
+            'story':{'seed':game.story.seed,'started':game.story.started,'memories':game.story.memories,'completed':game.story.completed,
                      'festival':game.story.festival,'elapsed':game.story.elapsed,'celebrations':game.story.celebrations}}
 
 
@@ -150,6 +150,7 @@ def restore_state(data, game):
     if story.festival and not all(story.completed):raise ValueError('Festival without chapters')
     if any((story.started[i] or story.completed[i]) and i>len(mall.active_regions) for i in range(4)):raise ValueError('Story in a closed court')
     if any(story.completed[i] and (not story.started[i] or not all(story.memories[i])) for i in range(4)):raise ValueError('Incomplete chapter memory state')
+    story.seed=number(saved_story.get('seed',0),0,2**31-1,True)
     story.setup(mall);story.update(0,mall)
     player=Player(vector(data['player']))
     if not any(a.collidepoint(player.rect.center) for a in mall.playable_areas) or any(w.colliderect(player.rect) for w in mall.obstacles):
