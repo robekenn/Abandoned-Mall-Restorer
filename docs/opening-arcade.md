@@ -55,7 +55,7 @@ Every five-second payment uses the current floor cleanliness across all unlocked
 | 50%, below 100% | 1x |
 | Exactly 100% | 1.5x |
 
-Fractional payouts are kept: Pages pays $2.5, $5 or $7.5 depending on the tier. The HUD shows the actual upcoming payout and multiplier; floor percentages never round up into the 100% bonus. Fresh litter removes that bonus until cleaned again.
+Fractional payouts are kept: Pages pays $2.5, $5 or $7.5 depending on the tier. The J-key journal shows the actual upcoming payout and multiplier; floor percentages never round up into the 100% bonus. Fresh litter removes that bonus until cleaned again.
 
 ## Businesses and recurring work
 
@@ -116,4 +116,22 @@ A brief rising chime accompanies each 1.5x rent payment. A short low tone signal
 12. Listen for the bonus-rent chime and blocked-action tone, then mute them with M.
 13. Resize to 800x600 and inspect all three menu tabs. Try Esc/E to close, M for audio, and Tab outside the menu (it should not change scenery).
 
-Progress still resets on close. Saving, shoppers, the south galleries and further economic balancing remain future work. Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
+Progress still resets on close. Saving, the south galleries and further economic balancing remain future work. Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
+
+## Owner-led shop improvements
+
+Reopened rent-paying stores now have owners with three optional projects. Earn improvements by delivering supplies, watering seedlings and welcoming shoppers; there is no escalating building-upgrade price schedule. Each business can gain $3.5 additional base rent in total. Equipment shops remain unchanged. See [the living mall guide](shoppers-and-requests.md) for controls, rewards and visitor behavior.
+
+## Workshop recycling contracts
+
+The Workshop adds three contracts after the $30-per-item Supplies contract:
+
+| Sale value per item | Purchase price |
+| --- | --- |
+| $45 | $900 |
+| $60 | $1,800 |
+| $80 | $3,200 |
+
+Buy them in order from the Workshop’s Gear tab. They use the same trash bag and bins, apply to the whole load at sale time, and stop at $80 per item. The Supplies contract track remains capped at $30. Equipment and fixture prices appear in a short list; only the selected upgrade’s description and location appear below it.
+
+The main HUD keeps cash, bag space, cleanliness and one objective visible. Press **J** to open the journal for the map, rental income, equipment and owner request countdowns. **J/Esc/E** closes it; it pauses the game and request timers. Owner requests begin three minutes after their store opens, with another three-minute pause after each improvement is claimed; each rent-paying store has three improvements total.

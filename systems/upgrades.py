@@ -17,6 +17,8 @@ class Upgrades:
     CAPACITY_PRICES = (5, 15, 40, 90, 180)
     ADVANCED_CAPACITIES = (20, 25, 30, 35, 40)
     ADVANCED_CAPACITY_PRICES = (500, 750, 1000, 1250)
+    ADVANCED_VALUES = (30, 45, 60, 80)
+    ADVANCED_VALUE_PRICES = (900, 1800, 3200)
     SPEEDS = (1, 1.15, 1.3, 1.5)
     SPEED_PRICES = (300, 600, 1000)
     VALUES = (1, 2, 4, 8, 15, 30)
@@ -30,6 +32,7 @@ class Upgrades:
         self.capacity_level = 0
         self.advanced_capacity_level = 0
         self.speed_level = 0
+        self.advanced_value_level = 0
         self.value_level = 0
         self.tool_level = 0
         self.decor = set()
@@ -42,7 +45,8 @@ class Upgrades:
 
     @property
     def unit_value(self):
-        return self.VALUES[self.value_level]
+        return (self.ADVANCED_VALUES[self.advanced_value_level] if self.advanced_value_level
+                else self.VALUES[self.value_level])
 
     @property
     def tool(self):
@@ -68,7 +72,14 @@ class Upgrades:
                 speed_maxed = self.speed_level == len(self.SPEED_PRICES)
                 speed_detail = 'Fully upgraded' if speed_maxed else (
                     f'{self.speed_multiplier:g}x to {self.SPEEDS[self.speed_level+1]:g}x walking speed')
-                return [Offer('advanced_capacity','Workshop carry capacity',detail,
+                value_maxed = self.advanced_value_level == len(self.ADVANCED_VALUE_PRICES)
+                value_ready = self.value_level == len(self.VALUE_PRICES)
+                value_detail = 'Fully upgraded' if value_maxed else (
+                    f'${self.unit_value} to ${self.ADVANCED_VALUES[self.advanced_value_level+1]} per item' if value_ready
+                    else 'Requires the $30 contract from Supplies')
+                return [Offer('advanced_value','Recycling value',value_detail,
+                              0 if value_maxed else self.ADVANCED_VALUE_PRICES[self.advanced_value_level],value_maxed),
+                        Offer('advanced_capacity','Workshop carry capacity',detail,
                               0 if maxed else self.ADVANCED_CAPACITY_PRICES[level],maxed),
                         Offer('speed','Walking speed',speed_detail,
                               0 if speed_maxed else self.SPEED_PRICES[self.speed_level],speed_maxed)]
@@ -86,7 +97,7 @@ class Upgrades:
             tracks = [('capacity', self.capacity_level, self.CAPACITY_PRICES, 'Carry capacity',
                        f'{self.CAPACITIES[self.capacity_level]} slots', self.CAPACITIES),
                       ('value', self.value_level, self.VALUE_PRICES, 'Recycling contract',
-                       f'${self.unit_value} per item', self.VALUES),
+                       f'${self.VALUES[self.value_level]} per item', self.VALUES),
                       ('tool', self.tool_level, self.TOOL_PRICES, 'Pickup tools', self.tool[0], self.TOOLS)]
             for key, level, prices, title, current, levels in tracks:
                 maximum = level == len(prices)
@@ -118,9 +129,11 @@ class Upgrades:
             return cash, 'That upgrade is already installed or unavailable.', False
         if key == 'advanced_capacity' and self.capacity_level < len(self.CAPACITY_PRICES):
             return cash, 'Buy the 20-slot bag at Northgate Supplies first.', False
+        if key == 'advanced_value' and self.value_level < len(self.VALUE_PRICES):
+            return cash, 'Buy the $30 recycling contract at Supplies first.', False
         if cash < offer.price:
             return cash, f'You need {money(offer.price-cash)} more for {offer.title.lower()}.', False
-        if key in ('capacity','value','tool','advanced_capacity','speed'):
+        if key in ('capacity','value','tool','advanced_capacity','advanced_value','speed'):
             field = key+'_level'
             setattr(self,field,getattr(self,field)+1)
         else:

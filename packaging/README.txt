@@ -17,4 +17,9 @@ at the east gate (its marker appears once the north stores are all open). Eastga
 faster walking. Supplies caps bags at 20; Workshop continues to 40.
 Shop: click a row to buy, 1-3 or Tab to change tabs, arrows to select,
 Enter to buy, and Esc or E to close. The game pauses while shopping.
+Shoppers return to reopened stores and restored amenities. Press E to greet them.
+Press E at a rent-paying store to meet its owner. Enter/click accepts a request.
+Deliver supplies, hold E while still to water seedlings or set up a welcome sign,
+and greet visitors. Return to the owner for permanent shop improvements and rent.
+Blue directory markers and the request tracker show where to go; no deadlines.
 Progress currently resets when the game closes.

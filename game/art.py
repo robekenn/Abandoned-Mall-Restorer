@@ -112,6 +112,25 @@ def prop(name):
         box(s, 'cream', (10, 13, 4, 5))
         box(s, 'green', (11, 14, 2, 3))
         box(s, 'shadow', (7, 21, 10, 1))
+    elif name == 'request_parcel':
+        box(s,'ink',(3,8,18,14))
+        box(s,'teal',(4,9,16,12))
+        box(s,'cream',(10,9,4,12))
+        box(s,'cream',(6,12,3,3))
+    elif name == 'request_seedlings':
+        box(s,'ink',(2,14,20,8))
+        box(s,'wood',(3,15,18,6))
+        for x in (5,11,17):
+            box(s,'green',(x,8,2,8))
+            box(s,'leaf',(x-2,9,6,2))
+        box(s,'water',(16,4,2,3))
+    elif name == 'request_sign':
+        box(s,'wood',(4,6,2,16))
+        box(s,'wood',(18,6,2,16))
+        box(s,'ink',(2,4,20,13))
+        box(s,'cream',(3,5,18,11))
+        box(s,'teal',(5,8,14,2))
+        box(s,'gold',(8,12,8,2))
     elif name == 'trash_bags':
         for x, y in ((2, 9), (11, 5)):
             box(s, 'ink', (x, y + 3, 10, 10))
@@ -171,6 +190,33 @@ def worker(facing, frame):
     return s
 
 
+def shopper(variant, facing, frame):
+    """Friendly 16x24 visitors, distinct clothing and hair, four directional strides."""
+    s = canvas((16,24))
+    stride = (0,-1,0,1)[frame]
+    shirt = ('rust','green','blue','cream')[variant]
+    hair = ('wood','ink','rust','stone')[variant]
+    for x,offset in ((5,stride),(9,-stride)):
+        box(s,'shadow',(x,16,3,5+offset))
+        box(s,'ink',(x-1,20+offset,4,2))
+    box(s,'ink',(4,9,8,8))
+    box(s,shirt,(5,10,6,7))
+    for x,offset in ((2,-stride),(12,stride)):
+        box(s,shirt,(x,10+offset,2,4))
+        box(s,'skin',(x,14+offset,2,2))
+    box(s,'ink',(4,2,8,8))
+    box(s,'skin' if facing != 'up' else hair,(5,4,6,5))
+    box(s,hair,(4,2,8,3))
+    if facing == 'down':
+        box(s,'ink',(6,6,1,1));box(s,'ink',(9,6,1,1))
+    elif facing in ('left','right'):
+        x = 4 if facing == 'left' else 11
+        box(s,'skin',(x,5,2,3));box(s,'ink',(x,5,1,1))
+    # A shopping bag replaces the worker's reflective vest and hat.
+    box(s,'wood',(12,16,3,5));box(s,'gold',(12,15,2,1))
+    return s
+
+
 class Art:
     def __init__(self):
         self.sprites = {}
@@ -179,11 +225,16 @@ class Art:
             for state in ('dirty', 'clean'):
                 self.sprites[f'{kind}_{state}'] = store(kind, state == 'clean')
         for name in ('trash_bags', 'litter', 'dirt', 'bench_dirty', 'bench_clean',
-                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic'):
+                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_seedlings', 'request_sign'):
             self.sprites[name] = prop(name)
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):
                 self.sprites[f'player_{facing}_{frame}'] = worker(facing, frame)
+
+        for variant in range(4):
+            for facing in ('down','up','left','right'):
+                for frame in range(4):
+                    self.sprites[f'shopper_{variant}_{facing}_{frame}'] = shopper(variant,facing,frame)
 
     def draw(self, surface, name, center, size):
         key = name, tuple(size)

@@ -74,6 +74,12 @@ class Player:
             pygame.draw.line(surface, (171, 132, 78), point, end, 3)
             if self.action_kind == 'dirt':
                 pygame.draw.rect(surface, (207, 187, 121), (end.x-7, end.y-2, 14, 5))
+            elif self.action_kind == 'water':
+                pygame.draw.rect(surface,(84,139,131),(end.x-5,end.y-4,10,8))
+                for dx,dy in ((-4,-10),(1,-15),(5,-9)):
+                    pygame.draw.rect(surface,(113,175,188),(end.x+dx,end.y+dy,3,4))
+            elif self.action_kind == 'setup':
+                pygame.draw.rect(surface,(188,190,164),(end.x-7,end.y-4,14,5))
             else:
                 pygame.draw.line(surface, (188, 203, 183), end + (-4, -3), end, 2)
                 pygame.draw.line(surface, (188, 203, 183), end + (4, -3), end, 2)
