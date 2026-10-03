@@ -18,7 +18,15 @@ The east unlock marker stays hidden until all five north businesses reopen. Then
 
 A rising chime rewards 1.5x rent; a short low tone and an explanatory message signal full bags and unavailable actions. An original, quiet four-level chiptune loop plays beneath the effects. M mutes music and effects, then resumes music when unmuted.
 
-The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving, shoppers and the southern galleries remain future milestones. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
+The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving and the southern galleries remain future milestones. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
+
+## A mall coming back to life
+
+Shoppers begin returning when stores reopen. They walk around obstacles, browse storefronts, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation.
+
+Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: deliver supplies in a separate satchel, hold E while standing still to water community seedlings, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
+
+These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. The HUD tracks your next action, compass guidance and blue directory markers. Supplies and Workshop remain equipment shops. See [shoppers and requests](docs/shoppers-and-requests.md) for details.
 
 ## Run on Windows
 
@@ -41,8 +49,9 @@ python3 -m venv .venv
 ## Controls
 
 - **WASD / Arrow keys:** move
-- **E:** collect nearby litter, sell at a trash bin, reopen a business open the east gate or enter an upgrade shop
-- **M:** toggle sound
+- **E:** collect nearby litter, sell at a trash bin, reopen a business open the east gate, enter an upgrade shop, meet an owner or greet a visitor
+- **Hold E while still:** water seedlings or set up a request sign
+- **M:** toggle music and effects
 - **Esc:** quit (or close the upgrade menu while shopping)
 
 Inside either upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay pauses while the menu is open.
@@ -53,7 +62,7 @@ The camera follows the player. Walls, storefronts, trash bins, benches, and the 
 
 `game/` owns the loop, settings, and camera; `entities/` owns the player, litter and bins; `mall/` owns the layout and storefronts; `ui/` owns the HUD. `systems/` owns upgrades, rent rules and bounded recurring litter. Remaining starter modules are placeholders for later systems.
 
-Run the movement, collision, camera, shutdown, and restoration-loop checks:
+Run the movement, collision, camera, shutdown, restoration, shoppers and request progression checks:
 
 ```bash
 python -m unittest discover -s tests -v

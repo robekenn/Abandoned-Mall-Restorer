@@ -116,4 +116,8 @@ A brief rising chime accompanies each 1.5x rent payment. A short low tone signal
 12. Listen for the bonus-rent chime and blocked-action tone, then mute them with M.
 13. Resize to 800x600 and inspect all three menu tabs. Try Esc/E to close, M for audio, and Tab outside the menu (it should not change scenery).
 
-Progress still resets on close. Saving, shoppers, the south galleries and further economic balancing remain future work. Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
+Progress still resets on close. Saving, the south galleries and further economic balancing remain future work. Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
+
+## Owner-led shop improvements
+
+Reopened rent-paying stores now have owners with three optional projects. Earn improvements by delivering supplies, watering seedlings and welcoming shoppers; there is no escalating building-upgrade price schedule. Each business can gain $3.5 additional base rent in total. Equipment shops remain unchanged. See [the living mall guide](shoppers-and-requests.md) for controls, rewards and visitor behavior.

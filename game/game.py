@@ -7,6 +7,8 @@ from game.art import Art
 from game.audio import Audio
 from game.feedback import Feedback
 from systems.litter import LitterSpawner
+from systems.shoppers import Shoppers, Shopper
+from systems.requests import OwnerRequests, RequestSpot, OWNERS
 from systems.upgrades import Upgrades
 from systems.economy import money, rent_multiplier
 from game.settings import TITLE, WINDOW_SIZE, FPS, INTERACTION_RADIUS
@@ -14,6 +16,7 @@ from mall.mall import Mall
 from mall.section import EastGallery
 from ui.hud import HUD
 from ui.upgrade_shop import UpgradeShop
+from ui.owner_menu import OwnerMenu
 
 
 class Game:
@@ -33,6 +36,9 @@ class Game:
         self.litter_spawner = LitterSpawner()
         self.upgrades = Upgrades()
         self.shop_menu = UpgradeShop()
+        self.owner_menu = OwnerMenu()
+        self.owner_requests = OwnerRequests()
+        self.shoppers = Shoppers()
         self.cash = 0
         self.rent_timer = 0.0
         self.message = 'Collect litter, sell it at a trash bin, then reopen Northgate Supplies.'
@@ -50,6 +56,8 @@ class Game:
         if (not self.mall.east.unlocked and self.mall.east.ready(self.mall)
                 and origin.distance_to(self.mall.east.position) <= INTERACTION_RADIUS):
             candidates.append(self.mall.east)
+        candidates += [p for p in self.shoppers.people if origin.distance_to(p.position)<=64]
+        candidates += [spot for spot in self.owner_requests.visible_spots if origin.distance_to(spot.position)<=72]
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
@@ -113,13 +121,24 @@ class Game:
             self.notify(f'Collected {collected}. Bag {self.upgrades.held}/{self.upgrades.capacity} / sell at a trash bin.')
 
     def interact(self):
-        if self.shop_menu.open:
+        if self.shop_menu.open or self.owner_menu.open:
             return
         target = self.target()
         if isinstance(target,Trash):
             self.collect(target)
         elif isinstance(target,TrashBin):
             self.sell_trash(target)
+        elif isinstance(target,Shopper):
+            self.owner_requests.greet(target)
+            self.notify(self.shoppers.greet(target))
+            self.audio.play('pickup')
+        elif isinstance(target,RequestSpot):
+            if self.owner_requests.interact(target):
+                self.notify('Display supplies collected in your delivery satchel. Return to the owner.')
+                self.feedback.burst(target.position,'SUPPLIES')
+                self.audio.play('pickup')
+            else:
+                self.notify(target.label+' / stand still until the bar fills.')
         elif isinstance(target,EastGallery):
             if not target.ready(self.mall):
                 self.deny('Reopen all five north arcade businesses before opening the east gallery.')
@@ -137,8 +156,7 @@ class Game:
                 if target.upgrade_shop:
                     self.open_upgrade_shop(target)
                 else:
-                    self.notify(f'{target.name}: +{money(target.rent*self.rent_multiplier)} / 5s '
-                                f'({self.rent_multiplier:g}x rent at current cleanliness).')
+                    self.owner_menu.visit(target)
             elif self.cash < target.cost:
                 self.deny(f'You need {money(target.cost-self.cash)} more to reopen {target.name}.')
             else:
@@ -152,10 +170,22 @@ class Game:
                     self.notify(f'{target.name} is open. Choose your upgrades.')
                 else:
                     next_shop = self.mall.next_store
-                    self.notify(f'{target.name} is open.' + (f' Next: {next_shop.name} (${next_shop.cost}).' if next_shop else ' All businesses reopened.'))
+                    self.notify(f'{target.name} is open.' + (f' Next: {next_shop.name} (${next_shop.cost}).' if next_shop else ' All businesses reopened.')+f' E here to meet {OWNERS[target.name]}.')
 
         else:
             self.deny('Nothing within reach. Move closer to litter, a bin, a shop or the gallery gate.')
+
+    def claim_request(self, store):
+        result = self.owner_requests.claim(store)
+        if result is None:
+            self.deny('Finish the request and return to its owner first.')
+            return False
+        improvement,bonus,reward = result
+        self.cash += reward
+        self.feedback.burst(store.position,improvement,restored=True)
+        self.audio.play('milestone')
+        self.notify(f'{OWNERS[store.name]}: {improvement} installed! +{money(bonus)} base rent and {money(reward)} for you.')
+        return True
 
     def open_upgrade_shop(self, store):
         self.shop_menu.shop = store.upgrade_shop
@@ -164,17 +194,27 @@ class Game:
         self.shop_menu.notice = ('Bags beyond 20 slots and faster walking.' if store.upgrade_shop == 'east'
                                  else 'Gear and fixtures / each fixture adds $1 base rent per 5s.')
 
-    def update(self, dt, direction):
+    def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         framing = 70+max(0,(720-viewport[1])/2)
         self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
-        if self.shop_menu.open:
+        if self.shop_menu.open or self.owner_menu.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
         self.message_timer = max(0,self.message_timer-dt)
         self.feedback.update(dt)
         self.litter_spawner.update(dt,self.mall,self.player.rect.center)
+        self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
+        completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
+        for spot in self.owner_requests.visible_spots:
+            if spot.progress:
+                self.player.use_tool('water' if spot.kind == 'seedlings' else 'setup',spot.position+pygame.Vector2(48,-16))
+        for spot in completed:
+            self.player.use_tool('water' if spot.kind == 'seedlings' else 'setup',spot.position+pygame.Vector2(48,-16))
+            self.feedback.burst(spot.position,'DONE',restored=True)
+            self.audio.play('pickup')
+            self.notify(self.owner_requests.objective)
         opened = [s for s in self.mall.stores if s.restored and s.rent > 0]
         if opened or self.upgrades.fixture_rent:
             self.rent_timer += dt
@@ -202,11 +242,17 @@ class Game:
     def draw(self):
         target = self.target()
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
+        for spot in self.owner_requests.spots:
+            if not spot.completed or spot.kind != 'parcel':
+                spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
+        self.shoppers.draw(self.screen,self.camera,self.art,self.hud.small,target)
         self.player.draw(self.screen,self.camera,self.art)
         self.feedback.draw(self.screen,self.camera,self.hud.font)
         self.hud.draw(self,target)
         if self.shop_menu.open:
             self.shop_menu.draw(self)
+        elif self.owner_menu.open:
+            self.owner_menu.draw(self)
         pygame.display.flip()
 
     def run(self):
@@ -226,6 +272,8 @@ class Game:
                             self.shop_menu.notice = message
                     elif self.shop_menu.open:
                         self.shop_menu.handle(event,self)
+                    elif self.owner_menu.open:
+                        self.owner_menu.handle(event,self)
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             self.running = False
@@ -236,7 +284,7 @@ class Game:
                              int(keys[pygame.K_s] or keys[pygame.K_DOWN])-int(keys[pygame.K_w] or keys[pygame.K_UP]))
                 if not pygame.key.get_focused():
                     direction = (0,0)
-                self.update(dt,direction)
+                self.update(dt,direction,keys[pygame.K_e] and pygame.key.get_focused())
                 self.draw()
         finally:
             pygame.quit()
