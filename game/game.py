@@ -7,6 +7,7 @@ from game.art import Art
 from game.audio import Audio
 from game.feedback import Feedback
 from systems.litter import LitterSpawner
+from systems.janitors import Janitors
 from systems.shoppers import Shoppers, Shopper
 from systems.requests import OwnerRequests, RequestSpot, OWNERS
 from systems.upgrades import Upgrades
@@ -53,6 +54,7 @@ class Game:
         self.total_collected=self.total_sold=0
         self.owner_requests = OwnerRequests()
         self.shoppers = Shoppers()
+        self.janitors = Janitors()
         self.cash = 0
         self.rent_timer = 0.0
         self.message = ''
@@ -215,10 +217,15 @@ class Game:
         self.screen=pygame.display.set_mode((0,0) if self.fullscreen else self.window_size,
                                             pygame.FULLSCREEN if self.fullscreen else pygame.RESIZABLE)
 
+    def frame_camera(self, viewport):
+        area=next((a for a in self.mall.playable_areas if a.collidepoint(self.player.rect.center)),self.mall.opening_area)
+        toward_bottom=max(0,min(1,(self.player.rect.centery-area.top-area.height*.45)/(area.height*.25)))
+        framing=(70+max(0,(720-viewport[1])/2))*(1-toward_bottom)-38*toward_bottom
+        self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
+
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
-        framing = 70+max(0,(720-viewport[1])/2)
-        self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
+        self.frame_camera(viewport)
         if self.welcome.open:
             self.welcome.update(dt)
             if not self.welcome.open and self.welcome.tutorial_enabled:self.tutorial.start(self)
@@ -226,12 +233,13 @@ class Game:
         if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
-        self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
+        self.frame_camera(viewport)
         self.message_timer = max(0,self.message_timer-dt)
         self.speech.update(dt)
         self.tutorial.update(self)
         self.feedback.update(dt)
         self.litter_spawner.update(dt,self.mall,self.player.rect.center)
+        self.janitors.update(dt,self)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
             self.notify(f'{OWNERS[ready[0].name]} has a new request. Visit {ready[0].name}.')
@@ -272,11 +280,14 @@ class Game:
         # Tall furniture and people share depth, so walking behind a prop looks natural.
         layers=[(depth,'furniture',(name,center,size)) for depth,name,center,size in self.mall.furniture(self.upgrades)]
         layers += [(p.position.y,'shopper',p) for p in self.shoppers.people if p.visible]
+        layers += [(p.position.y,'janitor',p) for p in self.janitors.people.values()]
         layers.append((self.player.rect.centery,'player',self.player))
         for _,kind,item in sorted(layers,key=lambda entry:entry[0]):
             if kind == 'furniture':
                 name,center,size=item
                 self.art.draw(self.screen,name,self.camera.point(center),size)
+            elif kind=='janitor':
+                item.draw(self)
             elif kind == 'shopper':
                 item.draw(self.screen,self.camera,self.art,self.hud.small,target is item)
             else:

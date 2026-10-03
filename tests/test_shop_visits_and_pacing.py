@@ -127,8 +127,9 @@ class ShopVisitsAndPacingTests(unittest.TestCase):
                         if wall.colliderect(footprint):
                             self.assertIn(person.state,('entering','inside','exiting'))
                             self.assertLess(abs(person.position.x-store.rect.centerx),12)
-                            self.assertGreaterEqual(person.position.y,store.rect.bottom-28)
-                            self.assertTrue(wall in (store.rect,g.mall.back_wall,g.mall.east.back_wall))
+                            if store.facing=='down':self.assertGreaterEqual(person.position.y,store.rect.bottom-28)
+                            else:self.assertLessEqual(person.position.y,store.rect.top+28)
+                            self.assertTrue(wall in (store.rect,g.mall.back_wall,g.mall.east.back_wall,g.mall.front_wall,g.mall.east.front_wall))
                     if person.done:break
                 self.assertTrue({'entering','inside','exiting','leaving'}<=seen)
                 self.assertTrue(person.done)

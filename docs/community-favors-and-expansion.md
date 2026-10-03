@@ -2,7 +2,7 @@
 
 The opening offers an optional first-steps guide. Click its On/Off option before starting, press T or click Skip during play, and press H to replay it. It follows actual movement, collection, sale, reopening Supplies, buying its first bag upgrade and opening the journal. It grants no money or equipment and does not pause the mall.
 
-Pickup and sale keep their floating rewards and effects without bottom notices. Successful purchases update the shop directly. Blocked actions still explain the problem. Shoppers talk in bubbles above their heads and pause briefly; owners give bubbles when you accept or finish work. The journal holds detailed progress, including paged countdowns for all sixteen owners.
+Pickup and sale keep their floating rewards and effects without bottom notices. Successful purchases update the shop directly. Blocked actions still explain the problem. Shoppers talk in bubbles above their heads and pause briefly; owners give bubbles when you accept or finish work. The journal holds detailed progress, including paged countdowns for all thirty-six owners.
 
 ## Work that comes back
 
@@ -27,7 +27,7 @@ Recurring cash scales by area: north 1×, east 2×, Garden 4×, Commons 6×. Hal
 
 ## Four neighborhoods
 
-A later gate becomes visible after the preceding area's first sweep and all five business reopenings. Pay once to enter. Each area has its own first sweep, two bins, delivery station, four rent-paying businesses and an equipment shop. After the sweep, open the rent businesses in their listed order. Each section's recurring litter pool becomes eligible after its first sweep and equipment shop reopen. One pile returns globally every four seconds, capped at twelve recurring piles per eligible section.
+A later gate becomes visible after the preceding area's first sweep and all ten business reopenings. Pay once to enter. Each area has its own first sweep, two bins, delivery station, nine rent-paying businesses and an equipment shop. After the sweep, open the rent businesses in their listed order. Each section's recurring litter pool becomes eligible after its first sweep and equipment shop reopen. One pile returns globally every four seconds, capped at twelve recurring piles per eligible section.
 
 | Area | Entry | Equipment shop | Following business costs / base rent per 5s |
 | --- | --- | --- | --- |
@@ -51,4 +51,6 @@ Each track requires the preceding shop's maximum in that track; Garden tools req
 
 Short dialogue mentions the neighbors who built Northgate, lost photographs, a winter lantern walk and returning local makers. These are story seeds for a later storyline pass. Shopper dialogue lives in `game/lore.py`; favor descriptions live in `systems/favors.py`.
 
-For review, try the guide's On/Off, Skip and H controls; greet a moving shopper; complete each original project then wait for a favor; verify local collection/sale counts and one-time rewards; fill all four neighborhoods in order; inspect the three journal pages and every shop at 800×600. Automated tests exercise all twelve favors for all sixteen owners, full-floor coverage, safe routes, gated purchases, all equipment caps, tutorial actions, and twenty-business progression. The smoke test renders all four regional shops, requests, speech, the guide and journal pages. Progress still resets on close.
+For review, try the guide's On/Off, Skip and H controls; greet a moving shopper; complete each original project then wait for a favor; verify local collection/sale counts and one-time rewards; fill all four neighborhoods in order; inspect the six overview journal pages and the Janitors tab and every shop at 800×600. Automated tests exercise all twelve favors for all thirty-six owners, full-floor coverage, safe routes, gated purchases, all equipment caps, tutorial actions, and forty-business progression. The smoke test renders all four regional shops, requests, speech, the guide and journal pages. Progress still resets on close.
+
+Each listed original business row is now followed by five opposing stores. The next section waits for both rows. See [courts and janitors](courts-and-janitors.md) for their prices, rents and automation.

@@ -88,7 +88,7 @@ class WelcomeAndErrandsTests(unittest.TestCase):
             g.display_menu.visit();g.draw();g.display_menu.open=False
             self.assertTrue(g.owner_requests.arrange_display(g.owner_requests.display_plan))
             g.claim_request(store)
-        self.assertEqual(len(catalogs),8)
+        self.assertEqual(len(catalogs),len([s for s in g.mall.stores if not s.upgrade_shop]))
 
     def test_benches_and_fountains_allow_walking_through_the_old_empty_margins(self):
         self.unlock();g=self.game

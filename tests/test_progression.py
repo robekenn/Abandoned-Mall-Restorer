@@ -41,7 +41,7 @@ class ProgressionTests(unittest.TestCase):
 
     def test_business_order_costs_and_combined_rent(self):
         g = self.game
-        supplies,pages,retro,cafe,tailor = g.mall.stores
+        supplies,pages,retro,cafe,tailor = g.mall.stores[:5]
         supplies.restored = True
         g.mall.refresh_businesses()
         g.cash = 100
@@ -77,11 +77,12 @@ class ProgressionTests(unittest.TestCase):
         g.cash = tailor.cost
         g.player.rect.center = tailor.position
         g.interact()
-        self.assertTrue(all(s.restored for s in g.mall.stores))
-        self.assertIsNone(g.mall.next_store)
+        self.assertTrue(all(s.restored for s in g.mall.stores[:5]))
+        self.assertEqual(g.mall.next_store.name,'Corner Bakery')
+        self.assertTrue(g.mall.next_store.available)
         g.rent_timer = 0
         g.update(5,(0,0))
-        self.assertEqual(g.cash,sum(s.rent for s in g.mall.stores))
+        self.assertEqual(g.cash,sum(s.rent for s in g.mall.stores if s.restored))
 
     def test_new_litter_waits_then_is_bounded_and_recleanable(self):
         g = self.game

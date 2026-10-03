@@ -2,8 +2,9 @@ import pygame
 
 
 class Store:
-    def __init__(self, rect, name, available=False, cost=100, rent=5, kind='cafe'):
+    def __init__(self, rect, name, available=False, cost=100, rent=5, kind='cafe', facing='down'):
         self.rect = pygame.Rect(rect)
+        self.facing = facing
         self.name = name
         self.available = available
         self.restored = False
@@ -17,7 +18,7 @@ class Store:
         self.door_open = False
         self.kind = kind
         self.upgrade_shop = None
-        self.position = pygame.Vector2(self.rect.centerx, self.rect.bottom + 35)
+        self.position = pygame.Vector2(self.rect.centerx, self.rect.bottom + 35 if facing=='down' else self.rect.top-35)
 
     @property
     def rent(self):
@@ -38,9 +39,10 @@ class Store:
         name = self.kind + ('_clean' if self.restored else '_dirty')
         if self.restored and self.door_open:
             name += '_open'
+        if self.facing=='up':name+='_up'
         art.draw(surface, name, r.center, (r.width+12,r.height+20))
         sign = font.render(self.name.upper(), True, (250,234,193) if self.restored else (188,184,166))
-        background = sign.get_rect(center=(r.centerx, r.y+40)).inflate(16,10)
+        background = sign.get_rect(center=(r.centerx, r.y+40 if self.facing=='down' else r.bottom-40)).inflate(16,10)
         pygame.draw.rect(surface, (35,49,47), background, border_radius=4)
         surface.blit(sign, sign.get_rect(center=background.center))
         # Permanent earned improvements: window display, flower boxes, then welcome pennants.

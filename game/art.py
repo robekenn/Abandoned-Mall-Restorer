@@ -262,10 +262,18 @@ class Art:
         for name in ('trash_bags', 'litter', 'dirt', 'bench_dirty', 'bench_clean',
                      'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign', 'request_keepsake', 'request_plaque', 'request_notice', 'request_toolkit', 'request_lantern', 'request_chalk'):
             self.sprites[name] = prop(name)
+        for kind in ('bookshop','cafe'):
+            for state in ('dirty','clean','clean_open'):
+                self.sprites[f'{kind}_{state}_up']=pygame.transform.flip(self.sprites[f'{kind}_{state}'],False,True)
         self.sprites['delivery_station'] = delivery_station()
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):
                 self.sprites[f'player_{facing}_{frame}'] = worker(facing, frame)
+                uniform=worker(facing,frame)
+                for x in range(16):
+                    for y in range(24):
+                        if uniform.get_at((x,y))==pygame.Color(PALETTE['gold']):uniform.set_at((x,y),PALETTE['blue'])
+                self.sprites[f'janitor_{facing}_{frame}']=uniform
 
         for variant in range(4):
             for facing in ('down','up','left','right'):

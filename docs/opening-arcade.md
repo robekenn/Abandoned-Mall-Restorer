@@ -67,13 +67,13 @@ Fractional payouts are kept: Pages pays $2.5, $5 or $7.5 depending on the tier. 
 | 4 | Bean Street | $450 | $12 |
 | 5 | The Tailor | $700 | $16 |
 
-There are currently 48 reachable starting tasks, with tile-coverage checks ensuring the entire playable floor can be cleaned. Starting positions avoid storefront entrances and trash bins. Once the first sweep is complete and Supplies is open, fresh litter returns every four seconds instead of eight, capped at twelve active piles. The pool stays bounded and spawns stay away from the player.
+There are currently 63 reachable starting tasks, with tile-coverage checks ensuring the entire playable floor can be cleaned. Starting positions avoid storefront entrances and trash bins. Once the first sweep is complete and Supplies is open, fresh litter returns every four seconds instead of eight, capped at twelve active piles. The pool stays bounded and spawns stay away from the player.
 
 Returning litter permits earning more money even if all initial proceeds were spent on upgrades before opening a rent-paying business. Clearing fresh litter restores its dirty floor patch; overlapping piles retain their remaining dirt. Trash-bin sales and rents fund both equipment and business progression. The two upright indoor trash bins sit beside the west/east benches and serve the playable north arcade; the east gallery can be unlocked next, then Garden Arcade and Community Commons follow.
 
 ## East gallery and Workshop
 
-The east marker and interaction prompt are hidden until the north sweep is complete and all five north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 46 initial tasks cover all concourse floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
+The east marker and interaction prompt are hidden until the north sweep is complete and all ten north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 56 initial tasks cover all concourse floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
 
 The first east business is **Eastgate Workshop ($2,000)**. It can open before finishing the east sweep. It does not pay store rent; its individually purchased fixtures do. Supplies keeps the original tools and recycling contracts, and now caps bag capacity at 20. Workshop upgrades continue from that cap:
 
@@ -134,4 +134,4 @@ The Workshop adds three contracts after the $30-per-item Supplies contract:
 
 Buy them in order from the Workshop’s Gear tab. They use the same trash bag and bins, apply to the whole load at sale time, and stop at $80 per item. The Supplies contract track remains capped at $30. Equipment and fixture prices appear in a short list; only the selected upgrade’s description and location appear below it.
 
-The main HUD keeps cash, bag space, cleanliness and one objective visible. Press **J** to open the journal for the map, rental income, equipment and owner request countdowns. **J/Esc/E** closes it; it pauses the game and request timers. Owner requests begin three minutes after their store opens, with another three-minute pause after each improvement is claimed; each rent-paying store has three initial improvements followed by recurring favors.
+The main HUD keeps cash, bag space, cleanliness and one objective visible. Press **J** to open the journal for the map, rental income, equipment and owner request countdowns. **J/Esc/E** closes it; it pauses the game and request timers. Owner requests begin three minutes after their store opens, with another three-minute pause after each improvement is claimed; each rent-paying store has three initial improvements followed by recurring favors. Each court now continues through five opposing shops; see [courts and janitors](courts-and-janitors.md) for the full expansion and hiring prices.

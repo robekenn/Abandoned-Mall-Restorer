@@ -100,7 +100,20 @@ def main():
             for spot in game.owner_requests.visible_spots:
                 game.player.rect.center=spot.position;game.update(0,(0,0));game.draw()
             game.journal.open = True
-            for page in range(3):game.journal.page=page;game.draw()
+            for page in range((len([s for s in game.mall.stores if not s.upgrade_shop])+5)//6):game.journal.page=page;game.draw()
+            game.cash=10000000
+            for key,*_ in game.janitors.courts(game.mall):
+                if not game.janitors.purchase(key,'hire',game)[0]:raise RuntimeError('Janitor hire failed')
+                game.janitors.purchase(key,'walk',game);game.janitors.purchase(key,'clean',game)
+            game.journal.tab=1;game.draw()
+            game.journal.open=False
+            for key,_,_,_,pool,_,_ in game.janitors.courts(game.mall):
+                janitor=game.janitors.people[key]
+                trash=next(t for t in pool if tuple(t.position) in janitor.paths.nodes)
+                game.mall.respawn_trash(trash);janitor.position=trash.position.copy()
+            game.janitors.update(4,game)
+            if not all(j.cleaned for j in game.janitors.people.values()):raise RuntimeError('Janitor cleanup failed')
+            game.draw()
             game.journal.open = False
             if owner_store.request_level != 3:
                 raise RuntimeError('Owner request smoke test did not earn all improvements')

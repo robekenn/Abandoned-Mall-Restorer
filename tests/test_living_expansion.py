@@ -50,7 +50,7 @@ class ExpansionTests(unittest.TestCase):
                 else:self.assertTrue(requests.interact(spot))
         self.assertTrue(requests.ready)
 
-    def test_four_areas_unlock_once_in_order_and_have_five_businesses_each(self):
+    def test_four_areas_unlock_once_in_order_and_have_ten_businesses_each(self):
         g=self.game;g.cash=100000
         self.assertFalse(g.mall.garden.ready(g.mall));self.assertFalse(g.mall.commons.ready(g.mall))
         for region in g.mall.regions:
@@ -65,7 +65,7 @@ class ExpansionTests(unittest.TestCase):
             with patch.object(g,'target',return_value=region):g.interact()
             self.assertTrue(region.unlocked);self.assertEqual(g.cash,0)
             self.assertFalse(g.mall.unlock_section(region))
-            self.assertEqual(len(region.stores),5)
+            self.assertEqual(len(region.stores),10)
             dirty=set(region.floor_tiles)&g.mall.dirty_tiles
             self.assertEqual(len(dirty),len(region.floor_tiles))
             g.mall.respawn_trash(g.mall.north_trash[0]);g.mall.clean_trash(g.mall.north_trash[0])
@@ -79,22 +79,22 @@ class ExpansionTests(unittest.TestCase):
                 self.assertTrue(store.restored)
                 self.assertEqual(g.cash,0)
                 g.shop_menu.open=False;g.owner_menu.open=False
-        self.assertEqual(len(g.mall.stores),20)
+        self.assertEqual(len(g.mall.stores),40)
         self.assertEqual(len(g.mall.playable_areas),4)
         self.assertEqual(g.mall.cleanliness,1)
         self.assertEqual(g.mall.barriers,[])
 
     def test_later_gates_block_walking_until_opened(self):
         g=self.game
-        g.player.rect.center=(160,1015);g.player.move((0,1),1,g.mall.obstacles)
-        self.assertLessEqual(g.player.rect.bottom,1060)
+        g.player.rect.center=(160,1435);g.player.move((0,1),1,g.mall.obstacles)
+        self.assertLessEqual(g.player.rect.bottom,1480)
         self.restore_current();g.mall.unlock_east();self.restore_current();g.mall.unlock_section(g.mall.garden)
-        g.player.rect.center=(160,1015);g.player.move((0,1),1,g.mall.obstacles)
-        self.assertGreater(g.player.rect.centery,1092)
-        g.player.rect.center=(1715,1990);g.player.move((1,0),1,g.mall.obstacles)
+        g.player.rect.center=(160,1435);g.player.move((0,1),1,g.mall.obstacles)
+        self.assertGreater(g.player.rect.centery,1512)
+        g.player.rect.center=(1715,2600);g.player.move((1,0),1,g.mall.obstacles)
         self.assertLessEqual(g.player.rect.right,1760)
         self.restore_current();g.mall.unlock_section(g.mall.commons)
-        g.player.rect.center=(1715,1990);g.player.move((1,0),1,g.mall.obstacles)
+        g.player.rect.center=(1715,2600);g.player.move((1,0),1,g.mall.obstacles)
         self.assertGreater(g.player.rect.centerx,1792)
 
     def test_all_four_floors_are_reachable_covered_and_recurring_litter_stays_bounded(self):

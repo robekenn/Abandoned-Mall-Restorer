@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import pygame
 from systems.favors import FAVORS
+from mall.businesses import OPPOSITE
 
 
 OWNERS = {'Pages Bookshop':'Mara','Retro Replay':'Jules','Bean Street':'Iris','The Tailor':'Theo',
@@ -33,6 +34,15 @@ DISPLAY_ITEMS = {
     'Sunday Table': ('Tea cup','Table cloth','Serving bowl'),
     'Homeward Goods': ('Woven basket','Small vase','Home keepsake'),
 }
+
+for businesses in OPPOSITE.values():
+    for name,_,_,_,owner,supplies in businesses:
+        OWNERS[name]=owner;SUPPLIES[name]=supplies
+        DISPLAY_ITEMS[name]=(supplies.title(),'Neighbor’s choice','Special collection')
+
+def work_desk(store):
+    return store.position+pygame.Vector2(90,80 if store.facing=='down' else -80)
+
 PROJECTS = (
     ('A fresh start','Collect our supplies from the signed delivery station.',
      'Welcoming display',0.5,50),
@@ -131,9 +141,9 @@ class OwnerRequests:
         if store.request_level == 0:
             self.spots = [RequestSpot(depot.position.copy(),f'Collect {SUPPLIES[store.name]}','parcel')]
         elif store.request_level == 1:
-            self.spots = [RequestSpot(store.position+pygame.Vector2(90,80),'Arrange the window display','display')]
+            self.spots = [RequestSpot(work_desk(store),'Arrange the window display','display')]
         else:
-            self.spots = [RequestSpot(store.position+pygame.Vector2(90,80),'Set up welcome sign','sign',2)]
+            self.spots = [RequestSpot(work_desk(store),'Set up welcome sign','sign',2)]
         return True
 
     def favor_spots(self, mall, region, depot):
@@ -146,7 +156,7 @@ class OwnerRequests:
             wall.colliderect(pygame.Rect(point[0]-16,point[1]-16,32,32)) for wall in mall.obstacles)]
         positions=[pygame.Vector2(min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(q))) for q in desired]
         spot=lambda point,title,kind,duration=0:RequestSpot(pygame.Vector2(point),title,kind,duration)
-        desk=self.store.position+pygame.Vector2(90,80)
+        desk=work_desk(self.store)
         if mode=='lost':return [spot(positions[0],'Collect the lost sketchbook','keepsake')]
         if mode=='memories':return [spot(p,f'Collect photograph {i+1}','keepsake') for i,p in enumerate(positions)]
         if mode=='polish':return [spot(p,f'Polish nameplate {i+1}','plaque',2) for i,p in enumerate(positions[:2])]

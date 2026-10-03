@@ -100,7 +100,7 @@ class Shopper:
         if self.path:
             return
         if self.state == 'arriving':
-            self.path = [self.store.position.copy(),pygame.Vector2(self.store.rect.centerx,self.store.rect.bottom-28)]
+            self.path = [self.store.position.copy(),pygame.Vector2(self.store.rect.centerx,self.store.rect.bottom-28 if self.store.facing=='down' else self.store.rect.top+28)]
             self.state = 'entering'
         elif self.state == 'entering':
             self.state,self.wait = 'inside',0

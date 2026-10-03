@@ -2,6 +2,7 @@ import pygame
 from entities.trash import Trash
 from entities.trash_bin import TrashBin
 from mall.store import Store
+from mall.businesses import opposite_stores
 from mall.furniture import bench_footprint, fountain_footprint
 from mall.delivery import DeliveryPoint
 from mall.section import EastGallery, later_galleries, covered_positions, floor_tiles
@@ -11,7 +12,7 @@ from game.settings import WORLD_SIZE
 class Mall:
     def __init__(self):
         self.size = WORLD_SIZE
-        self.opening_area = pygame.Rect(40, 40, 1720, 1020)
+        self.opening_area = pygame.Rect(40, 40, 1720, 1440)
         w, h = self.size
         business_specs = [('Northgate Supplies', 10, 0, 'bookshop'),
                           ('Pages Bookshop', 100, 5, 'bookshop'),
@@ -20,6 +21,7 @@ class Mall:
                           ('The Tailor', 700, 16, 'bookshop')]
         self.stores = [Store((100+i*328, 100, 280, 240), name, i == 0, cost, rent, kind)
                        for i, (name, cost, rent, kind) in enumerate(business_specs)]
+        self.stores += opposite_stores('north',self.opening_area)
         self.north_stores = list(self.stores)
         self.stores[0].upgrade_shop = 'north'
         self.east = EastGallery()
@@ -28,22 +30,23 @@ class Mall:
         self.fountain = pygame.Rect(700, 600, 220, 100)
         self.benches = [pygame.Rect(280, 700, 120, 35), pygame.Rect(1220, 700, 120, 35)]
         self.lamps = [((left.rect.right+right.rect.left)//2, 385)
-                      for left,right in zip(self.stores,self.stores[1:])]
+                      for left,right in zip(self.stores[:5],self.stores[1:5])]
         self.plants = [(100,600),(1670,600),(500,920),(1250,920)]
         self.trash_bins = [TrashBin((bench.right+45,bench.centery),name)
                            for bench,name in zip(self.benches,('West trash bin','East trash bin'))]
-        self.gates = [pygame.Rect(1760, 40, 32, 1020), pygame.Rect(40, 1060, 1752, 32)]
+        self.gates = [pygame.Rect(1760, 40, 32, 1440), pygame.Rect(40, 1480, 1752, 32)]
         self.east_gate = self.gates[0]
-        self.commons_divider=pygame.Rect(1760,1092,32,1068)
+        self.commons_divider=pygame.Rect(1760,1512,32,1488)
         self.east.gate_rects=[self.east_gate]
         self.garden.gate_rects=[self.gates[1]]
         self.commons.gate_rects=[self.commons_divider,self.east.south_gate]
         self.obstacles = [pygame.Rect(0, 0, w, 40), pygame.Rect(0, h-40, w, 40),
                           pygame.Rect(0, 0, 40, h), pygame.Rect(w-40, 0, 40, h)]
         self.back_wall = pygame.Rect(40, 40, 1720, 300)
+        self.front_wall=pygame.Rect(232,self.opening_area.bottom-280,1528,280)
         self.delivery = DeliveryPoint((100,900),'North')
         self.furniture_obstacles = [fountain_footprint(self.fountain)]+[bench_footprint(b) for b in self.benches]
-        self.obstacles += [s.rect for s in self.stores]+self.gates+[self.back_wall]
+        self.obstacles += [s.rect for s in self.stores]+self.gates+[self.back_wall,self.front_wall]
         self.floor_obstacles = list(self.obstacles)
         self.obstacles += [d.rect for d in self.trash_bins]+[self.delivery.rect]+self.furniture_obstacles
         # Closed sections still have collision geometry and a sealed southern boundary.
@@ -157,6 +160,7 @@ class Mall:
         if trash.cleaned or trash not in self.trash:
             return False
         trash.cleaned = True
+        trash.revision=getattr(trash,'revision',0)+1
         trash.ever_cleaned = True
         tiles = next(tiles for tiles,pool,_ in self.cleanup_sections() if trash in pool)
         self.dirty_tiles.difference_update(p for p in tiles
@@ -178,6 +182,7 @@ class Mall:
         if not trash.cleaned or trash not in self.trash:
             return False
         trash.cleaned = False
+        trash.revision=getattr(trash,'revision',0)+1
         tiles = next(tiles for tiles,pool,_ in self.cleanup_sections() if trash in pool)
         self.dirty_tiles.update(p for p in tiles
                                 if trash.position.distance_squared_to(p) < 115**2)
@@ -217,8 +222,10 @@ class Mall:
         for wall in self.obstacles[:4]:
             pygame.draw.rect(surface,(53,65,65),camera.rect(wall))
         pygame.draw.rect(surface, (39,53,54), camera.rect(self.back_wall))
+        pygame.draw.rect(surface,(39,53,54),camera.rect(self.front_wall))
         for region in self.regions:
             pygame.draw.rect(surface,(39,53,54),camera.rect(region.back_wall))
+            pygame.draw.rect(surface,(39,53,54),camera.rect(region.front_wall))
         for store in self.distant_stores:
             store.draw(surface,camera,font,art,False)
         # Future galleries can be seen through closed grilles, but are not playable yet.

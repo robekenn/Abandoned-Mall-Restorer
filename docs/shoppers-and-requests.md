@@ -23,7 +23,7 @@ Press E at an open rent-paying storefront:
 | Copper Kettle | Nell | Tea tins |
 | Secondhand Stars | Otto | Donated treasures |
 
-Garden Arcade and Community Commons each add four more owners. Every area has its own signed delivery station.
+Garden Arcade and Community Commons each have nine owners. Every area has its own signed delivery station.
 
 Northgate Supplies and Eastgate Workshop keep their equipment menus and do not give owner requests. Each owner offers three initial projects in order, then twelve rotating repeatable favors. The first becomes available after three minutes of play with that shop open. Each claimed improvement starts a fresh three-minute wait before its next request, so requests cannot be completed back to back. Timers are independent per shop and stop while menus or the journal are open. Closed shops do not accumulate readiness. An available request stays available until accepted. Accept with Enter, Space or a click; Esc/E closes the conversation. Menus pause movement, litter, visitors, request work and rent. M still mutes music and effects.
 

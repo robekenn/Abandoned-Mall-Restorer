@@ -5,6 +5,7 @@ from entities.trash_bin import TrashBin
 from mall.store import Store
 from mall.furniture import bench_footprint, fountain_footprint
 from mall.delivery import DeliveryPoint
+from mall.businesses import opposite_stores
 
 
 def covered_positions(area, floor, obstacles, stores, bins, seeds=(), spawn=None, entrance_buffer=90):
@@ -52,19 +53,21 @@ class RegionalGallery:
                      for i,(title,price,rent,kind) in enumerate(specs)]
         for store in self.stores:store.section_key=key
         self.stores[0].upgrade_shop=key
+        self.stores += opposite_stores(key,self.area)
+        self.front_wall=pygame.Rect(left+192,self.area.bottom-280,self.area.width-192,280)
         self.back_wall=pygame.Rect(left+(192 if south else 0),top,self.area.width-(192 if south else 0),300)
         self.south_gate=pygame.Rect(left,self.area.bottom,self.area.width,32)
         self.fountain=pygame.Rect(left+788 if key in ('east','commons') else 700,top+560,220,100)
         self.benches=[pygame.Rect(left+288 if key=='east' else left+240,top+660,120,35),
                       pygame.Rect(left+1368 if key=='east' else left+1180,top+660,120,35)]
         self.bins=[TrashBin((b.right+45,b.centery),f'{name} {side} bin') for b,side in zip(self.benches,('west','east'))]
-        self.lamps=[((a.rect.right+b.rect.left)//2,top+345) for a,b in zip(self.stores,self.stores[1:])]
+        self.lamps=[((a.rect.right+b.rect.left)//2,top+345) for a,b in zip(self.stores[:5],self.stores[1:5])]
         self.plants=[(left+68,top+540),(self.area.right-80,top+540),(left+568,top+890),(left+1288,top+890)]
         self.delivery=DeliveryPoint((self.area.right-160 if key in ('east','commons') else left+60,top+860),name)
         self.entrance=(left+68,self.area.bottom-60)
         self.gate_rects=[]
         self.furniture_obstacles=[fountain_footprint(self.fountain)]+[bench_footprint(b) for b in self.benches]
-        structural=[self.back_wall]+[store.rect for store in self.stores]
+        structural=[self.back_wall,self.front_wall]+[store.rect for store in self.stores]
         if key=='east':structural.append(self.south_gate)
         self.obstacles=structural+[b.rect for b in self.bins]+[self.delivery.rect]+self.furniture_obstacles
         self.floor_tiles=floor_tiles(self.area,structural)
@@ -92,19 +95,19 @@ class RegionalGallery:
 
 class EastGallery(RegionalGallery):
     def __init__(self):
-        super().__init__('east','East gallery',(1792,40,1768,1020),1500,'north',[
+        super().__init__('east','East gallery',(1792,40,1768,1440),1500,'north',[
             ('Eastgate Workshop',2000,0,'bookshop'),('Vinyl & Company',3000,25,'bookshop'),
             ('The Green Table',4500,40,'cafe'),('Copper Kettle',6000,55,'cafe'),
             ('Secondhand Stars',8000,70,'bookshop')],(1715,800))
 
 
 def later_galleries():
-    garden=RegionalGallery('garden','Garden Arcade',(40,1092,1720,1068),10000,'east',[
+    garden=RegionalGallery('garden','Garden Arcade',(40,1512,1720,1488),10000,'east',[
         ('Garden Supply',12000,0,'bookshop'),('Seed & Stem',15000,90,'bookshop'),
         ('Little Lantern',18500,115,'bookshop'),('Market Kitchen',22000,145,'cafe'),
-        ('Patchwork Studio',26000,180,'bookshop')],(160,1015),True)
-    commons=RegionalGallery('commons','Community Commons',(1792,1092,1768,1068),35000,'garden',[
+        ('Patchwork Studio',26000,180,'bookshop')],(160,1435),True)
+    commons=RegionalGallery('commons','Community Commons',(1792,1512,1768,1488),35000,'garden',[
         ('Commons Exchange',40000,0,'bookshop'),('Book Nook',48000,230,'bookshop'),
         ('Radio Room',56000,280,'bookshop'),('Sunday Table',65000,340,'cafe'),
-        ('Homeward Goods',75000,410,'bookshop')],(1715,1990),True)
+        ('Homeward Goods',75000,410,'bookshop')],(1715,2600),True)
     return garden,commons
