@@ -10,16 +10,16 @@ class LitterSpawner:
         self.random = random.Random(41)
 
     def update(self, dt, mall, player_position):
-        if not mall.initial_cleanup_complete or not any(s.restored for s in mall.stores):
+        pools = mall.recurring_pools
+        if not pools:
             self.elapsed = 0.0
             return
         self.elapsed += dt
         if self.elapsed < self.interval:
             return
         self.elapsed %= self.interval
-        if mall.active_litter_count >= self.cap:
-            return
+        pools = [pool for pool in pools if sum(not t.cleaned for t in pool) < self.cap]
         # Reuse the finite starting pool. Keep new litter clear of doors and player.
-        choices = [t for t in mall.trash if t.cleaned and t.position.distance_squared_to(player_position) > 100**2]
+        choices = [t for pool in pools for t in pool if t.cleaned and t.position.distance_squared_to(player_position) > 100**2]
         if choices:
             mall.respawn_trash(self.random.choice(choices))

@@ -31,9 +31,9 @@ class HUD:
         bounds = pygame.Rect(panel.x+10,panel.y+32,170,85)
         sx,sy = bounds.width/mall.size[0], bounds.height/mall.size[1]
         pygame.draw.rect(surface, (49,62,62), bounds)
-        opening = mall.opening_area
-        corner = pygame.Rect(bounds.x+opening.x*sx,bounds.y+opening.y*sy,opening.width*sx,opening.height*sy)
-        pygame.draw.rect(surface, (109,139,108) if mall.cleaned_count else (94,110,93),corner)
+        for area in mall.playable_areas:
+            corner = pygame.Rect(bounds.x+area.x*sx,bounds.y+area.y*sy,area.width*sx,area.height*sy)
+            pygame.draw.rect(surface,(109,139,108) if mall.cleaned_count else (94,110,93),corner)
         for gate in mall.gates:
             rect = pygame.Rect(bounds.x+gate.x*sx,bounds.y+gate.y*sy,max(2,gate.width*sx),max(2,gate.height*sy))
             pygame.draw.rect(surface, (194,162,100),rect)
@@ -45,7 +45,8 @@ class HUD:
             pygame.draw.rect(surface,(129,196,185),(point[0]-2,point[1]-2,5,5))
         point = (round(bounds.x+player[0]*sx),round(bounds.y+player[1]*sy))
         pygame.draw.rect(surface,(235,230,191),(point[0]-2,point[1]-2,4,4))
-        surface.blit(self.small.render('YOU / NORTH ARCADE',True,(177,190,174)), (panel.x+8,panel.bottom-18))
+        region = 'EAST GALLERY' if mall.east.unlocked and mall.east.area.collidepoint(player) else 'NORTH ARCADE'
+        surface.blit(self.small.render('YOU / '+region,True,(177,190,174)),(panel.x+8,panel.bottom-18))
 
     def draw(self, game, target):
         surface = game.screen
@@ -53,7 +54,8 @@ class HUD:
         width,height = surface.get_size()
         pygame.draw.rect(surface,(24,34,39),(0,0,width,118))
         surface.blit(self.title.render('NORTHGATE',True,(237,225,199)),(24,14))
-        surface.blit(self.small.render('NORTH ARCADE / A SMALL BEGINNING',True,(165,184,172)),(24,45))
+        region = 'EAST GALLERY' if mall.east.unlocked and mall.east.area.collidepoint(game.player.rect.center) else 'NORTH ARCADE'
+        surface.blit(self.small.render(region+' / ONE SMALL ACTION AT A TIME',True,(165,184,172)),(24,45))
         next_shop = mall.next_store
         if upgrades.held == upgrades.capacity:
             objective = 'Bag full. Sell your load at a SELL trash bin.'
@@ -61,14 +63,19 @@ class HUD:
             objective = f'Collect and sell litter. Reopen Supplies for ${mall.stores[0].cost}.'
         elif not mall.initial_cleanup_complete:
             objective = f'First sweep: {mall.active_litter_count} patches left. E at Supplies: upgrades.'
+        elif not mall.east.unlocked and next_shop is None:
+            objective = 'Next: East gallery / $1,500 / E at the east gate.'
+        elif mall.east.unlocked and mall.east.stores[0].restored and not mall.east.initial_cleanup_complete:
+            left = sum(not t.cleaned for t in mall.east.trash)
+            objective = f'East sweep: {left} patches left. E at Workshop: upgrades.'
         elif next_shop:
-            objective = f'Next: {next_shop.name} / ${next_shop.cost} / +${next_shop.rent} rent.'
+            objective = f'Next: {next_shop.name} / ${next_shop.cost} / '+ ('upgrade shop.' if next_shop.upgrade_shop else f'+${next_shop.rent} base rent.')
         else:
             objective = 'All businesses open. Buy upgrades and keep the arcade welcoming.'
         objective_font = self.small if self.font.size(objective)[0] > width-250 else self.font
         surface.blit(objective_font.render(objective,True,(191,204,183)),(24,67))
         bag_color = (239,181,109) if upgrades.held == upgrades.capacity else (173,191,157)
-        inventory = f'Bag {upgrades.held}/{upgrades.capacity} / Sale ${upgrades.unit_value} each / {upgrades.tool[0]}'
+        inventory = f'Bag {upgrades.held}/{upgrades.capacity} / Sale ${upgrades.unit_value} each / Walk {upgrades.speed_multiplier:g}x'
         surface.blit(self.small.render(inventory,True,bag_color),(24,95))
         surface.blit(self.title.render(money(game.cash),True,(140,216,174)),(width-160,17))
         status = f'{cleanliness_label(mall.cleanliness)} clean / {mall.active_litter_count} litter'
@@ -77,8 +84,9 @@ class HUD:
         bar = pygame.Rect(width-190,91,166,6)
         pygame.draw.rect(surface,(60,78,73),bar)
         pygame.draw.rect(surface,(149,176,119),(bar.x,bar.y,round(bar.width*mall.cleanliness),bar.height))
+        surface.blit(self.small.render(f'Fixtures +${upgrades.fixture_rent} base rent',True,(164,186,168)),(width-190,101))
         pygame.draw.rect(surface,(24,34,39),(0,height-82,width,82))
-        text = 'E  '+target.label if target else 'Collect litter / sell at trash bins / upgrade at Supplies.'
+        text = 'E  '+target.label if target else 'Collect litter / sell at trash bins / visit an upgrade shop.'
         surface.blit(self.font.render(text,True,(239,205,138)),(24,height-70))
         controls = f'WASD / Arrows: move   E: interact   M: sound {"off" if game.audio.muted else "on"}   Esc: quit'
         surface.blit(self.small.render(controls,True,(166,186,180)),(24,height-36))

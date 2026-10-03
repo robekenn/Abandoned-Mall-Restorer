@@ -2,6 +2,7 @@ import pygame
 from entities.trash import Trash
 from entities.trash_bin import TrashBin
 from mall.store import Store
+from mall.section import EastGallery, covered_positions, floor_tiles
 from game.settings import WORLD_SIZE
 
 
@@ -17,6 +18,9 @@ class Mall:
                           ('The Tailor', 700, 16, 'bookshop')]
         self.stores = [Store((100+i*328, 100, 280, 240), name, i == 0, cost, rent, kind)
                        for i, (name, cost, rent, kind) in enumerate(business_specs)]
+        self.north_stores = list(self.stores)
+        self.stores[0].upgrade_shop = 'north'
+        self.east = EastGallery()
         self.fountain = pygame.Rect(700, 600, 220, 100)
         self.benches = [pygame.Rect(280, 700, 120, 35), pygame.Rect(1220, 700, 120, 35)]
         self.lamps = [((left.rect.right+right.rect.left)//2, 385)
@@ -25,49 +29,67 @@ class Mall:
         self.trash_bins = [TrashBin((bench.right+45,bench.centery),name)
                            for bench,name in zip(self.benches,('West trash bin','East trash bin'))]
         self.gates = [pygame.Rect(1760, 40, 32, 1020), pygame.Rect(40, 1060, 1752, 32)]
+        self.east_gate = self.gates[0]
         self.obstacles = [pygame.Rect(0, 0, w, 40), pygame.Rect(0, h-40, w, 40),
                           pygame.Rect(0, 0, 40, h), pygame.Rect(w-40, 0, 40, h)]
         self.back_wall = pygame.Rect(40, 40, 1720, 300)
         self.obstacles += [s.rect for s in self.stores] + [self.fountain] + self.benches + self.gates + [self.back_wall] + [d.rect for d in self.trash_bins]
-        self.distant_stores = [Store((2000+i*400, 100, 340, 240), name)
-                               for i, name in enumerate(['CINEMA', 'RECORDS', 'DEPARTMENT STORE'])]
-        self.distant_stores += [Store((100+i*410, 1250, 350, 240), 'SOUTH GALLERY') for i in range(4)]
+        # Closed sections still have collision geometry and a sealed southern boundary.
+        self.obstacles += self.east.obstacles
+        self.distant_stores = list(self.east.stores)
+        self.distant_stores += [Store((100+i*410,1250,350,240),'SOUTH GALLERY') for i in range(4)]
         positions = [(240,480),(370,550),(500,440),(620,510),(830,450),(1040,480),
                      (1150,560),(1410,450),(1540,620),(1450,820),(1110,870),(940,790),
                      (680,870),(500,780),(220,840)]
         positions = [p for p in positions if not any(d.position.distance_squared_to(p) < 100**2 for d in self.trash_bins)]
-        self.floor_tiles = tuple((x+31, y+31)
-                                 for x in range(40, 1760, 64)
-                                 for y in range(40, 1060, 64)
-                                 if not any(w.collidepoint((x+31, y+31)) for w in self.obstacles))
+        self.floor_tiles = floor_tiles(self.opening_area,self.obstacles)
         self.dirty_tiles = set(self.floor_tiles)
         self._initial_cleanup_complete = False
         positions += self._coverage_positions(positions)
         self.trash = [Trash(p, 'dirt' if i % 3 == 0 else 'trash') for i,p in enumerate(positions)]
         self.initial_litter_count = len(self.trash)
+        self.north_trash = list(self.trash)
+        self.north_floor_tiles = self.floor_tiles
 
     def _coverage_positions(self, seeds):
         """Cover every walkable floor tile with a reachable cleanup task."""
-        floor = [p for p in self.floor_tiles if not any(w.collidepoint(p) for w in self.obstacles)]
-        candidates = list(floor)
-        candidates = [p for p in candidates
-                      if self.opening_area.contains(pygame.Rect(p[0]-16, p[1]-16, 32, 32))
-                      and not any(w.colliderect(pygame.Rect(p[0]-16, p[1]-16, 32, 32)) for w in self.obstacles)
-                      and (p[0]-240)**2+(p[1]-430)**2 > 120**2
-                      and all((p[0]-s.position.x)**2+(p[1]-s.position.y)**2 > 90**2 for s in self.stores)
-                      and all(d.position.distance_squared_to(p) > 80**2 for d in self.trash_bins)]
-        coverage = [(p, {i for i,tile in enumerate(floor)
-                         if (p[0]-tile[0])**2+(p[1]-tile[1])**2 < 115**2}) for p in candidates]
-        uncovered = {i for i,tile in enumerate(floor)
-                     if not any((p[0]-tile[0])**2+(p[1]-tile[1])**2 < 115**2 for p in seeds)}
-        extra = []
-        while uncovered:
-            point, covered = max(coverage, key=lambda item: len(item[1] & uncovered))
-            if not covered & uncovered:
-                raise ValueError('Starting litter does not cover the playable floor')
-            extra.append(point)
-            uncovered -= covered
-        return extra
+        return covered_positions(self.opening_area,self.floor_tiles,self.obstacles,
+                                 self.stores,self.trash_bins,seeds,spawn=(240,430))
+
+    @property
+    def playable_areas(self):
+        return [self.opening_area]+([self.east.area] if self.east.unlocked else [])
+
+    @property
+    def recurring_pools(self):
+        pools = [self.north_trash] if self.initial_cleanup_complete and self.stores[0].restored else []
+        if self.east.unlocked and self.east.initial_cleanup_complete and self.east.stores[0].restored:
+            pools.append(self.east.trash)
+        return pools
+
+    @property
+    def recurring_trash(self):
+        return [t for pool in self.recurring_pools for t in pool]
+
+    def unlock_east(self):
+        if self.east.unlocked or not self.east.ready(self):
+            return False
+        self.east.unlocked = True
+        gate = self.east_gate
+        self.gates.remove(gate)
+        self.obstacles.remove(gate)
+        self.gates.append(self.east.south_gate)
+        self.stores += self.east.stores
+        self.distant_stores = [s for s in self.distant_stores if s not in self.east.stores]
+        self.floor_tiles += self.east.floor_tiles
+        self.dirty_tiles.update(self.east.floor_tiles)
+        self.trash += self.east.trash
+        self.benches += self.east.benches
+        self.trash_bins += self.east.bins
+        self.lamps += self.east.lamps
+        self.plants += self.east.plants
+        self.refresh_businesses()
+        return True
 
     @property
     def cleaned_count(self):
@@ -91,51 +113,61 @@ class Mall:
         return next((s for s in self.stores if not s.restored), None)
 
     def refresh_businesses(self):
-        for i, store in enumerate(self.stores):
+        for i,store in enumerate(self.north_stores):
             store.available = store.restored or i == 0 or (
                 self.initial_cleanup_complete and self.stores[i-1].restored)
+        for i,store in enumerate(self.east.stores):
+            store.available = self.east.unlocked and (store.restored or i == 0 or (
+                self.east.initial_cleanup_complete and self.east.stores[i-1].restored))
 
     def clean_trash(self, trash):
-        if trash.cleaned:
+        if trash.cleaned or trash not in self.trash:
             return False
         trash.cleaned = True
         trash.ever_cleaned = True
-        self.dirty_tiles = {p for p in self.dirty_tiles
-                            if trash.position.distance_squared_to(p) >= 115**2}
-        if all(t.ever_cleaned for t in self.trash):
+        tiles = self.north_floor_tiles if trash in self.north_trash else self.east.floor_tiles
+        self.dirty_tiles.difference_update(p for p in tiles
+                                          if trash.position.distance_squared_to(p) < 115**2)
+        if all(t.ever_cleaned for t in self.north_trash):
             self._initial_cleanup_complete = True
-        if self.initial_cleanup_complete:
-            # Remaining fresh piles retain their dirt even when their patches overlap.
-            self.dirty_tiles = {p for p in self.floor_tiles
-                                if any(not t.cleaned and t.position.distance_squared_to(p) < 115**2
-                                       for t in self.trash)}
+        if self.east.unlocked and all(t.ever_cleaned for t in self.east.trash):
+            self.east.initial_cleanup_complete = True
+        # Each completed section retains dirt under overlapping fresh piles.
+        sections = [(self.north_floor_tiles,self.north_trash,self.initial_cleanup_complete)]
+        if self.east.unlocked:
+            sections.append((self.east.floor_tiles,self.east.trash,self.east.initial_cleanup_complete))
+        for tiles,pool,complete in sections:
+            if complete:
+                self.dirty_tiles.difference_update(tiles)
+                self.dirty_tiles.update(p for p in tiles if any(
+                    not t.cleaned and t.position.distance_squared_to(p) < 115**2 for t in pool))
         self.refresh_businesses()
         return True
 
     def respawn_trash(self, trash):
-        if not trash.cleaned:
+        if not trash.cleaned or trash not in self.trash:
             return False
         trash.cleaned = False
-        self.dirty_tiles.update(p for p in self.floor_tiles
+        tiles = self.north_floor_tiles if trash in self.north_trash else self.east.floor_tiles
+        self.dirty_tiles.update(p for p in tiles
                                 if trash.position.distance_squared_to(p) < 115**2)
         return True
 
     def tile_restored(self, center):
-        if not self.opening_area.collidepoint(center):
+        if not any(area.collidepoint(center) for area in self.playable_areas):
             return False
         key = ((int(center[0])-40)//64*64+71, (int(center[1])-40)//64*64+71)
         return key not in self.dirty_tiles
 
     def draw(self, surface, camera, font, art, target, upgrades):
         surface.fill((27, 36, 40))
-        cleaned = self.cleaned_count
         view = surface.get_rect().move(round(camera.offset.x), round(camera.offset.y))
         # Work only on visible tiles, even as the mall grows.
         for x in range(max(40, (view.left-40)//64*64+40), min(self.size[0]-40, view.right+64), 64):
             for y in range(max(40, (view.top-40)//64*64+40), min(self.size[1]-40, view.bottom+64), 64):
                 r = camera.rect((x, y, 63, 63))
                 center = (x+31, y+31)
-                opening = self.opening_area.collidepoint(center)
+                opening = any(area.collidepoint(center) for area in self.playable_areas)
                 restored = opening and self.tile_restored(center)
                 parity = (x//64+y//64)%2
                 color = ((142,146,124) if parity else (153,155,133)) if restored else ((79,91,87) if parity else (86,97,91))
@@ -155,6 +187,7 @@ class Mall:
         for wall in self.obstacles[:4]:
             pygame.draw.rect(surface,(53,65,65),camera.rect(wall))
         pygame.draw.rect(surface, (39,53,54), camera.rect(self.back_wall))
+        pygame.draw.rect(surface,(39,53,54),camera.rect(self.east.back_wall))
         for store in self.distant_stores:
             store.draw(surface,camera,font,art,False)
         # Future galleries can be seen through closed grilles, but are not playable yet.
@@ -167,6 +200,13 @@ class Mall:
             else:
                 for x in range(r.left, r.right, 12):
                     pygame.draw.line(surface, (100,108,96), (x,r.top), (x,r.bottom), 3)
+        if self.east.ready(self):
+            self.east.draw_marker(surface,camera,font,target is self.east)
+        if self.east.unlocked:
+            art.draw(surface,'fountain_clean' if 'fountain_east' in upgrades.decor else 'fountain_dirty',
+                     camera.point(self.east.fountain.center),(245,165))
+            if 'mosaic_east' in upgrades.decor:
+                art.draw(surface,'mosaic',camera.point((2690,790)),(210,125))
         if 'mosaic' in upgrades.decor:
             art.draw(surface,'mosaic',camera.point((810,790)),(210,125))
         for store in self.stores:
