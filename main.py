@@ -7,6 +7,7 @@ def main():
     parser = argparse.ArgumentParser(description='Abandoned Mall Restorer')
     parser.add_argument('--smoke-test', action='store_true',
                         help='Render a frame and exit using a headless display')
+    parser.add_argument('--windowed', action='store_true',help='Start in a resizable window instead of fullscreen')
     args = parser.parse_args()
     if args.smoke_test:
         os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -14,8 +15,14 @@ def main():
     from game.game import Game
     if args.smoke_test:
         import pygame
-        game = Game()
+        game = Game(start_screen=True)
         try:
+            game.update(.7,(0,0))
+            game.draw()
+            game.welcome.start()
+            game.update(.45,(0,0))
+            game.draw()
+            game.update(.45,(0,0))
             game.update(0.13, (1, 0))
             game.draw()
             for trash in game.mall.trash:
@@ -65,6 +72,11 @@ def main():
                     game.player.rect.center = spot.position
                     game.update(spot.duration,(0,0),True)
                     game.draw()
+                if level == 1:
+                    game.interact()
+                    game.draw()
+                    for index in game.owner_requests.display_plan:
+                        game.display_menu.choose(index,game)
                 if level == 2:
                     for _ in range(3):
                         game.shoppers.update(8,game.mall,game.upgrades,owner_store)
@@ -84,7 +96,7 @@ def main():
         finally:
             pygame.quit()
         return
-    Game().run()
+    Game(fullscreen=not args.windowed,start_screen=True).run()
 
 
 if __name__ == "__main__":

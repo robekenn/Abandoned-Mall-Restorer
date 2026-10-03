@@ -65,6 +65,10 @@ class HUD:
         for bin in mall.trash_bins:
             p=(round(bounds.x+bin.position.x*sx),round(bounds.y+bin.position.y*sy))
             pygame.draw.rect(surface,theme.ACCENT,(p[0]-2,p[1]-2,4,4))
+        deliveries=[mall.delivery]+([mall.east.delivery] if mall.east.unlocked else [])
+        for depot in deliveries:
+            p=(round(bounds.x+depot.position.x*sx),round(bounds.y+depot.position.y*sy))
+            pygame.draw.rect(surface,theme.GOLD,(p[0]-3,p[1]-3,6,6),1)
         if requests and requests.store:
             destinations=[requests.store.position] if requests.ready else [s.position for s in requests.visible_spots]
             if not destinations and requests.store.request_level==2:
@@ -73,8 +77,8 @@ class HUD:
                 pygame.draw.circle(surface,(111,211,233),(round(bounds.x+p.x*sx),round(bounds.y+p.y*sy)),4)
         pygame.draw.circle(surface,theme.TEXT,(round(bounds.x+player[0]*sx),round(bounds.y+player[1]*sy)),3)
 
-    def draw(self, game, target):
-        surface=game.screen;width,height=surface.get_size();mall=game.mall
+    def draw(self, game, target, surface=None):
+        surface=game.screen if surface is None else surface;width,height=surface.get_size();mall=game.mall
         pygame.draw.rect(surface,theme.BG,(0,0,width,76))
         surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
         region='East gallery' if mall.east.unlocked and mall.east.area.collidepoint(game.player.rect.center) else 'North arcade'

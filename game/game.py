@@ -18,13 +18,18 @@ from ui.hud import HUD
 from ui.upgrade_shop import UpgradeShop
 from ui.owner_menu import OwnerMenu
 from ui.journal import Journal
+from ui.display_menu import DisplayMenu
+from ui.welcome import Welcome
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, *, fullscreen=False, start_screen=False):
         pygame.display.init()
         pygame.font.init()
-        self.screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
+        self.fullscreen=fullscreen
+        self.window_size=WINDOW_SIZE
+        self.screen = pygame.display.set_mode((0,0) if fullscreen else WINDOW_SIZE,
+                                              pygame.FULLSCREEN if fullscreen else pygame.RESIZABLE)
         pygame.display.set_caption(TITLE)
         self.clock = pygame.time.Clock()
         self.mall = Mall()
@@ -39,6 +44,8 @@ class Game:
         self.shop_menu = UpgradeShop()
         self.owner_menu = OwnerMenu()
         self.journal = Journal()
+        self.display_menu = DisplayMenu()
+        self.welcome = Welcome(start_screen)
         self.owner_requests = OwnerRequests()
         self.shoppers = Shoppers()
         self.cash = 0
@@ -123,7 +130,7 @@ class Game:
             self.notify(f'Collected {collected}. Bag {self.upgrades.held}/{self.upgrades.capacity} / sell at a trash bin.')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open:
             return
         target = self.target()
         if isinstance(target,Trash):
@@ -135,7 +142,9 @@ class Game:
             self.notify(self.shoppers.greet(target))
             self.audio.play('pickup')
         elif isinstance(target,RequestSpot):
-            if self.owner_requests.interact(target):
+            if target.kind == 'display':
+                self.display_menu.visit()
+            elif self.owner_requests.interact(target):
                 self.notify('Display supplies collected in your delivery satchel. Return to the owner.')
                 self.feedback.burst(target.position,'SUPPLIES')
                 self.audio.play('pickup')
@@ -195,11 +204,19 @@ class Game:
         self.shop_menu.category = self.shop_menu.selection = 0
         self.shop_menu.notice = ''
 
+    def toggle_fullscreen(self):
+        self.fullscreen=not self.fullscreen
+        self.screen=pygame.display.set_mode((0,0) if self.fullscreen else self.window_size,
+                                            pygame.FULLSCREEN if self.fullscreen else pygame.RESIZABLE)
+
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         framing = 70+max(0,(720-viewport[1])/2)
         self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open:
+        if self.welcome.open:
+            self.welcome.update(dt)
+            return
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
@@ -213,9 +230,9 @@ class Game:
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:
             if spot.progress:
-                self.player.use_tool('water' if spot.kind == 'seedlings' else 'setup',spot.position+pygame.Vector2(48,-16))
+                self.player.use_tool('setup',spot.position+pygame.Vector2(48,-16))
         for spot in completed:
-            self.player.use_tool('water' if spot.kind == 'seedlings' else 'setup',spot.position+pygame.Vector2(48,-16))
+            self.player.use_tool('setup',spot.position+pygame.Vector2(48,-16))
             self.feedback.burst(spot.position,'DONE',restored=True)
             self.audio.play('pickup')
             self.notify(self.owner_requests.objective)
@@ -245,16 +262,37 @@ class Game:
         for spot in self.owner_requests.spots:
             if not spot.completed or spot.kind != 'parcel':
                 spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
-        self.shoppers.draw(self.screen,self.camera,self.art,self.hud.small,target)
-        self.player.draw(self.screen,self.camera,self.art)
-        self.feedback.draw(self.screen,self.camera,self.hud.font)
-        self.hud.draw(self,target)
-        if self.shop_menu.open:
-            self.shop_menu.draw(self)
-        elif self.owner_menu.open:
-            self.owner_menu.draw(self)
-        elif self.journal.open:
-            self.journal.draw(self)
+        # Tall furniture and people share depth, so walking behind a prop looks natural.
+        layers=[(depth,'furniture',(name,center,size)) for depth,name,center,size in self.mall.furniture(self.upgrades)]
+        layers += [(p.position.y,'shopper',p) for p in self.shoppers.people if p.visible]
+        layers.append((self.player.rect.centery,'player',self.player))
+        for _,kind,item in sorted(layers,key=lambda entry:entry[0]):
+            if kind == 'furniture':
+                name,center,size=item
+                self.art.draw(self.screen,name,self.camera.point(center),size)
+            elif kind == 'shopper':
+                item.draw(self.screen,self.camera,self.art,self.hud.small,target is item)
+            else:
+                item.draw(self.screen,self.camera,self.art)
+        if self.welcome.open:
+            if self.welcome.leaving:
+                hud_layer=pygame.Surface(self.screen.get_size(),pygame.SRCALPHA)
+                self.hud.draw(self,target,hud_layer)
+                fade=self.welcome.fade
+                hud_layer.set_alpha(round(255*fade*fade*(3-2*fade)))
+                self.screen.blit(hud_layer,(0,0))
+            self.welcome.draw(self)
+        else:
+            self.feedback.draw(self.screen,self.camera,self.hud.font)
+            self.hud.draw(self,target)
+            if self.shop_menu.open:
+                self.shop_menu.draw(self)
+            elif self.owner_menu.open:
+                self.owner_menu.draw(self)
+            elif self.journal.open:
+                self.journal.draw(self)
+            elif self.display_menu.open:
+                self.display_menu.draw(self)
         pygame.display.flip()
 
     def run(self):
@@ -264,14 +302,21 @@ class Game:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.running = False
-                    elif event.type == pygame.VIDEORESIZE:
-                        self.screen = pygame.display.set_mode((max(800,event.w),max(600,event.h)),pygame.RESIZABLE)
+                    elif event.type == pygame.VIDEORESIZE and not self.fullscreen:
+                        self.window_size=(max(800,event.w),max(600,event.h))
+                        self.screen = pygame.display.set_mode(self.window_size,pygame.RESIZABLE)
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                        self.toggle_fullscreen()
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_m:
                         muted = self.audio.toggle()
                         message = 'Music and effects muted.' if muted else 'Music and effects on.'
                         self.notify(message)
                         if self.shop_menu.open:
                             self.shop_menu.notice = message
+                    elif self.welcome.open:
+                        self.welcome.handle(event,self)
+                    elif self.display_menu.open:
+                        self.display_menu.handle(event,self)
                     elif self.shop_menu.open:
                         self.shop_menu.handle(event,self)
                     elif self.owner_menu.open:

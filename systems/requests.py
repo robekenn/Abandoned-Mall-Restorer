@@ -8,11 +8,19 @@ OWNERS = {'Pages Bookshop':'Mara','Retro Replay':'Jules','Bean Street':'Iris','T
 SUPPLIES = {'Pages Bookshop':'new books','Retro Replay':'game cartridges',
             'Bean Street':'coffee cups','The Tailor':'fabric rolls',
             'Vinyl & Company':'records','The Green Table':'herb pots'}
+DISPLAY_ITEMS = {
+    'Pages Bookshop': ('New novel','Travel guide','Rare edition'),
+    'Retro Replay': ('New release','Classic game','Collector set'),
+    'Bean Street': ('House blend','Morning mug','Gift tin'),
+    'The Tailor': ('Linen shirt','Everyday scarf','Evening coat'),
+    'Vinyl & Company': ('New album','Old favorite','Limited pressing'),
+    'The Green Table': ('Fresh basil','Kitchen mint','Herb basket'),
+}
 PROJECTS = (
-    ('A fresh start','Bring our display supplies from the delivery crate by the bins.',
+    ('A fresh start','Collect our supplies from the signed delivery station.',
      'Welcoming display',0.5,50),
-    ('Room to grow','Water two community seedling trays. Hold E at each tray, then come back.',
-     'Community corner',1,100),
+    ('A window worth stopping for','Arrange a window display using our shelf plan. Press E at the blue worktable.',
+     'Curated window',1,100),
     ('Hello, neighbors','Set up our welcome sign with Hold E, and say hello to three different shoppers.',
      'Neighborhood favorite',2,200),
 )
@@ -33,7 +41,8 @@ class RequestSpot:
 
     def draw(self, surface, camera, art, font, selected):
         point = camera.point(self.position)
-        art.draw(surface,'request_'+self.kind,(point.x+48,point.y-16),(48,48))
+        if self.kind != 'parcel':
+            art.draw(surface,'request_'+self.kind,(point.x+48,point.y-16),(48,48))
         if not self.completed:
             pygame.draw.circle(surface,(130,196,209),point,8,2)
         if selected:
@@ -52,6 +61,7 @@ class OwnerRequests:
         self.spots = []
         self.parcel = False
         self.greetings = set()
+        self.delivery_name = ''
 
     def eligible(self, store):
         return store.restored and not store.upgrade_shop and store.request_level < len(PROJECTS) and store.request_wait <= 0
@@ -73,7 +83,7 @@ class OwnerRequests:
     def details(self, store):
         title,description,improvement,bonus,reward = PROJECTS[store.request_level]
         if store.request_level == 0:
-            description = f'Our {SUPPLIES[store.name]} arrived. Bring them from the blue delivery crate by the bins so we can welcome our first customers.'
+            description = f'Our {SUPPLIES[store.name]} arrived. Bring them from our section’s signed delivery station so we can welcome our first customers.'
         return title,description,improvement,bonus,reward
 
     def accept(self, store, mall):
@@ -83,15 +93,12 @@ class OwnerRequests:
         self.parcel = False
         self.greetings.clear()
         east = store in mall.east.stores
-        bins = mall.east.bins if east else mall.trash_bins[:2]
         if store.request_level == 0:
-            depot = min(bins,key=lambda b:b.position.distance_squared_to(store.position))
-            self.spots = [RequestSpot(depot.position+pygame.Vector2(0,90),f'Collect {SUPPLIES[store.name]}','parcel')]
+            depot = mall.east.delivery if east else mall.delivery
+            self.delivery_name = depot.name
+            self.spots = [RequestSpot(depot.position.copy(),f'Collect {SUPPLIES[store.name]}','parcel')]
         elif store.request_level == 1:
-            # Temporary seedling trays do not grant purchased planter upgrades.
-            positions = [(1900,880),(3160,880)] if east else [(480,880),(1220,880)]
-            self.spots = [RequestSpot(pygame.Vector2(p),f'Water seedling tray {i+1}','seedlings',1.5)
-                          for i,p in enumerate(positions)]
+            self.spots = [RequestSpot(store.position+pygame.Vector2(90,80),'Arrange the window display','display')]
         else:
             self.spots = [RequestSpot(store.position+pygame.Vector2(90,80),'Set up welcome sign','sign',2)]
         return True
@@ -116,18 +123,36 @@ class OwnerRequests:
         if self.ready:
             return f'Return to {owner} at {self.store.name} / E, then Enter.'
         if self.store.request_level == 0:
-            return 'Pick up display supplies at the blue crate marker by the bins.'
+            return f'Collect supplies at {self.delivery_name}. J opens the map.'
         if self.store.request_level == 1:
-            return f'Hold E to water seedling trays: {sum(s.completed for s in self.spots)}/2.'
+            return 'Arrange the window display at the blue worktable. Press E.'
         return f'Welcome sign: {"done" if self.spots[0].completed else "Hold E"} / shoppers greeted {len(self.greetings)}/3.'
 
     def interact(self, spot):
         if spot not in self.visible_spots:
             return False
-        if spot.duration:
+        if spot.duration or spot.kind != 'parcel':
             return False
         spot.completed = True
         self.parcel = True
+        return True
+
+    @property
+    def display_items(self):
+        return DISPLAY_ITEMS[self.store.name] if self.store and self.store.request_level == 1 else ()
+
+    @property
+    def display_plan(self):
+        if not self.display_items:
+            return ()
+        # Different storefronts feature different shelf orders; stable across reopening.
+        orders=((1,0,2),(2,1,0),(0,2,1))
+        return orders[list(OWNERS).index(self.store.name)%len(orders)]
+
+    def arrange_display(self, arrangement):
+        if not self.display_items or tuple(arrangement) != self.display_plan or self.ready:
+            return False
+        self.spots[0].completed = True
         return True
 
     def work(self, dt, player_position, held, stationary):

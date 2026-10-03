@@ -34,10 +34,9 @@ class Store:
     def draw(self, surface, camera, font, art, selected=False):
         r = camera.rect(self.rect)
         name = self.kind + ('_clean' if self.restored else '_dirty')
+        if self.restored and self.door_open:
+            name += '_open'
         art.draw(surface, name, r.center, (r.width+12,r.height+20))
-        if self.door_open:
-            pygame.draw.rect(surface,(24,35,38),(r.centerx-18,r.bottom-148,36,126))
-            pygame.draw.line(surface,(175,191,163),(r.centerx+17,r.bottom-146),(r.centerx+17,r.bottom-24),2)
         sign = font.render(self.name.upper(), True, (250,234,193) if self.restored else (188,184,166))
         background = sign.get_rect(center=(r.centerx, r.y+40)).inflate(16,10)
         pygame.draw.rect(surface, (35,49,47), background, border_radius=4)
@@ -48,11 +47,10 @@ class Store:
                 pygame.draw.rect(surface,(223,180,94),(r.centerx+offset-12,r.bottom-70,24,6))
         if self.request_level >= 2:
             for offset in (-r.width//4,r.width//4):
-                x,y = r.centerx+offset,r.bottom-35
-                pygame.draw.rect(surface,(133,94,61),(x-20,y,40,8))
-                for dx in (-12,0,12):
-                    pygame.draw.rect(surface,(112,150,87),(x+dx-4,y-10,8,10))
-                    pygame.draw.rect(surface,(223,180,94),(x+dx-3,y-12,6,5))
+                x,y = r.centerx+offset,r.bottom-70
+                for dx,color in ((-8,(84,139,131)),(0,(223,180,94)),(8,(172,120,79))):
+                    pygame.draw.rect(surface,color,(x+dx-3,y-18,6,18))
+                pygame.draw.rect(surface,(228,216,164),(x-15,y-23,30,3))
         if self.request_level >= 3:
             for x in range(r.left+12,r.right-12,24):
                 pygame.draw.polygon(surface,(223,180,94),[(x,r.y+90),(x+14,r.y+90),(x+7,r.y+102)])

@@ -32,7 +32,7 @@ class Journal:
             text=game.hud.font.render(value,True,theme.TEXT);surface.blit(text,text.get_rect(topright=(panel.x+22+half,y-2)))
         map_rect=pygame.Rect(panel.x+44+half,panel.y+86,half,176)
         game.hud.directory(surface,game.mall,game.player.rect.center,game.owner_requests,game.shoppers.people,map_rect)
-        surface.blit(game.hud.small.render('White: you   Blue: your request',True,theme.MUTED),(map_rect.x,map_rect.bottom+10))
+        surface.blit(game.hud.small.render('White: you   Blue: request   Gold: deliveries',True,theme.MUTED),(map_rect.x,map_rect.bottom+10))
         y=panel.y+304
         surface.blit(game.hud.font.render('Store owners',True,theme.ACCENT),(panel.x+22,y))
         for i,store in enumerate(s for s in game.mall.stores if not s.upgrade_shop):
