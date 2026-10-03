@@ -1,6 +1,7 @@
 """One paid cleaner per court, with local routes and discounted automatic sales."""
 import pygame
 from systems.shoppers import Walkways
+from entities.player import draw_tool
 
 
 class CourtPaths(Walkways):
@@ -67,7 +68,12 @@ class Janitor:
         return max(0,dt-used/self.speed)
 
     def update(self, dt, pool, game):
-        self.paths.refresh(game.mall)
+        before=self.paths.signature;self.paths.refresh(game.mall)
+        if before!=self.paths.signature and self.path:
+            destination=self.target.position if self.target else self.path[-1]
+            route=self.route_to(destination,game.mall)
+            self.path=route or []
+            if route is None:self.target=None;self.progress=0
         requests=game.owner_requests
         protected=[]
         if requests.favor and requests.favor.mode=='collect' and requests.area==self.paths.area and requests.progress<requests.favor.amount:
@@ -97,7 +103,12 @@ class Janitor:
 
     def draw(self, game):
         point=game.camera.point(self.position)
-        game.art.draw(game.screen,f'janitor_{self.facing}_{self.frame}',(point.x,point.y-12),(48,72))
+        cleaning=bool(self.progress and self.target and not self.target.cleaned and not self.path)
+        frame=int(self.progress/.105)%4 if cleaning else self.frame
+        pose=f'clean_{frame}' if cleaning else str(frame)
+        game.art.draw(game.screen,f'janitor_{self.facing}_{pose}',(point.x,point.y-12),(48,72))
+        if cleaning:
+            draw_tool(game.screen,game.art,point,self.facing,frame,'broom' if self.target.kind=='dirt' else 'grabber')
         if self.progress:
             rect=pygame.Rect(point.x-23,point.y-65,46,5)
             pygame.draw.rect(game.screen,(41,56,59),rect)

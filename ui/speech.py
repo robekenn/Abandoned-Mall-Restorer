@@ -40,5 +40,5 @@ class Speech:
         else:
             for person in game.shoppers.people:
                 if person.visible and person.speech_time:
-                    self.draw_bubble(game,person.name,person.speech,person.position)
+                    self.draw_bubble(game,person.name,person.speech,person.display_position)
                     break

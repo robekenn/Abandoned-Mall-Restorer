@@ -57,7 +57,8 @@ class DeveloperTests(unittest.TestCase):
         for enabled in (False,True):
             g=Game(developer=enabled)
             events=[[pygame.event.Event(pygame.KEYDOWN,key=pygame.K_F3),pygame.event.Event(pygame.KEYDOWN,key=pygame.K_1)],
-                    [pygame.event.Event(pygame.QUIT)]]
+                    [pygame.event.Event(pygame.QUIT)],
+                 [pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN),pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN)]]
             with patch('pygame.event.get',side_effect=events),patch.object(g,'draw'),patch.object(g,'update'):
                 g.run()
             self.assertEqual(g.developer.open,enabled)

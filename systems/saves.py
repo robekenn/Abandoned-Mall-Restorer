@@ -14,6 +14,7 @@ from systems.requests import OwnerRequests
 from systems.shoppers import Shoppers
 from systems.janitors import Janitors, Janitor
 from systems.story import Story
+from systems.mall_life import MallLife, EventSpot
 from ui.tutorial import Tutorial
 
 
@@ -55,7 +56,10 @@ def snapshot(game):
         workers[key]={'position':list(j.position),'walk':j.walk_level,'clean':j.clean_level,'cleaned':j.cleaned,
                       'earnings':j.earnings,'target':game.mall.trash.index(target) if target else None,
                       'progress':j.progress if target else 0}
-    return {'cash':game.cash,'player':list(game.player.rect.center),'facing':game.player.facing,
+    life=game.life
+    community={'completed':life.completed,'cooldowns':life.cooldowns,'owner_chats':life.owner_chats,
+               'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants}
+    return {'life':community,'cash':game.cash,'player':list(game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
             'trash':[[t.cleaned,t.ever_cleaned,getattr(t,'revision',0)] for t in game.mall.trash],
@@ -152,6 +156,27 @@ def restore_state(data, game):
     if any(story.completed[i] and (not story.started[i] or not all(story.memories[i])) for i in range(4)):raise ValueError('Incomplete chapter memory state')
     story.seed=number(saved_story.get('seed',0),0,2**31-1,True)
     story.setup(mall);story.update(0,mall)
+    life=MallLife()
+    if data.get('life') is not None:
+        row=data['life']
+        if set(row['completed'])!=set(life.completed) or set(row['cooldowns'])!=set(life.cooldowns):raise ValueError('Invalid community courts')
+        life.completed={k:number(row['completed'][k],0,10**9,True) for k in life.completed}
+        life.cooldowns={k:number(row['cooldowns'][k],0,life.COOLDOWN) for k in life.cooldowns}
+        allowed={s.name for s in mall.stores if s.restored and not s.upgrade_shop}
+        if not set(row['owner_chats'])<=allowed:raise ValueError('Unknown owner conversation')
+        life.owner_chats={k:number(v,0,10**12,True) for k,v in row['owner_chats'].items()}
+        life.active=row['active'];life.round=number(row['round'],0,3,True)
+        names=row.get('participants',[])
+        if not isinstance(names,list) or len(names)>3 or any(n not in ('Alex','Bea','Sam','Nico','June','Lee','Robin','Kit') for n in names):raise ValueError('Unknown event participants')
+        life.participants=names
+        if life.active is not None:
+            if life.active not in life.completed:raise ValueError('Unknown gathering')
+            court=next(c for c in workers.courts(mall) if c[0]==life.active)
+            point=vector(row['position']);footprint=pygame.Rect(point.x-90,point.y-82,180,162)
+            if not court[5] or not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles):raise ValueError('Unsafe community table')
+            life.spot=EventSpot(point,life.event.title)
+        elif life.round or row['position'] is not None or life.participants:raise ValueError('Community progress without a gathering')
+    life.sync_spots(mall)
     player=Player(vector(data['player']))
     if not any(a.collidepoint(player.rect.center) for a in mall.playable_areas) or any(w.colliderect(player.rect) for w in mall.obstacles):
         # A checkpoint on a grille threshold is moved to the nearest safe floor node.
@@ -166,7 +191,7 @@ def restore_state(data, game):
     shoppers=Shoppers();shoppers.next_identity=number(data['visitor_identity'],integer=True)
     if requests.greetings:shoppers.next_identity=max(shoppers.next_identity,max(requests.greetings)+1)
     state={'mall':mall,'upgrades':u,'owner_requests':requests,'janitors':workers,'story':story,'tutorial':tutorial,
-           'player':player,'shoppers':shoppers,'cash':number(data['cash']),'rent_timer':number(data['rent_timer'],0,5),
+           'life':life,'player':player,'shoppers':shoppers,'cash':number(data['cash']),'rent_timer':number(data['rent_timer'],0,5),
            'total_collected':number(data['collected'],integer=True),'total_sold':number(data['sold'],integer=True)}
     litter_timer=number(data['litter_timer'],0,4);turn=number(data['litter_turn'],0,10**12,True);muted=flag(data['muted'])
     # Commit only after every field passed; a damaged primary can safely fall back.

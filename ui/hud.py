@@ -8,6 +8,7 @@ from systems.shoppers import Shopper
 from mall.store import Store
 from systems.story import StoryPoint, CHAPTERS
 from ui import theme
+from systems.mall_life import EventSpot
 
 
 class HUD:
@@ -24,6 +25,8 @@ class HUD:
         if game.tutorial.active:return game.tutorial.goal
         if requests.store:
             return f'{OWNERS[requests.store.name]}: {requests.project[0]}',requests.objective
+        if game.life.spot and game.mall.area_for_store(game.life.court(game,game.life.active)[3][0]).collidepoint(game.player.rect.center):
+            return game.life.event.title,'Visit the community table · '+str(game.life.round)+'/3 little connections'
         if game.upgrades.held == game.upgrades.capacity:
             return 'Bag full','Sell your trash at a mall bin.'
         if not mall.stores[0].restored:
@@ -46,6 +49,7 @@ class HUD:
         return 'A place for everyone','Visit the Commons board to begin another lantern walk.'
 
     def prompt(self, game, target):
+        if isinstance(target,EventSpot):return 'E','Join '+target.title
         if isinstance(target,StoryPoint):return 'E',target.label
         if isinstance(target,Trash):
             return 'E','Collect litter' if game.upgrades.held<game.upgrades.capacity else 'Bag full. Find a bin.'
@@ -79,6 +83,8 @@ class HUD:
         for depot in deliveries:
             p=(round(bounds.x+depot.position.x*sx),round(bounds.y+depot.position.y*sy))
             pygame.draw.rect(surface,theme.GOLD,(p[0]-3,p[1]-3,6,6),1)
+        for point in getattr(mall,'event_spots',()):
+            pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),4)
         for point in getattr(mall,'story_markers',()):
             pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),3)
         if requests and requests.store:
@@ -117,7 +123,7 @@ class HUD:
         available=width-key_width-330
         for i,line in enumerate(theme.wrap(self.small,action,available)[:2]):
             surface.blit(self.small.render(line,True,theme.TEXT),(r.right+12,height-41+i*17))
-        controls=self.small.render('J Journal   H Help   M Sound   Esc Exit',True,theme.MUTED)
+        controls=self.small.render('J Journal   H Help   M Sound   Esc Pause',True,theme.MUTED)
         surface.blit(controls,controls.get_rect(midright=(width-20,height-29)))
         if game.message_timer:
             lines=theme.wrap(self.small,game.message,min(540,width-68))[:2]

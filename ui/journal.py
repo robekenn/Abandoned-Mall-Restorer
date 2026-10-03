@@ -21,7 +21,7 @@ class Journal:
 
     def tabs(self, surface):
         panel,_=self.geometry(surface)
-        return [pygame.Rect(panel.x+22+i*124,panel.y+59,114,25) for i in range(3)]
+        return [pygame.Rect(panel.x+22+i*124,panel.y+59,114,25) for i in range(4)]
 
     def staff_rows(self, surface):
         panel,_=self.geometry(surface)
@@ -40,10 +40,14 @@ class Journal:
     def handle(self,event,game):
         if event.type==pygame.KEYDOWN:
             if event.key in (pygame.K_j,pygame.K_ESCAPE,pygame.K_e):self.open=False;return
-            if event.key in (pygame.K_1,pygame.K_2,pygame.K_3,pygame.K_TAB):
-                self.tab=(self.tab+1)%3 if event.key==pygame.K_TAB else event.key-pygame.K_1
+            if event.key in (pygame.K_1,pygame.K_2,pygame.K_3,pygame.K_4,pygame.K_TAB):
+                self.tab=(self.tab+1)%4 if event.key==pygame.K_TAB else event.key-pygame.K_1
                 if self.tab==2:self.chapter=min(3,game.story.current)
                 self.notice='';return
+            if self.tab==3:
+                if event.key in (pygame.K_UP,pygame.K_DOWN):self.court=(self.court+(-1 if event.key==pygame.K_UP else 1))%4
+                elif event.key in (pygame.K_RETURN,pygame.K_SPACE):self.start_event(game,self.court)
+                return
             if self.tab==2:
                 if event.key==pygame.K_r:self.memories_view=not self.memories_view
                 if event.key in (pygame.K_LEFT,pygame.K_RIGHT):self.chapter=max(0,min(3,self.chapter+(-1 if event.key==pygame.K_LEFT else 1)))
@@ -57,7 +61,8 @@ class Journal:
         elif event.type==pygame.MOUSEWHEEL:
             if self.tab==0:self.page=max(0,self.page-event.y)
             elif self.tab==1:self.court=(self.court-event.y)%4
-            else:self.chapter=max(0,min(3,self.chapter-event.y))
+            elif self.tab==2:self.chapter=max(0,min(3,self.chapter-event.y))
+            else:self.court=(self.court-event.y)%4
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
             if self.geometry(game.screen)[1].collidepoint(event.pos):self.open=False;return
             for i,rect in enumerate(self.tabs(game.screen)):
@@ -65,6 +70,10 @@ class Journal:
                     self.tab=i;self.notice=''
                     if i==2:self.chapter=min(3,game.story.current)
                     return
+            if self.tab==3:
+                for i,row in enumerate(self.life_rows(game.screen)):
+                    if row.collidepoint(event.pos):self.court=i;self.start_event(game,i)
+                return
             if self.tab==2:
                 for i,rect in enumerate(self.page_buttons(game.screen)):
                     if rect.collidepoint(event.pos):self.chapter=max(0,min(3,self.chapter+(-1 if i==0 else 1)))
@@ -79,6 +88,35 @@ class Journal:
                 return
             for i,rect in enumerate(self.page_buttons(game.screen)):
                 if rect.collidepoint(event.pos):self.page=max(0,self.page+(-1 if i==0 else 1))
+
+    def life_rows(self, surface):
+        panel,_=self.geometry(surface)
+        return [pygame.Rect(panel.x+22,panel.y+98+i*86,panel.width-44,78) for i in range(4)]
+
+    def start_event(self, game, index):
+        key=list(game.life.completed)[index]
+        if game.life.start(game,key):
+            self.open=False;game.notify(game.life.event.title+' · Follow the gold table on your journal map.')
+        elif game.life.active:self.notice='A gathering is already underway. Visit its community table to join in.'
+        elif game.life.cooldowns[key]>0:self.notice='Give the neighbors a little time to prepare for another gathering.'
+        else:self.notice='Open two regular businesses and clean at least half of this court to host a gathering.'
+
+    def draw_life(self, game, panel):
+        for i,(court,row) in enumerate(zip(game.janitors.courts(game.mall),self.life_rows(game.screen))):
+            key,name=court[:2];life=game.life;theme.frame(game.screen,row,theme.CARD)
+            if i==self.court:pygame.draw.rect(game.screen,theme.ACCENT,row,1,border_radius=8)
+            game.screen.blit(game.hud.font.render(name,True,theme.TEXT),(row.x+12,row.y+8))
+            title=life.event.title if life.active==key else life.gathering(key).title
+            game.screen.blit(game.hud.small.render(title,True,theme.GOLD),(row.x+12,row.y+33))
+            if life.active==key:status=f'Underway · {life.round}/3 connections · Visit the community table'
+            elif not court[5]:status='Open this court to bring its neighbors together'
+            elif life.cooldowns[key]>0:status='Next gathering in '+theme.clock(life.cooldowns[key])+' of play'
+            elif not life.available(game,key):status='Needs 2 regular shops and 50% local cleanliness'
+            else:status='Enter / click to host · Completed '+str(life.completed[key])
+            game.screen.blit(game.hud.small.render(status,True,theme.ACCENT),(row.x+12,row.y+55))
+        for n,line in enumerate(theme.wrap(game.hud.small,self.notice or 'Optional gatherings have no deadline. Listen to each neighbor and find a little something they will love.',panel.width-44)[:3]):
+            game.screen.blit(game.hud.small.render(line,True,theme.MUTED),(panel.x+22,panel.bottom-85+n*19))
+        game.screen.blit(game.hud.small.render('1–4: tabs   Up/Down: court   Enter: host   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
 
     def draw_staff(self, game, panel):
         for i,((key,name,_,_,_,unlocked,_),row) in enumerate(zip(game.janitors.courts(game.mall),self.staff_rows(game.screen))):
@@ -106,7 +144,7 @@ class Journal:
                 game.screen.blit(text,text.get_rect(center=button.center))
         if self.notice:
             game.screen.blit(game.hud.small.render(self.notice,True,theme.GOLD),(panel.x+22,panel.bottom-49))
-        caption='1/2/3: tabs   ↑/↓: court   Enter: hire   C: cleaning   W: walking'
+        caption='1–4: tabs   ↑/↓: court   Enter: hire   C: cleaning   W: walking'
         game.screen.blit(game.hud.small.render(caption,True,theme.MUTED),(panel.x+22,panel.bottom-27))
 
     def draw_story(self, game, panel):
@@ -136,15 +174,16 @@ class Journal:
                 game.screen.blit(text,text.get_rect(topright=(row.right-10,row.y+5)))
         result='The lantern walk is here. Northgate still has stories to share.' if game.story.festival else 'Read the gold community board in each court to begin or finish.'
         game.screen.blit(game.hud.small.render(result,True,theme.GOLD),(panel.x+22,panel.bottom-53))
-        game.screen.blit(game.hud.small.render('1/2/3: tabs   Left/Right: chapters   R: keepsakes   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
+        game.screen.blit(game.hud.small.render('1–4: tabs   Left/Right: chapters   R: keepsakes   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
 
     def draw(self,game):
         surface=game.screen;theme.dim(surface);panel,close=self.geometry(surface);theme.frame(surface,panel)
         surface.blit(game.hud.title.render('Mall journal',True,theme.TEXT),(panel.x+22,panel.y+22))
         theme.frame(surface,close,theme.CARD,False);text=game.hud.small.render('Close',True,theme.MUTED);surface.blit(text,text.get_rect(center=close.center))
-        for i,(label,rect) in enumerate(zip(('Overview','Janitors','Story'),self.tabs(surface))):
+        for i,(label,rect) in enumerate(zip(('Overview','Janitors','Story','Mall life'),self.tabs(surface))):
             theme.frame(surface,rect,theme.CARD,False)
             text=game.hud.small.render(label,True,theme.ACCENT if self.tab==i else theme.MUTED);surface.blit(text,text.get_rect(center=rect.center))
+        if self.tab==3:self.draw_life(game,panel);return
         if self.tab==1:self.draw_staff(game,panel);return
         if self.tab==2:self.draw_story(game,panel);return
         stats=[('Rent per 5 seconds',money(game.rent_income)),('Cleanliness bonus',f'{game.rent_multiplier:g}×'),
@@ -176,4 +215,4 @@ class Journal:
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
         surface.blit(game.hud.small.render('F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
-        surface.blit(game.hud.small.render('1/2/3: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))
+        surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))

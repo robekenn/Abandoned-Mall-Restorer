@@ -22,13 +22,17 @@ The east unlock marker stays hidden until all ten north businesses reopen. Then 
 
 A rising chime rewards 1.5x rent; a short low tone and an explanatory message signal full bags and unavailable actions. An original, quiet four-level chiptune loop plays beneath the effects. M mutes music and effects, then resumes music when unmuted.
 
-The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress now saves automatically, with Continue on the opening screen and a separate developer slot. F5 saves manually. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
+The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Rounded silhouettes, shaded clothes and distinct hairstyles keep the warm pixel-art palette. Janitors animate with a broom for dirt and a grabber for litter, using the same tool strokes as the player. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress now saves automatically, with Continue on the opening screen and a separate developer slot. F5 saves manually. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
 
 ## A mall coming back to life
 
-Shoppers begin returning when stores reopen. Every visitor uses one visible main entrance on the North arcade’s exterior west wall and walks through the connected courts. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
+Shoppers begin returning when stores reopen. Every visitor uses one visible main entrance on the North arcade’s exterior west wall and walks through the connected courts. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Some visitors browse a second local shop on clean floors, carry purchases after shopping, sit on restored benches, pause by fountains, or meet a friend. Purchased amenities and clean floors encourage longer visits. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
 
-Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
+Open **J → Mall life** (journal key **4**) to host an optional community gathering. Each court needs two reopened regular shops and at least 50% local cleanliness. Book swaps, café tastings, plant sales and evening makers markets rotate after each completed gathering. Visit the gold-marked community table and listen to three neighbors before choosing something they will enjoy. There is no deadline or penalty for trying again. Completion pays $200/$500/$1,000/$1,800 by court; the next gathering becomes available after five minutes of play. Progress and owner conversations save with the existing checkpoint.
+
+**Esc** opens a pause screen, freezing movement, work, rent and event timers. Resume, save, or choose Exit game and confirm. Closing the window also asks for confirmation. The default confirmation is to stay; a failed save keeps the game open and offers a deliberate exit without saving.
+
+Press E at any reopened rent-paying business to meet its owner. **C / Just chat** shares a personal memory or a reaction to the mall; these conversations develop as the owner earns improvements. Owners appear by their doors while speaking. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
 These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A fresh three-minute wait follows every claim. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
 
@@ -65,7 +69,7 @@ python3 -m venv .venv
 - **F5:** save a checkpoint
 - **F11:** switch between fullscreen and a resizable window
 - **J:** open/close the journal (map, stats, owner countdowns, janitors and story)
-- **Esc:** close an open menu/journal, or quit from the mall
+- **Esc:** close an open menu/journal, or pause from the mall; exiting requires confirmation
 
 Inside any upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
 
@@ -87,8 +91,10 @@ Tests use SDL's dummy display driver, so they also run without a desktop.
 
 ## Developer playtesting
 
-Launch with `python main.py --dev` (Windows: `py main.py --dev`). After starting, press **F3** to add $10,000/$100,000/$1,000,000, clean the current court or jump to the next area. Use 1–6 or click a button; **6** prepares the next story chapter and takes you to its community board. F3/Esc closes the panel. These controls are disabled during normal launches. See [developer playtesting](docs/developer-playtesting.md) for windowed and packaged-build commands.
+Launch with `python main.py --dev` (Windows: `py main.py --dev`). After starting, press **F3** to add $10,000/$100,000/$1,000,000, clean the current court or jump to the next area. Use 1–7 or click a button; **6** prepares the next story chapter and takes you to its community board. **7** prepares a community gathering in the current court. F3/Esc closes the panel. These controls are disabled during normal launches. See [developer playtesting](docs/developer-playtesting.md) for windowed and packaged-build commands.
 
 ## CI and downloadable builds
 
 GitHub Actions tests Windows, Linux and macOS with Python 3.12/3.13, then builds and smoke-tests standalone packages. Download development builds from the CI run artifacts. Pushing a `v` version tag prepares a draft release after all checks pass. See [CI and release guide](docs/ci-and-releases.md) for local packaging and publishing steps.
+
+See [mall life and community gatherings](docs/mall-life.md) for events, evolving conversations and the new exit flow.

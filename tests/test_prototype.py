@@ -53,6 +53,8 @@ class PrototypeTests(unittest.TestCase):
         g.camera.update((0, 0), (4000, 2400))
         self.assertEqual(g.camera.offset, (0, 0))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         g.run()
         self.assertFalse(g.running)
 
@@ -89,6 +91,8 @@ class PrototypeTests(unittest.TestCase):
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_w))
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_TAB))
         pygame.event.post(pygame.event.Event(pygame.QUIT))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN))
+        pygame.event.post(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         g.run()
         self.assertEqual(g.upgrades.decor, set())
 

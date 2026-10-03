@@ -81,7 +81,8 @@ class ShopVisitsAndPacingTests(unittest.TestCase):
         g=self.game
         batches=[[pygame.event.Event(pygame.KEYDOWN,key=pygame.K_j)],
                  [pygame.event.Event(pygame.KEYDOWN,key=pygame.K_ESCAPE)],
-                 [pygame.event.Event(pygame.QUIT)]]
+                 [pygame.event.Event(pygame.QUIT)],
+                 [pygame.event.Event(pygame.KEYDOWN,key=pygame.K_DOWN),pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN)]]
         states=[]
         with patch('pygame.event.get',side_effect=batches),patch.object(g,'draw',side_effect=lambda:states.append(g.journal.open)):
             g.run()

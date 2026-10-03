@@ -69,5 +69,9 @@ class Player:
         art.draw(surface,name,(point.x,point.y-12),(48,72))
         if self.action_time>0:
             tool={'dirt':'broom','water':'water','setup':'setup'}.get(self.action_kind,'grabber')
-            offset={'down':(12,8),'up':(-10,-30),'left':(-28,-7),'right':(28,-7)}[self.facing]
-            art.draw(surface,f'{tool}_{self.facing}_{frame}',point+offset,(72,72))
+            draw_tool(surface,art,point,self.facing,frame,tool)
+
+
+def draw_tool(surface, art, point, facing, frame, tool):
+    offset={'down':(12,8),'up':(-15,-26),'left':(-28,-7),'right':(28,-7)}[facing]
+    art.draw(surface,f'{tool}_{facing}_{frame}',point+offset,(72,72))

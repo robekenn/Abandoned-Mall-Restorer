@@ -18,6 +18,13 @@ class OwnerMenu:
         button = pygame.Rect(panel.x+20,panel.bottom-80,panel.width-40,40)
         return panel,button
 
+    def chat_button(self, surface):
+        panel,_=self.geometry(surface)
+        return pygame.Rect(panel.x+20,panel.y+77,125,20)
+
+    def chat(self, game):
+        game.life.chat(game,self.store);self.open=False
+
     def visit(self, store):
         self.store = store
         self.open = True
@@ -37,12 +44,14 @@ class OwnerMenu:
 
     def handle(self, event, game):
         if event.type == pygame.KEYDOWN:
-            if event.key in (pygame.K_ESCAPE,pygame.K_e):
+            if event.key==pygame.K_c:self.chat(game)
+            elif event.key in (pygame.K_ESCAPE,pygame.K_e):
                 self.open = False
             elif event.key in (pygame.K_RETURN,pygame.K_SPACE):
                 self.action(game)
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.geometry(game.screen)[1].collidepoint(event.pos):
+            if self.chat_button(game.screen).collidepoint(event.pos):self.chat(game)
+            elif self.geometry(game.screen)[1].collidepoint(event.pos):
                 self.action(game)
 
     def draw(self, game):
@@ -57,6 +66,8 @@ class OwnerMenu:
         surface.blit(game.hud.small.render(subtitle,True,theme.MUTED),(panel.x+20,panel.y+55))
         for i in range(3):
             pygame.draw.circle(surface,theme.GOLD if i<store.request_level else theme.BORDER,(panel.right-28-i*20,panel.y+38),5)
+        chat=self.chat_button(surface);theme.frame(surface,chat,theme.CARD,False)
+        surface.blit(game.hud.small.render('C  Just chat',True,theme.ACCENT),(chat.x+8,chat.y+4))
         reward = ''
         if requests.store is not store and store.request_wait>0:
             title = 'A little time to settle in'
@@ -86,4 +97,4 @@ class OwnerMenu:
         theme.frame(surface,button,theme.CARD)
         label = game.hud.font.render(action,True,theme.ACCENT)
         surface.blit(label,label.get_rect(center=button.center))
-        surface.blit(game.hud.small.render('Enter / click: continue     Esc / E: close',True,theme.MUTED),(panel.x+20,panel.bottom-26))
+        surface.blit(game.hud.small.render('Enter: request   C: just chat   Esc / E: close',True,theme.MUTED),(panel.x+20,panel.bottom-26))

@@ -59,7 +59,7 @@ class Welcome:
                 if self.has_save:game.continue_game()
                 else:self.start()
             elif event.key==pygame.K_n:self.choose_new()
-            elif event.key==pygame.K_ESCAPE:game.running=False
+            elif event.key==pygame.K_ESCAPE:game.pause.show(True)
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
             _,start,quit=self.geometry(game.screen)
             if self.tutorial_rect(game.screen).collidepoint(event.pos):self.tutorial_enabled=not self.tutorial_enabled
@@ -67,7 +67,7 @@ class Welcome:
             elif start.collidepoint(event.pos):
                 if self.has_save:game.continue_game()
                 else:self.start()
-            elif quit.collidepoint(event.pos):game.running=False
+            elif quit.collidepoint(event.pos):game.pause.show(True)
 
     def draw(self, game):
         overlay=pygame.Surface(game.screen.get_size(),pygame.SRCALPHA)

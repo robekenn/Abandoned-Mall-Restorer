@@ -9,7 +9,7 @@ Linux requires a desktop and SDL-compatible system graphics/audio libraries.
 macOS builds are unsigned arm64 binaries; Windows builds are also unsigned.
 These builds are intended for testing; code signing is a future release task.
 
-Move: WASD / arrows. Interact: E. Music/effects mute: M. Quit: Esc.
+Move: WASD / arrows. Interact: E. Music/effects mute: M. Pause: Esc. Choose Exit game and confirm to quit.
 Collect litter into your bag and sell it at a SELL trash bin. Reopen Northgate
 Supplies first, then visit it with E to buy gear and individual fixtures.
 Each fixture adds $1 base rent. Reopen all north businesses, then pay $1,500
@@ -28,3 +28,8 @@ Developer playtesting: launch MallRestorer with --dev, then press F3
 after starting to add money, clean the current court or jump to the next.
 The panel pauses gameplay; close it with F3 or Esc. Normal launches keep
 these shortcuts disabled. On Windows: MallRestorer.exe --dev
+
+J -> Mall life (4): host optional gatherings after two regular shops reopen
+and your court is at least half clean. E at its gold table starts the
+conversation. C in an owner conversation: just chat. Developer F3 -> 7
+prepares a gathering for quick review.
