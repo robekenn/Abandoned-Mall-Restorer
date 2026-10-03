@@ -6,31 +6,35 @@ A top-down 2D restoration game built with Python and pygame-ce, without a commer
 
 ## A small beginning
 
-The game starts fullscreen on a short introduction to Northgate’s story. Choose **Start restoring** or press **Enter/Space** to fade into the mall. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**. The optional first-steps guide can be disabled before starting, skipped with **T**, or replayed with **H**.
+The game starts fullscreen on a short introduction to Northgate’s story. Choose **Start restoring** or press **Enter/Space** to fade into the mall. After a checkpoint exists, **Continue** resumes it; **New game / N** asks for a second confirmation. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**. The optional first-steps guide can be disabled before starting, skipped with **T**, or replayed with **H**.
 
 ## First playable prototype
 
-Restore the north arcade of Northgate Mall. Collect litter and dust into a one-item bag, then sell the load at either of two marked trash bins for $1 per item. A full bag blocks further cleanup until sold. The HUD shows cash, bag space, floor cleanliness and one current goal. Press J for the mall journal, map and detailed stats.
+Restore the north arcade of Northgate Mall. Collect litter and dust into a one-item bag, then sell the load at either of two marked trash bins for $1 per item. A full bag blocks further cleanup until sold. The HUD shows cash, bag space, floor cleanliness and one current goal. Press J for the mall journal, map, story and detailed stats.
 
 Reopen **Northgate Supplies** first for $10. Return to its marker and press E to open the upgrade shop. Buy larger bags (2/4/8/16/20 slots), better recycling contracts ($2/$4/$8/$15/$30 per item), and tools with longer reach and multi-item pickup. Each bench, lamp, planter, fountain and mosaic is purchased separately and adds $1 base rent per five seconds; there is no automatic scenery restoration or Tab scene cycling.
 
 The 63 starting cleanup tasks cover the entire concourse floor, including beneath furniture. Clearing all of them makes the opening floor 100% clean and unlocks the next business after Supplies: Pages Bookshop ($100, $5 rent), Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Open businesses pay rent every five seconds according to the playable arcade’s floor cleanliness: 0% pays nothing; above 0% and below 50% pays half; 50% through less than 100% pays normal rent; exactly 100% pays 1.5 times rent. Half-dollar payouts are retained. The journal shows the current payout and multiplier. Supplies is an upgrade shop and does not pay rent.
 
-After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve recurring piles per eligible section. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
+After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve recurring piles per eligible section. Eligible courts take turns; janitors reserve the litter needed for an active local collection favor. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
 
 The east unlock marker stays hidden until all ten north businesses reopen. Then pay **$1,500** at the east gate to open the next gallery. Reopen **Eastgate Workshop for $2,000** for 25/30/35/40-item bags (requires the 20-slot Supplies bag), three walking-speed upgrades up to 1.5x, recycling contracts worth $45/$60/$80 per item (requires Supplies’ $30 contract), and east-gallery fixtures. Clean its 56 starting patches and reopen Vinyl & Company, The Green Table, Copper Kettle and Secondhand Stars. Finish the east businesses to unlock **Garden Arcade ($10,000)**, then finish Garden to unlock **Community Commons ($35,000)**. All four areas have ten businesses, with five on each side of the court, an equipment shop, two bins, a delivery station and independent first-sweep progression. Cleanliness now includes all unlocked floors.
 
 A rising chime rewards 1.5x rent; a short low tone and an explanatory message signal full bags and unavailable actions. An original, quiet four-level chiptune loop plays beneath the effects. M mutes music and effects, then resumes music when unmuted.
 
-The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving remains a future milestone. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
+The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress now saves automatically, with Continue on the opening screen and a separate developer slot. F5 saves manually. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
 
 ## A mall coming back to life
 
-Shoppers begin returning when stores reopen. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
+Shoppers begin returning when stores reopen. Every visitor uses one visible main entrance on the North arcade’s exterior west wall and walks through the connected courts. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
 
 Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
 These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A fresh three-minute wait follows every claim. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
+
+## The winter lantern walk
+
+You return to the mall you visited as a child. Mara, Remy, Fern and Wren help recover its neighborhood festival through four chapters: reading, music, lantern-making and a shared table. Find the gold community boards, discover two scattered keepsakes and talk to a neighbor holding a third in each court, reopen six businesses, help owners twice and restore three local fixtures. Earlier work counts. Chapters hang pixel lanterns on restored storefronts and bring gatherings of real shoppers and one-time rewards; the final lantern walk leaves the mall playable. **J → Story** tracks goals; **R** reads your keepsakes. See [discovery and court transitions](docs/court-transitions-and-discovery.md) for the new search mechanics and entrance, and [saving and the lantern story](docs/saving-and-lantern-story.md) for the narrative, save locations and review guide.
 
 ## Run on Windows
 
@@ -53,13 +57,14 @@ python3 -m venv .venv
 ## Controls
 
 - **WASD / Arrow keys:** move
-- **E:** collect nearby litter, sell at a trash bin, reopen a business, open a section gate, enter an upgrade shop, meet an owner or greet a visitor
+- **E:** collect nearby litter, sell at a trash bin, reopen a business, open a section gate, enter an upgrade shop, meet an owner, greet a visitor or read a community board / keepsake
 - **Hold E while still:** set up a request sign
 - **1–3 / click in a display task:** place a product; **Backspace** undoes a choice
 - **H:** replay the optional tutorial; **T:** skip an active tutorial
 - **M:** toggle music and effects
+- **F5:** save a checkpoint
 - **F11:** switch between fullscreen and a resizable window
-- **J:** open/close the journal (map, stats and owner request countdowns)
+- **J:** open/close the journal (map, stats, owner countdowns, janitors and story)
 - **Esc:** close an open menu/journal, or quit from the mall
 
 Inside any upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
@@ -82,7 +87,7 @@ Tests use SDL's dummy display driver, so they also run without a desktop.
 
 ## Developer playtesting
 
-Launch with `python main.py --dev` (Windows: `py main.py --dev`). After starting, press **F3** to add $10,000/$100,000/$1,000,000, clean the current court or jump to the next area. Use 1–5 or click a button; F3/Esc closes the panel. These controls are disabled during normal launches. See [developer playtesting](docs/developer-playtesting.md) for windowed and packaged-build commands.
+Launch with `python main.py --dev` (Windows: `py main.py --dev`). After starting, press **F3** to add $10,000/$100,000/$1,000,000, clean the current court or jump to the next area. Use 1–6 or click a button; **6** prepares the next story chapter and takes you to its community board. F3/Esc closes the panel. These controls are disabled during normal launches. See [developer playtesting](docs/developer-playtesting.md) for windowed and packaged-build commands.
 
 ## CI and downloadable builds
 

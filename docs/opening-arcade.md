@@ -116,7 +116,7 @@ A brief rising chime accompanies each 1.5x rent payment. A short low tone signal
 12. Listen for the bonus-rent chime and blocked-action tone, then mute them with M.
 13. Resize to 800x600 and inspect all three menu tabs. Try Esc/E to close, M for audio, and Tab outside the menu (it should not change scenery).
 
-Progress still resets on close. Saving and further economic balancing remain future work. The southern areas are playable; see [community favors and expansion](community-favors-and-expansion.md). Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
+Progress now saves automatically, manually with F5 and on exit; Continue restores your world. Recurring litter rotates across eligible courts and janitors leave pieces needed for your local collection favors. See [saving and story](saving-and-lantern-story.md). The southern areas are playable; see [community favors and expansion](community-favors-and-expansion.md). Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
 
 ## Owner-led shop improvements
 

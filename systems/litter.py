@@ -7,9 +7,10 @@ class LitterSpawner:
         self.interval = interval
         self.cap = cap
         self.elapsed = 0.0
+        self.turn=0
         self.random = random.Random(41)
 
-    def update(self, dt, mall, player_position):
+    def update(self, dt, mall, player_position, requests=None):
         pools = mall.recurring_pools
         if not pools:
             self.elapsed = 0.0
@@ -18,8 +19,17 @@ class LitterSpawner:
         if self.elapsed < self.interval:
             return
         self.elapsed %= self.interval
-        pools = [pool for pool in pools if sum(not t.cleaned for t in pool) < self.cap]
-        # Reuse the finite starting pool. Keep new litter clear of doors and player.
-        choices = [t for pool in pools for t in pool if t.cleaned and t.position.distance_squared_to(player_position) > 100**2]
-        if choices:
-            mall.respawn_trash(self.random.choice(choices))
+        order=list(range(len(pools)))
+        order=order[self.turn%len(pools):]+order[:self.turn%len(pools)]
+        if requests and requests.favor and requests.favor.mode=='collect' and requests.progress<requests.favor.amount:
+            needed=requests.favor.amount-requests.progress
+            for i,pool in enumerate(pools):
+                if pool and requests.area.collidepoint(pool[0].position) and sum(not t.cleaned for t in pool)<needed:
+                    order=[i]+[j for j in order if j!=i];break
+        # Fair court rotation preserves the global four-second interval and local caps.
+        for i in order:
+            pool=pools[i]
+            if sum(not t.cleaned for t in pool)>=self.cap:continue
+            choices=[t for t in pool if t.cleaned and t.position.distance_squared_to(player_position)>100**2]
+            if choices:
+                mall.respawn_trash(self.random.choice(choices));self.turn=i+1;return

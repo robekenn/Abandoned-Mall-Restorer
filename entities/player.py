@@ -15,7 +15,7 @@ class Player:
 
     def use_tool(self, kind, target=None):
         self.action_kind = kind
-        self.action_time = 0.32
+        self.action_time = 0.42
         if target is not None:
             direction = pygame.Vector2(target) - self.rect.center
             if direction.length_squared():
@@ -64,22 +64,10 @@ class Player:
 
     def draw(self, surface, camera, art):
         point = camera.point(self.rect.center)
-        art.draw(surface, f'player_{self.facing}_{self.animation_frame}',
-                 (point.x, point.y-12), (48, 72))
-        if self.action_time > 0:
-            offsets = {'down': (0, 16), 'up': (0, -24), 'left': (-18, 0), 'right': (18, 0)}
-            end = point + offsets[self.facing]
-            swing = 5 if self.action_time > 0.16 else -5
-            end.x += swing
-            pygame.draw.line(surface, (171, 132, 78), point, end, 3)
-            if self.action_kind == 'dirt':
-                pygame.draw.rect(surface, (207, 187, 121), (end.x-7, end.y-2, 14, 5))
-            elif self.action_kind == 'water':
-                pygame.draw.rect(surface,(84,139,131),(end.x-5,end.y-4,10,8))
-                for dx,dy in ((-4,-10),(1,-15),(5,-9)):
-                    pygame.draw.rect(surface,(113,175,188),(end.x+dx,end.y+dy,3,4))
-            elif self.action_kind == 'setup':
-                pygame.draw.rect(surface,(188,190,164),(end.x-7,end.y-4,14,5))
-            else:
-                pygame.draw.line(surface, (188, 203, 183), end + (-4, -3), end, 2)
-                pygame.draw.line(surface, (188, 203, 183), end + (4, -3), end, 2)
+        frame=min(3,max(0,int((.42-self.action_time)/.105)))
+        name=f'player_{self.facing}_clean_{frame}' if self.action_time>0 else f'player_{self.facing}_{self.animation_frame}'
+        art.draw(surface,name,(point.x,point.y-12),(48,72))
+        if self.action_time>0:
+            tool={'dirt':'broom','water':'water','setup':'setup'}.get(self.action_kind,'grabber')
+            offset={'down':(12,8),'up':(-10,-30),'left':(-28,-7),'right':(28,-7)}[self.facing]
+            art.draw(surface,f'{tool}_{self.facing}_{frame}',point+offset,(72,72))

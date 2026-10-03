@@ -24,10 +24,13 @@ from ui.welcome import Welcome
 from ui.speech import Speech
 from ui.tutorial import Tutorial
 from ui.developer import Developer
+from ui.story_menu import StoryMenu
+from systems.story import Story, StoryPoint
+from systems.saves import SaveStore
 
 
 class Game:
-    def __init__(self, *, fullscreen=False, start_screen=False, developer=False):
+    def __init__(self, *, fullscreen=False, start_screen=False, developer=False, persistence=False, save_dir=None):
         pygame.display.init()
         pygame.font.init()
         self.fullscreen=fullscreen
@@ -57,6 +60,11 @@ class Game:
         self.owner_requests = OwnerRequests()
         self.shoppers = Shoppers()
         self.janitors = Janitors()
+        self.story=Story();self.story.setup(self.mall)
+        self.story_menu=StoryMenu()
+        self.save_store=SaveStore(save_dir,developer,persistence)
+        self.save_started=persistence and not start_screen
+        self.welcome.has_save=self.save_store.available()
         self.cash = 0
         self.rent_timer = 0.0
         self.message = ''
@@ -69,12 +77,17 @@ class Game:
         trash_bins = [d for d in self.mall.trash_bins if origin.distance_to(d.position) <= INTERACTION_RADIUS]
         if trash_bins and self.upgrades.held:
             return min(trash_bins,key=lambda d: origin.distance_squared_to(d.position))
+        story_targets=[p for p in self.story.visible_points(self.mall)+self.story.visible_neighbors(self.mall)
+                       if p.memory>=0 and origin.distance_to(p.position)<=(64 if p.source=='neighbor' else 32)]
+        if story_targets:return min(story_targets,key=lambda p:origin.distance_squared_to(p.position))
         candidates = [t for t in self.mall.trash if not t.cleaned and origin.distance_to(t.position) <= self.upgrades.tool[1]]
         candidates += [s for s in self.mall.stores if origin.distance_to(s.position) <= INTERACTION_RADIUS]
         candidates += [r for r in self.mall.regions if not r.unlocked and r.ready(self.mall)
                        and origin.distance_to(r.position)<=INTERACTION_RADIUS]
         candidates += [p for p in self.shoppers.people if p.visible and origin.distance_to(p.position)<=64]
         candidates += [spot for spot in self.owner_requests.visible_spots if origin.distance_to(spot.position)<=72]
+        candidates += [p for p in self.story.visible_neighbors(self.mall) if origin.distance_to(p.position)<=64]
+        candidates += [p for p in self.story.visible_points(self.mall) if origin.distance_to(p.position)<=72]
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
@@ -92,6 +105,7 @@ class Game:
             return self.deny('Visit the reopened upgrade shop to buy upgrades.')
         self.cash,message,bought = self.upgrades.purchase(key,self.cash,self.shop_menu.shop)
         self.audio.play('milestone' if bought else 'blocked')
+        if bought:self.save_checkpoint()
         return '' if bought else message
 
     def sell_trash(self, trash_bin):
@@ -125,7 +139,7 @@ class Game:
                 self.owner_requests.record_collection(1,trash.position)
                 self.upgrades.held += 1
                 collected += 1
-                self.feedback.burst(trash.position,'+1 item')
+                self.feedback.burst(trash.position,'+1 item',kind=trash.kind)
         if not collected:
             return
         self.total_collected += collected
@@ -139,17 +153,19 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open:
             return
         target = self.target()
         if isinstance(target,Trash):
             self.collect(target)
         elif isinstance(target,TrashBin):
             self.sell_trash(target)
+        elif isinstance(target,StoryPoint):
+            self.story.action(target,self)
         elif isinstance(target,Shopper):
             self.owner_requests.greet(target)
             self.speech.timer=0
-            self.shoppers.greet(target)
+            self.shoppers.greet(target,self.story)
             self.audio.play('pickup')
         elif isinstance(target,RequestSpot):
             if target.kind == 'display':
@@ -165,6 +181,7 @@ class Game:
                 self.feedback.burst(target.position,'AREA OPEN',restored=True)
                 self.audio.play('milestone')
                 self.notify(f'{target.name} is open. Begin with {target.stores[0].name}.')
+                self.save_checkpoint()
         elif target is not None:
             if not target.available:
                 self.deny(target.label)
@@ -188,6 +205,8 @@ class Game:
                     next_shop = self.mall.next_store
                     self.notify(f'{target.name} is open.' + (f' Next: {next_shop.name} (${next_shop.cost}).' if next_shop else ' All businesses reopened.')+f' E here to meet {OWNERS[target.name]}.')
 
+                self.save_checkpoint()
+
         else:
             self.deny('Nothing within reach. Move closer to litter, a bin, a shop or the gallery gate.')
 
@@ -201,6 +220,7 @@ class Game:
         self.feedback.burst(store.position,f'+{money(reward)}',restored=True)
         self.audio.play('milestone')
         rent=f' Our rent grows by {money(bonus)}.' if bonus else ''
+        self.save_checkpoint()
         self.say_owner(store,f'Thank you. Here is {money(reward)} for your help.'+rent+' Northgate feels a little more like home.')
         return True
 
@@ -214,25 +234,47 @@ class Game:
         self.shop_menu.category = self.shop_menu.selection = 0
         self.shop_menu.notice = ''
 
+    def save_checkpoint(self):
+        return self.save_store.save(self) if self.save_started else False
+
+    def continue_game(self):
+        if self.save_store.load(self):
+            self.welcome.continuing=True;self.welcome.start();return True
+        self.welcome.status=self.save_store.status
+        return False
+
     def toggle_fullscreen(self):
         self.fullscreen=not self.fullscreen
         self.screen=pygame.display.set_mode((0,0) if self.fullscreen else self.window_size,
                                             pygame.FULLSCREEN if self.fullscreen else pygame.RESIZABLE)
 
     def frame_camera(self, viewport):
-        area=next((a for a in self.mall.playable_areas if a.collidepoint(self.player.rect.center)),self.mall.opening_area)
-        toward_bottom=max(0,min(1,(self.player.rect.centery-area.top-area.height*.45)/(area.height*.25)))
-        framing=(70+max(0,(720-viewport[1])/2))*(1-toward_bottom)-38*toward_bottom
-        self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
+        # Blend framing within each vertical row, including the corridor between
+        # them. Choosing a new court must not jump the camera by a hundred pixels.
+        y=self.player.rect.centery
+        north=self.mall.opening_area; south=self.mall.garden.area
+        def bias(area):
+            fraction=max(0,min(1,(y-area.top-area.height*.45)/(area.height*.25)))
+            return (70+max(0,(720-viewport[1])/2))*(1-fraction)-38*fraction
+        if y<=north.bottom-192:framing=bias(north)
+        elif y>=south.top+192:framing=bias(south)
+        else:
+            blend=(y-(north.bottom-192))/(south.top+192-(north.bottom-192))
+            blend=blend*blend*(3-2*blend)
+            framing=-38+(108+max(0,(720-viewport[1])/2))*blend
+        self.camera.update((self.player.rect.centerx,y-framing),viewport)
 
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         self.frame_camera(viewport)
         if self.welcome.open:
             self.welcome.update(dt)
-            if not self.welcome.open and self.welcome.tutorial_enabled:self.tutorial.start(self)
+            if not self.welcome.open:
+                self.save_started=self.save_store.enabled
+                if self.welcome.tutorial_enabled and not self.welcome.continuing:self.tutorial.start(self)
+                if not self.welcome.continuing:self.save_checkpoint()
             return
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.frame_camera(viewport)
@@ -240,7 +282,8 @@ class Game:
         self.speech.update(dt)
         self.tutorial.update(self)
         self.feedback.update(dt)
-        self.litter_spawner.update(dt,self.mall,self.player.rect.center)
+        self.story.update(dt,self.mall)
+        self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
         self.janitors.update(dt,self)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
@@ -265,6 +308,8 @@ class Game:
                 if multiplier:
                     self.feedback.burst(self.player.rect.center,f'+{money(self.rent_income)} rent',restored=True)
                 self.rent_timer -= 5
+        self.save_store.elapsed+=dt
+        if self.save_started and self.save_store.elapsed>=30:self.save_checkpoint()
 
     @property
     def rent_multiplier(self):
@@ -277,10 +322,12 @@ class Game:
     def draw(self):
         target = self.target()
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
+        self.story.draw(self)
         for spot in self.owner_requests.scene_spots:
             spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
         # Tall furniture and people share depth, so walking behind a prop looks natural.
         layers=[(depth,'furniture',(name,center,size)) for depth,name,center,size in self.mall.furniture(self.upgrades)]
+        layers += [(p.position.y,'neighbor',p) for p in self.story.visible_neighbors(self.mall)]
         layers += [(p.position.y,'shopper',p) for p in self.shoppers.people if p.visible]
         layers += [(p.position.y,'janitor',p) for p in self.janitors.people.values()]
         layers.append((self.player.rect.centery,'player',self.player))
@@ -288,6 +335,8 @@ class Game:
             if kind == 'furniture':
                 name,center,size=item
                 self.art.draw(self.screen,name,self.camera.point(center),size)
+            elif kind=='neighbor':
+                self.story.draw_neighbor(self,item)
             elif kind=='janitor':
                 item.draw(self)
             elif kind == 'shopper':
@@ -309,7 +358,9 @@ class Game:
             if self.developer.enabled:
                 badge=self.hud.small.render('DEV · F3',True,(230,194,124))
                 self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
-            if self.developer.open:
+            if self.story_menu.open:
+                self.story_menu.draw(self)
+            elif self.developer.open:
                 self.developer.draw(self)
             elif self.shop_menu.open:
                 self.shop_menu.draw(self)
@@ -341,6 +392,10 @@ class Game:
                             self.shop_menu.notice = message
                     elif self.welcome.open:
                         self.welcome.handle(event,self)
+                    elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:
+                        self.save_checkpoint()
+                    elif self.story_menu.open:
+                        self.story_menu.handle(event,self)
                     elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
                         if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):
                             self.developer.open=not self.developer.open
@@ -374,4 +429,5 @@ class Game:
                 self.update(dt,direction,keys[pygame.K_e] and pygame.key.get_focused())
                 self.draw()
         finally:
+            self.save_checkpoint()
             pygame.quit()

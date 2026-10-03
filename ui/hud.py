@@ -6,6 +6,7 @@ from systems.economy import money, cleanliness_label
 from systems.requests import OWNERS, RequestSpot
 from systems.shoppers import Shopper
 from mall.store import Store
+from systems.story import StoryPoint, CHAPTERS
 from ui import theme
 
 
@@ -32,13 +33,20 @@ class HUD:
         for region in mall.active_regions:
             if region.stores[0].restored and not region.initial_cleanup_complete:
                 return region.name,f'Finish its first sweep. {sum(not t.cleaned for t in region.trash)} patches left.'
+        story_goal=game.story.hud_goal(game)
+        if story_goal:return story_goal
         ready=next((r for r in mall.regions if not r.unlocked and r.ready(mall)),None)
         if ready:return 'A new chapter',f'Open {ready.name} · {money(ready.cost)}'
         if mall.next_store:
             return 'Next opening',f'{mall.next_store.name} · {money(mall.next_store.cost)}'
-        return 'A welcoming mall','Visit owners when their next idea is ready.'
+        if game.story.current<4:
+            chapter=game.story.current
+            if game.story.ready(game,chapter):return CHAPTERS[chapter].title,'Return to the community board to gather the neighbors.'
+            return 'The lantern walk','J → Story: help each court bring the festival back.'
+        return 'A place for everyone','Visit the Commons board to begin another lantern walk.'
 
     def prompt(self, game, target):
+        if isinstance(target,StoryPoint):return 'E',target.label
         if isinstance(target,Trash):
             return 'E','Collect litter' if game.upgrades.held<game.upgrades.capacity else 'Bag full. Find a bin.'
         if isinstance(target,TrashBin):return 'E','Sell carried trash'
@@ -71,6 +79,8 @@ class HUD:
         for depot in deliveries:
             p=(round(bounds.x+depot.position.x*sx),round(bounds.y+depot.position.y*sy))
             pygame.draw.rect(surface,theme.GOLD,(p[0]-3,p[1]-3,6,6),1)
+        for point in getattr(mall,'story_markers',()):
+            pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),3)
         if requests and requests.store:
             destinations=[requests.store.position] if requests.ready else [s.position for s in requests.visible_spots]
             if not destinations and requests.needs_greetings:

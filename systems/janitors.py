@@ -40,14 +40,14 @@ class Janitor:
         end=self.paths.nearest(destination)
         path=self.paths.route(self.position,end)
         start=self.paths.nearest(self.position)
-        if start!=end and not path:return None
+        if path is None:return None
         # Both off-grid joins must fit the cleaner's footprint.
         joins=[(self.position,start),(end,destination)]
         if any(w.inflate(20,24).clipline(a,b) for a,b in joins for w in mall.obstacles):return None
         return [pygame.Vector2(start)]+path+[pygame.Vector2(destination)]
 
-    def choose_work(self, pool, mall):
-        for trash in sorted((t for t in pool if not t.cleaned),key=lambda t:self.position.distance_squared_to(t.position)):
+    def choose_work(self, pool, mall, protected=()):
+        for trash in sorted((t for t in pool if not t.cleaned and t not in protected),key=lambda t:self.position.distance_squared_to(t.position)):
             path=self.route_to(trash.position,mall)
             if path is not None:
                 self.target=trash;self.target_revision=getattr(trash,'revision',0);self.path=path;self.progress=0;return True
@@ -68,16 +68,22 @@ class Janitor:
 
     def update(self, dt, pool, game):
         self.paths.refresh(game.mall)
+        requests=game.owner_requests
+        protected=[]
+        if requests.favor and requests.favor.mode=='collect' and requests.area==self.paths.area and requests.progress<requests.favor.amount:
+            remaining=requests.favor.amount-requests.progress
+            protected=sorted((t for t in pool if not t.cleaned),key=lambda t:t.position.distance_squared_to(game.player.rect.center))[:remaining]
+        if self.target in protected:self.target=None;self.path=[];self.progress=0
         if self.target and (self.target.cleaned or getattr(self.target,'revision',0)!=self.target_revision):
             self.target=None;self.path=[];self.progress=0
-        if not self.target and self.choose_work(pool,game.mall):self.idle_wait=0
+        if not self.target and self.choose_work(pool,game.mall,protected):self.idle_wait=0
         if not self.target:
             if not self.path:
                 self.idle_wait+=dt
                 if self.idle_wait>=3:
                     nodes=sorted(self.paths.nodes)
                     self.wander_index=(self.wander_index+7)%len(nodes)
-                    self.path=self.paths.route(self.position,nodes[self.wander_index]);self.idle_wait=0
+                    self.path=self.paths.route(self.position,nodes[self.wander_index]) or [];self.idle_wait=0
             self.move(dt);return
         remaining=self.move(dt)
         if self.path:return

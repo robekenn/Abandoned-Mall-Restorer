@@ -28,6 +28,7 @@ class OwnerMenu:
             game.claim_request(store)
         elif not requests.store and requests.eligible(store):
             requests.accept(store,game.mall)
+            game.save_checkpoint()
             game.say_owner(store,'Thank you for making time for us. The journal will show where to go.')
             game.audio.play('pickup')
         elif requests.store and requests.store is not store:

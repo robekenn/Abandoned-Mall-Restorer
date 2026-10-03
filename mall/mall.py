@@ -12,6 +12,8 @@ from game.settings import WORLD_SIZE
 class Mall:
     def __init__(self):
         self.size = WORLD_SIZE
+        self.entrance=pygame.Vector2(52,1063)
+        self.entrance_rect=pygame.Rect(12,1005,52,116)
         self.opening_area = pygame.Rect(40, 40, 1720, 1440)
         w, h = self.size
         business_specs = [('Northgate Supplies', 10, 0, 'bookshop'),
@@ -238,6 +240,10 @@ class Mall:
             else:
                 for x in range(r.left, r.right, 12):
                     pygame.draw.line(surface, (100,108,96), (x,r.top), (x,r.bottom), 3)
+        # One shared public entrance, attached to the exterior west wall.
+        art.draw(surface,'main_entrance',camera.point(self.entrance_rect.center),(64,128))
+        label=font.render('MAIN ENTRANCE',True,(228,216,164))
+        surface.blit(label,label.get_rect(midleft=camera.point((74,1008))))
         for region in self.regions:
             if region.ready(self):region.draw_marker(surface,camera,font,target is region)
             if region.unlocked and f'mosaic_{region.key}' in upgrades.decor:
