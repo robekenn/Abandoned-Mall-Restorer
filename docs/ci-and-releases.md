@@ -4,7 +4,7 @@
 
 - `.github/workflows/ci.yml`: push-to-main, pull-request, manual, and reusable entry point. Runs dependency checks, Python syntax checks, regression tests, and headless launch/render checks on Windows, Ubuntu 22.04 and macOS 14 with Python 3.12 and 3.13. Packaging starts only when all tests pass.
 - `.github/workflows/build.yml`: reusable native build matrix with Python 3.12. Builds and tests each executable before uploading archives and SHA-256 checksum files.
-- `.github/workflows/release.yml`: version tags trigger the same CI and build checks, then attach the archives to a draft GitHub release. Only the draft-writing job has repository write permission.
+- `.github/workflows/release.yml`: merging a VERSION change into main runs CI and packages, verifies all three archives and their checksums, then publishes a playable preview. Version-tag pushes retain the manual draft-release path. Only the release-writing job has repository write permission.
 - `scripts/build_release.py`: shared local/CI packaging implementation. Uses PyInstaller in folder mode, includes the data directory, smoke-tests from outside the repository, adds player instructions, and creates a platform/architecture-specific archive.
 - `requirements.txt` and `requirements-build.txt`: pinned runtime and packaging dependencies. Update intentionally and let CI validate the change.
 
@@ -16,22 +16,15 @@ Use **CI → Run workflow → main** to generate fresh test builds without makin
 
 Tests simulate keyboard events, movement/collisions, cleanup and income, scenery unlocks, pixel frames, walking/idle transitions and shutdown. Headless checks cannot verify the feel of controls or real display/audio drivers; play-test every release candidate on target hardware.
 
-## Prepare a release
+## First playable release
 
-1. Wait for the chosen main commit's CI run to pass, download its build and play-test it.
-2. From a clean, up-to-date local main checkout, create and push an unused version tag:
+PR #15 adds VERSION `0.1.0` and `docs/releases/v0.1.0.md`. Merging the PR changes VERSION on main and triggers **Prepare release**. After all six test jobs and three package jobs pass, the workflow verifies the three archives and SHA-256 checksums, creates tag `v0.1.0` at the tested merge commit, uploads the downloads into a draft, and publishes it as **v0.1.0 — First Playable Preview** with the pre-release flag.
 
-   ```bash
-   git switch main
-   git pull --ff-only origin main
-   git tag -a v0.1.0 -m "First playable preview"
-   git push origin v0.1.0
-   ```
+The tag created by GitHub's workflow token does not start a second workflow run. Nothing publishes from the PR branch. A failed check or missing platform archive prevents publication. The workflow refuses to modify a published release or reuse a tag pointing at another commit. If a failed upload leaves a draft, rerun the failed workflow on the same commit to finish it.
 
-3. Wait for **Prepare release** to finish. It reruns tests and builds on the tagged commit. Any failed check prevents draft creation.
-4. Open **Releases**, edit the prepared draft, review the generated notes and attached downloads, mark early versions as pre-releases, then click **Publish release** when ready.
+For future preview releases, update VERSION and add matching `docs/releases/vX.Y.Z.md` notes in a PR. The current preview title is intended for the first release and should be revised when planning the second. Published tags must never be moved. A manually pushed version tag still produces a draft for human review, following the existing procedure.
 
-No personal access token is required: GitHub supplies the workflow's short-lived token. Rerunning a failed release workflow can update an existing draft, but refuses to overwrite a published release. Use a new tag for a new public version; do not move published tags.
+No personal access token is required; the release job uses GitHub's short-lived token with contents-write permission.
 
 Packages: Windows x64 ZIP, Linux x64 tar.gz (Ubuntu 22.04 or compatible desktop), and macOS arm64 tar.gz. macOS and Windows executables are unsigned; signing/notarization and an Intel Mac build are separate future work. The Windows build uses a console so startup errors remain visible during this prototype phase.
 

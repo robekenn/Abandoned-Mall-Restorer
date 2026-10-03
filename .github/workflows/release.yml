@@ -2,6 +2,8 @@ name: Prepare release
 
 on:
   push:
+    branches: [main]
+    paths: [VERSION]
     tags: ['v*']
 
 permissions:
@@ -14,7 +16,7 @@ concurrency:
 jobs:
   validate-and-build:
     uses: ./.github/workflows/ci.yml
-  draft-release:
+  prepare-release:
     needs: validate-and-build
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -27,15 +29,51 @@ jobs:
           pattern: game-*
           path: release-assets
           merge-multiple: true
-      - name: Create or update draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+      - name: Verify all platform archives and checksums
         shell: bash
         run: |
-          if gh release view "$RELEASE_TAG" --json isDraft > release.json; then
-            python -c "import json; assert json.load(open('release.json'))['isDraft'], 'Refusing to modify a published release'"
+          python3 - <<'PY'
+          from pathlib import Path
+          assets = Path('release-assets')
+          for pattern in ('MallRestorer-windows-*.zip', 'MallRestorer-linux-*.tar.gz', 'MallRestorer-darwin-*.tar.gz'):
+              matches = list(assets.glob(pattern))
+              assert len(matches) == 1, f'Expected one archive for {pattern}'
+              assert matches[0].with_name(matches[0].name + '.sha256').is_file(), 'Missing checksum'
+          PY
+          cd release-assets
+          sha256sum --check *.sha256
+      - name: Create release with downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          if [[ "$RELEASE_REF" == refs/heads/main ]]; then
+            version="$(tr -d '\r\n' < VERSION)"
+            [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid VERSION'; exit 1; }
+            tag="v$version"
+            notes="docs/releases/$tag.md"
+            [[ -f "$notes" ]] || { echo "Missing release notes: $notes"; exit 1; }
+            title="$tag — First Playable Preview"
+            args=(--target "$RELEASE_SHA" --prerelease --notes-file "$notes")
+            publish=true
           else
-            gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --generate-notes
+            tag="${RELEASE_REF#refs/tags/}"
+            title="$tag"
+            args=(--verify-tag --generate-notes)
+            publish=false
           fi
-          gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          if tag_sha="$(gh api "repos/$REPOSITORY/commits/$tag" --jq .sha 2>/dev/null)"; then
+            [[ "$tag_sha" == "$RELEASE_SHA" ]] || { echo 'Refusing to reuse a tag from another commit'; exit 1; }
+          fi
+          if gh release view "$tag" --json isDraft > release.json; then
+            python3 -c "import json; assert json.load(open('release.json'))['isDraft'], 'Refusing to modify a published release'"
+          else
+            gh release create "$tag" --draft --title "$title" "${args[@]}"
+          fi
+          gh release upload "$tag" release-assets/* --clobber
+          if [[ "$publish" == true ]]; then
+            gh release edit "$tag" --draft=false --prerelease --title "$title" --notes-file "$notes"
+          fi

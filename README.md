@@ -102,3 +102,7 @@ See [mall life and community gatherings](docs/mall-life.md) for events, evolving
 ### Calmer first steps and event variety
 
 The H-key guide now pauses for your character’s explanations and resumes for real practice; T skips it. Recurring owner favors wait a random 3–10 minutes after the first three projects. Gatherings offer book matching, cafe preparation, scattered planting and makers-material hunts, with court-specific completed story boards. See [playtest notes](docs/calm-guide-and-event-variety.md).
+
+### First downloadable release
+
+Merging the release-preparation PR publishes **v0.1.0 — First Playable Preview** after all platform tests and packaged launch checks pass. Windows, Linux and Apple-silicon macOS downloads will appear on the [Releases page](https://github.com/robekenn/Abandoned-Mall-Restorer/releases). Python is not required. See the [release notes](docs/releases/v0.1.0.md) and [release workflow guide](docs/ci-and-releases.md).
