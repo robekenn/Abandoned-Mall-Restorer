@@ -322,7 +322,7 @@ def north_lantern(frame):
     box(s,'cream' if frame else 'rust',(3,4,1,2))
     box(s,'rust',(5,3,1,3))
     box(s,'wood',(2,6,4,1));box(s,'gold',(3,7,1,1))
-    return s
+    return pygame.transform.flip(s,False,True)
 
 
 def entrance():
