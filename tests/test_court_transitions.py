@@ -145,7 +145,18 @@ class CourtTransitionTests(unittest.TestCase):
         expected=[g.camera.point(p) for s in stores for p in g.story.lantern_positions(s)]
         self.assertEqual([c.args[2] for c in calls],expected)
         for store in stores:
-            self.assertTrue(all(store.rect.collidepoint(p) for p in g.story.lantern_positions(store)))
+            positions=g.story.lantern_positions(store)
+            if store.facing=='up':
+                self.assertTrue(all(store.rect.left<x<store.rect.right and y==store.rect.top-8 for x,y in positions))
+            else:self.assertTrue(all(store.rect.collidepoint(p) for p in positions))
+        north_calls=[c for c in calls if c.args[1].startswith('festival_lantern_north_')]
+        self.assertEqual(len(north_calls),4*sum(s.facing=='up' for s in stores))
+        self.assertTrue(all(c.args[3]==(48,32) for c in north_calls))
+        # This is an above-view cap/barrel/bracket asset, not a flipped facade lamp.
+        sprite=g.art.sprites['festival_lantern_north_0']
+        self.assertEqual(sprite.get_size(),(24,16))
+        original=pygame.transform.flip(g.art.sprites['festival_lantern_0'],False,True)
+        self.assertNotEqual(pygame.image.tobytes(sprite,'RGBA'),pygame.image.tobytes(original,'RGBA'))
 
     def test_reaching_animation_expires_without_changing_collision_or_idle_scale(self):
         g=self.game;before=g.player.rect.copy();g.player.use_tool('dirt',(300,430))

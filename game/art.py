@@ -310,6 +310,23 @@ def shopper(variant, facing, frame):
     return s
 
 
+def north_lantern(frame):
+    """A squat lantern seen above its cap, on a bracket projecting into the court."""
+    s=canvas((24,16))
+    # Bracket joins the front coping from behind the lamp, on its south side.
+    box(s,'ink',(11,10,3,6));box(s,'stone',(12,11,1,4))
+    box(s,'wood',(8,14,9,2));box(s,'light',(9,14,7,1))
+    # Foreshortened barrel and side ribs; the top lid stays visible in this view.
+    box(s,'ink',(5,4,14,7));box(s,'ink',(7,2,10,11))
+    box(s,'gold',(6,5,12,5));box(s,'rust',(8,10,8,2))
+    box(s,'cream' if frame else 'gold',(8,6,8,3))
+    for x in (7,11,16):box(s,'wood',(x,5,1,6))
+    box(s,'wood',(6,3,12,3));box(s,'cream',(8,3,8,1))
+    box(s,'gold',(9,4,6,1));box(s,'teal',(10,1,4,2))
+    box(s,'light',(11,1,2,1))
+    return s
+
+
 def entrance():
     """West-wall glass doors and a welcome mat; the shared visitor portal."""
     s=canvas((16,32))
@@ -366,6 +383,7 @@ class Art:
                 self.sprites[f'{kind}_{state}_up']=north_store(kind,state!='dirty',state=='clean_open')
         self.sprites['delivery_station'] = delivery_station()
         self.sprites['main_entrance']=entrance()
+        for frame in range(2):self.sprites[f'festival_lantern_north_{frame}']=north_lantern(frame)
         for name in ('community_board','festival_lantern_0','festival_lantern_1','story_north','story_east','story_garden','story_commons'):
             self.sprites[name]=prop(name)
         for facing in ('down', 'up', 'left', 'right'):

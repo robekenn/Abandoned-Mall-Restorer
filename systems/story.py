@@ -123,7 +123,7 @@ class Story:
 
     @staticmethod
     def lantern_positions(store):
-        y=store.rect.top+110 if store.facing=='down' else store.rect.top+22
+        y=store.rect.top+110 if store.facing=='down' else store.rect.top-8
         return [(store.rect.left+dx,y) for dx in (40,100,store.rect.width-100,store.rect.width-40)]
 
     def requirements(self, game, i):
@@ -233,10 +233,18 @@ class Story:
             for store in stores:
                 if not store.restored:continue
                 lanterns=[game.camera.point(p) for p in self.lantern_positions(store)]
-                pygame.draw.line(game.screen,(133,110,76),(lanterns[0].x-22,lanterns[0].y-24),
-                                 (lanterns[-1].x+22,lanterns[-1].y-24),2)
+                north=store.facing=='up'
+                if north:
+                    # A coping rail lies along the roof's near edge. Each lamp's
+                    # south bracket meets it; the barrel projects into the court.
+                    rail=game.camera.point((store.rect.left+18,store.rect.top+6))
+                    pygame.draw.line(game.screen,(133,110,76),rail,(rail.x+store.rect.width-36,rail.y),2)
+                else:
+                    pygame.draw.line(game.screen,(133,110,76),(lanterns[0].x-22,lanterns[0].y-24),
+                                     (lanterns[-1].x+22,lanterns[-1].y-24),2)
                 for n,p in enumerate(lanterns):
-                    game.art.draw(game.screen,'festival_lantern_'+str((int(self.elapsed*2)+n)%2),p,(48,48))
+                    name='festival_lantern_north_' if north else 'festival_lantern_'
+                    game.art.draw(game.screen,name+str((int(self.elapsed*2)+n)%2),p,(48,32) if north else (48,48))
             if self.celebrations[i]>0:
                 for n in range(15):
                     p=game.camera.point(board.position+pygame.Vector2((n*31)%210-105,(n*17+self.elapsed*24)%100-70))
