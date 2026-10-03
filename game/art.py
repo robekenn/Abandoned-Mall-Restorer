@@ -311,19 +311,28 @@ def shopper(variant, facing, frame):
 
 
 def north_lantern(frame):
-    """A squat lantern seen above its cap, on a bracket projecting into the court."""
-    s=canvas((24,16))
-    # Bracket joins the front coping from behind the lamp, on its south side.
-    box(s,'ink',(11,10,3,6));box(s,'stone',(12,11,1,4))
-    box(s,'wood',(8,14,9,2));box(s,'light',(9,14,7,1))
-    # Foreshortened barrel and side ribs; the top lid stays visible in this view.
-    box(s,'ink',(5,4,14,7));box(s,'ink',(7,2,10,11))
-    box(s,'gold',(6,5,12,5));box(s,'rust',(8,10,8,2))
-    box(s,'cream' if frame else 'gold',(8,6,8,3))
-    for x in (7,11,16):box(s,'wood',(x,5,1,6))
-    box(s,'wood',(6,3,12,3));box(s,'cream',(8,3,8,1))
-    box(s,'gold',(9,4,6,1));box(s,'teal',(10,1,4,2))
-    box(s,'light',(11,1,2,1))
+    """Round paper lantern viewed downwards at an angle, with a broad top plane."""
+    s=canvas((24,24))
+    # Rear bracket recedes diagonally to the coping; it sits behind the globe.
+    pygame.draw.lines(s,PALETTE['ink'],False,[(13,12),(17,19),(17,23)],3)
+    pygame.draw.lines(s,PALETTE['stone'],False,[(13,12),(17,19),(17,23)],1)
+    box(s,'wood',(14,22,7,2));box(s,'light',(15,22,5,1))
+    # Stepped ellipses provide a visible top and a curved, shaded near side.
+    pygame.draw.ellipse(s,PALETTE['ink'],(3,4,18,14))
+    pygame.draw.ellipse(s,PALETTE['gold'],(4,5,16,12))
+    pygame.draw.polygon(s,PALETTE['rust'],[(16,6),(19,9),(17,14),(13,16),(8,15),(14,13)])
+    pygame.draw.ellipse(s,PALETTE['cream'],(5,5,14,7))
+    pygame.draw.ellipse(s,PALETTE['gold'],(6,6,12,5))
+    box(s,'cream',(6,9,2,3))
+    # Curved bamboo ribs follow the round surface, rather than a flat rectangle.
+    for rib in (((8,6),(7,9),(8,13),(10,16)),((12,5),(11,9),(12,14),(13,16)),
+                ((16,6),(17,9),(16,13),(15,15))):
+        pygame.draw.lines(s,PALETTE['wood'],False,rib,1)
+    pygame.draw.ellipse(s,PALETTE['wood'],(9,4,7,4))
+    pygame.draw.ellipse(s,PALETTE['light'],(10,4,5,2))
+    box(s,'ink',(12,1,2,3));box(s,'stone',(12,1,1,2))
+    box(s,'cream' if frame else 'gold',(9,10,2,3))
+    box(s,'wood',(11,17,3,1));box(s,'gold',(12,18,1,3))
     return s
 
 

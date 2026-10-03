@@ -123,7 +123,7 @@ class Story:
 
     @staticmethod
     def lantern_positions(store):
-        y=store.rect.top+110 if store.facing=='down' else store.rect.top-8
+        y=store.rect.top+110 if store.facing=='down' else store.rect.top-16
         return [(store.rect.left+dx,y) for dx in (40,100,store.rect.width-100,store.rect.width-40)]
 
     def requirements(self, game, i):
@@ -244,7 +244,7 @@ class Story:
                                      (lanterns[-1].x+22,lanterns[-1].y-24),2)
                 for n,p in enumerate(lanterns):
                     name='festival_lantern_north_' if north else 'festival_lantern_'
-                    game.art.draw(game.screen,name+str((int(self.elapsed*2)+n)%2),p,(48,32) if north else (48,48))
+                    game.art.draw(game.screen,name+str((int(self.elapsed*2)+n)%2),p,(48,48))
             if self.celebrations[i]>0:
                 for n in range(15):
                     p=game.camera.point(board.position+pygame.Vector2((n*31)%210-105,(n*17+self.elapsed*24)%100-70))
