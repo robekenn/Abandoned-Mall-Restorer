@@ -63,7 +63,18 @@ class Shopper:
     def label(self):
         return f'Say hello to {self.name} / visiting {self.store.name}'
 
+    @property
+    def visible(self):
+        return self.state != 'inside' and not self.done
+
     def update(self, dt, manager, mall, upgrades):
+        if self.state == 'inside':
+            self.wait += dt
+            self.frame = 0
+            if self.wait >= 10+self.identity%3*2:
+                self.path = [self.store.position.copy(),pygame.Vector2(manager.walkways.nearest(self.store.position))]
+                self.state,self.wait = 'exiting',0
+            return
         moving = False
         budget = 86*dt
         while self.path and budget > 0:
@@ -81,23 +92,29 @@ class Shopper:
         self.frame = int(self.animation_time/0.18)%4 if moving else 0
         if self.path:
             return
-        self.wait += dt
         if self.state == 'arriving':
-            self.state,self.wait = 'browsing',0
-        elif self.state == 'browsing' and self.wait >= 5:
+            self.path = [self.store.position.copy(),pygame.Vector2(self.store.rect.centerx,self.store.rect.bottom-28)]
+            self.state = 'entering'
+        elif self.state == 'entering':
+            self.state,self.wait = 'inside',0
+        elif self.state == 'exiting':
             amenities = manager.amenities(mall,upgrades)
             goal = manager.random.choice(amenities) if amenities else self.entrance
             self.path = manager.walkways.route(self.position,goal)
             self.state,self.wait = ('strolling' if amenities else 'leaving'),0
         elif self.state == 'strolling':
             self.state,self.wait = 'resting',0
-        elif self.state == 'resting' and self.wait >= 4:
-            self.path = manager.walkways.route(self.position,self.entrance)
-            self.state,self.wait = 'leaving',0
+        elif self.state == 'resting':
+            self.wait += dt
+            if self.wait >= 4:
+                self.path = manager.walkways.route(self.position,self.entrance)
+                self.state,self.wait = 'leaving',0
         elif self.state == 'leaving':
             self.done = True
 
     def draw(self, surface, camera, art, font, selected):
+        if not self.visible:
+            return
         point = camera.point(self.position)
         art.draw(surface,f'shopper_{self.variant}_{self.facing}_{self.frame}',(point.x,point.y-12),(48,72))
         if selected:
@@ -128,6 +145,8 @@ class Shoppers:
         for person in self.people:
             person.update(dt,self,mall,upgrades)
         self.people = [p for p in self.people if not p.done]
+        for store in mall.stores:
+            store.door_open = any(p.store is store and p.state in ('entering','exiting') for p in self.people)
         desired = min(12,len(opened)+(2 if mall.cleanliness >= 0.5 else 0)+len(self.amenities(mall,upgrades))//2) if opened else 0
         self.elapsed += dt
         if self.elapsed >= 8 and len(self.people)<desired:

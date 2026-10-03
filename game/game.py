@@ -17,6 +17,7 @@ from mall.section import EastGallery
 from ui.hud import HUD
 from ui.upgrade_shop import UpgradeShop
 from ui.owner_menu import OwnerMenu
+from ui.journal import Journal
 
 
 class Game:
@@ -37,6 +38,7 @@ class Game:
         self.upgrades = Upgrades()
         self.shop_menu = UpgradeShop()
         self.owner_menu = OwnerMenu()
+        self.journal = Journal()
         self.owner_requests = OwnerRequests()
         self.shoppers = Shoppers()
         self.cash = 0
@@ -56,7 +58,7 @@ class Game:
         if (not self.mall.east.unlocked and self.mall.east.ready(self.mall)
                 and origin.distance_to(self.mall.east.position) <= INTERACTION_RADIUS):
             candidates.append(self.mall.east)
-        candidates += [p for p in self.shoppers.people if origin.distance_to(p.position)<=64]
+        candidates += [p for p in self.shoppers.people if p.visible and origin.distance_to(p.position)<=64]
         candidates += [spot for spot in self.owner_requests.visible_spots if origin.distance_to(spot.position)<=72]
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
@@ -121,7 +123,7 @@ class Game:
             self.notify(f'Collected {collected}. Bag {self.upgrades.held}/{self.upgrades.capacity} / sell at a trash bin.')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open:
             return
         target = self.target()
         if isinstance(target,Trash):
@@ -191,20 +193,22 @@ class Game:
         self.shop_menu.shop = store.upgrade_shop
         self.shop_menu.open = True
         self.shop_menu.category = self.shop_menu.selection = 0
-        self.shop_menu.notice = ('Bags beyond 20 slots and faster walking.' if store.upgrade_shop == 'east'
-                                 else 'Gear and fixtures / each fixture adds $1 base rent per 5s.')
+        self.shop_menu.notice = ''
 
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         framing = 70+max(0,(720-viewport[1])/2)
         self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
-        if self.shop_menu.open or self.owner_menu.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.camera.update((self.player.rect.centerx,self.player.rect.centery-framing),viewport)
         self.message_timer = max(0,self.message_timer-dt)
         self.feedback.update(dt)
         self.litter_spawner.update(dt,self.mall,self.player.rect.center)
+        ready = self.owner_requests.update(dt,self.mall)
+        if ready and not self.owner_requests.store:
+            self.notify(f'{OWNERS[ready[0].name]} has a new request. Visit {ready[0].name}.')
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:
@@ -223,13 +227,9 @@ class Game:
                 self.cash += self.rent_income
                 if multiplier == 1.5:
                     self.audio.play('bonus_rent')
-                if self.upgrades.fixture_rent and multiplier:
-                    self.feedback.burst(self.player.rect.center,
-                                        f'+{money(self.upgrades.fixture_rent*multiplier)} fixtures',restored=True)
+                if multiplier:
+                    self.feedback.burst(self.player.rect.center,f'+{money(self.rent_income)} rent',restored=True)
                 self.rent_timer -= 5
-                for store in opened:
-                    if multiplier:
-                        self.feedback.burst(store.position,f'+{money(store.rent*multiplier)} rent',restored=True)
 
     @property
     def rent_multiplier(self):
@@ -253,6 +253,8 @@ class Game:
             self.shop_menu.draw(self)
         elif self.owner_menu.open:
             self.owner_menu.draw(self)
+        elif self.journal.open:
+            self.journal.draw(self)
         pygame.display.flip()
 
     def run(self):
@@ -274,8 +276,12 @@ class Game:
                         self.shop_menu.handle(event,self)
                     elif self.owner_menu.open:
                         self.owner_menu.handle(event,self)
+                    elif self.journal.open:
+                        self.journal.handle(event,self)
                     elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
+                        if event.key == pygame.K_j:
+                            self.journal.open = True
+                        elif event.key == pygame.K_ESCAPE:
                             self.running = False
                         elif event.key == pygame.K_e:
                             self.interact()

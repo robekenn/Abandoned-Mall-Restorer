@@ -11,6 +11,8 @@ class Store:
         self.base_rent = rent
         self.request_bonus = 0
         self.request_level = 0
+        self.request_wait = 180.0
+        self.door_open = False
         self.kind = kind
         self.upgrade_shop = None
         self.position = pygame.Vector2(self.rect.centerx, self.rect.bottom + 35)
@@ -33,6 +35,9 @@ class Store:
         r = camera.rect(self.rect)
         name = self.kind + ('_clean' if self.restored else '_dirty')
         art.draw(surface, name, r.center, (r.width+12,r.height+20))
+        if self.door_open:
+            pygame.draw.rect(surface,(24,35,38),(r.centerx-18,r.bottom-148,36,126))
+            pygame.draw.line(surface,(175,191,163),(r.centerx+17,r.bottom-146),(r.centerx+17,r.bottom-24),2)
         sign = font.render(self.name.upper(), True, (250,234,193) if self.restored else (188,184,166))
         background = sign.get_rect(center=(r.centerx, r.y+40)).inflate(16,10)
         pygame.draw.rect(surface, (35,49,47), background, border_radius=4)
@@ -59,7 +64,7 @@ class Store:
         if self.available:
             point = camera.point(self.position)
             pygame.draw.circle(surface, (105,181,147) if self.restored else (216,177,104), point, 12)
-            if self.restored and not self.upgrade_shop and self.request_level < 3:
+            if self.restored and not self.upgrade_shop and self.request_level < 3 and self.request_wait <= 0:
                 pygame.draw.line(surface,(173,217,210),(point.x,point.y-35),(point.x,point.y-27),3)
                 pygame.draw.circle(surface,(173,217,210),(point.x,point.y-22),2)
             if selected:

@@ -27,6 +27,7 @@ class LivingMallTests(unittest.TestCase):
 
     def accept(self, store):
         g = self.game
+        store.request_wait = 0
         g.player.rect.center = store.position
         g.interact()
         self.assertTrue(g.owner_menu.open)
@@ -171,6 +172,7 @@ class LivingMallTests(unittest.TestCase):
         g.shoppers.walkways.refresh(g.mall)
         for level in range(3):
             store.request_level=level
+            store.request_wait=0
             self.assertTrue(g.owner_requests.accept(store,g.mall))
             for spot in g.owner_requests.spots:
                 self.assertTrue(g.mall.east.area.collidepoint(spot.position))
@@ -196,7 +198,12 @@ class LivingMallTests(unittest.TestCase):
             for visitor in g.shoppers.people:
                 self.assertTrue(g.mall.opening_area.collidepoint(visitor.position))
                 footprint=pygame.Rect(visitor.position.x-9,visitor.position.y-11,18,22)
-                self.assertFalse(any(w.colliderect(footprint) for w in g.mall.obstacles))
+                for wall in g.mall.obstacles:
+                    if wall.colliderect(footprint):
+                        self.assertIn(visitor.state,('entering','inside','exiting'))
+                        self.assertLess(abs(visitor.position.x-visitor.store.rect.centerx),12)
+                        self.assertGreaterEqual(visitor.position.y,visitor.store.rect.bottom-28)
+                        self.assertTrue(wall == visitor.store.rect or wall == g.mall.back_wall)
         self.assertGreater(g.shoppers.next_identity,1)
         self.assertTrue(any(p.state!='arriving' for p in g.shoppers.people))
 
@@ -222,7 +229,7 @@ class LivingMallTests(unittest.TestCase):
         person=g.shoppers.people[0]
         self.assertIs(person.store,store)
         person.position=pygame.Vector2(g.shoppers.walkways.nearest(store.position));person.path=[]
-        person.state='browsing';person.wait=5
+        person.state='exiting';person.wait=0
         person.update(0,g.shoppers,g.mall,g.upgrades)
         self.assertEqual(person.state,'strolling')
         self.assertTrue(person.path)

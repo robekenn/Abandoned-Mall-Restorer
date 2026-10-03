@@ -1,6 +1,7 @@
 """Mouse and keyboard upgrade-shop menu, sized for the minimum window."""
 import pygame
 from systems.economy import money
+from ui import theme
 
 
 class UpgradeShop:
@@ -11,19 +12,19 @@ class UpgradeShop:
         self.shop = 'north'
         self.category = 0
         self.selection = 0
-        self.notice = 'Choose an upgrade. Each fixture is purchased separately.'
+        self.notice = ''
 
     def geometry(self, screen):
         w,h = screen.get_size()
         panel = pygame.Rect(0,0,min(w-48,760),min(h-48,580))
         panel.center = (w//2,h//2)
-        tabs = [pygame.Rect(panel.x+16+i*(panel.width-32)//3,panel.y+74,(panel.width-32)//3-6,34) for i in range(3)]
+        tabs = [pygame.Rect(panel.x+16+i*(panel.width-32)//3,panel.y+86,(panel.width-32)//3-6,34) for i in range(3)]
         return panel,tabs
 
     def rows(self, game):
         panel,_ = self.geometry(game.screen)
         offers = game.upgrades.offers(self.categories[self.category],self.shop)
-        return [(o,pygame.Rect(panel.x+16,panel.y+116+i*44,panel.width-32,40)) for i,o in enumerate(offers)]
+        return [(o,pygame.Rect(panel.x+16,panel.y+132+i*40,panel.width-32,36)) for i,o in enumerate(offers)]
 
     def buy(self, game, key):
         self.notice = game.buy_upgrade(key)
@@ -57,25 +58,30 @@ class UpgradeShop:
 
     def draw(self, game):
         surface = game.screen
-        shade = pygame.Surface(surface.get_size(),pygame.SRCALPHA)
-        shade.fill((10,20,22,205));surface.blit(shade,(0,0))
+        theme.dim(surface)
         panel,tabs = self.geometry(surface)
-        pygame.draw.rect(surface,(30,45,47),panel)
-        pygame.draw.rect(surface,(146,164,126),panel,2)
-        surface.blit(game.hud.title.render('EASTGATE WORKSHOP' if self.shop == 'east' else 'NORTHGATE SUPPLIES',True,(235,222,170)),(panel.x+16,panel.y+14))
-        surface.blit(game.hud.small.render(f'{money(game.cash)} available / bag {game.upgrades.held}/{game.upgrades.capacity} / ${game.upgrades.unit_value} per item',True,(177,206,174)),(panel.x+16,panel.y+48))
+        theme.frame(surface,panel)
+        title = 'Eastgate Workshop' if self.shop == 'east' else 'Northgate Supplies'
+        surface.blit(game.hud.title.render(title,True,theme.TEXT),(panel.x+20,panel.y+18))
+        surface.blit(game.hud.small.render(f'{money(game.cash)} available',True,theme.GOLD),(panel.x+20,panel.y+56))
         for i,rect in enumerate(tabs):
-            pygame.draw.rect(surface,(77,100,78) if i == self.category else (44,62,62),rect)
-            surface.blit(game.hud.font.render(f'{i+1} {self.categories[i]}',True,(229,222,184)),(rect.x+10,rect.y+7))
-        for i,(offer,rect) in enumerate(self.rows(game)):
-            pygame.draw.rect(surface,(53,74,68) if i == self.selection else (37,55,54),rect)
-            surface.blit(game.hud.font.render(offer.title,True,(222,224,190)),(rect.x+9,rect.y+3))
-            surface.blit(game.hud.small.render(offer.detail,True,(167,187,170)),(rect.x+9,rect.y+23))
-            text = 'Installed' if offer.owned else f'Buy ${offer.price}'
-            color = (159,175,147) if offer.owned else ((224,192,124) if game.cash >= offer.price else (145,149,140))
-            label = game.hud.font.render(text,True,color)
-            surface.blit(label,label.get_rect(midright=(rect.right-10,rect.y+13)))
-        lines = game.hud.wrap(self.notice,panel.width-32)
-        for i,line in enumerate(lines[:2]):
-            surface.blit(game.hud.small.render(line,True,(223,202,151)),(panel.x+16,panel.bottom-65+i*18))
-        surface.blit(game.hud.small.render('Click to buy / 1-3: tabs / arrows: select / Enter: buy / M: mute / Esc or E: close',True,(169,185,169)),(panel.x+16,panel.bottom-23))
+            theme.frame(surface,rect,theme.CARD if i==self.category else theme.PANEL)
+            surface.blit(game.hud.font.render(f'{i+1}  {self.categories[i]}',True,theme.ACCENT if i==self.category else theme.MUTED),(rect.x+10,rect.y+8))
+        rows = self.rows(game)
+        for i,(offer,rect) in enumerate(rows):
+            theme.frame(surface,rect,theme.CARD if i==self.selection else theme.PANEL, i==self.selection)
+            label = 'Installed' if offer.owned else money(offer.price)
+            price = game.hud.font.render(label,True,theme.MUTED if offer.owned else theme.GOLD)
+            surface.blit(price,price.get_rect(midright=(rect.right-12,rect.centery)))
+            # Place descriptions below the list, keeping every row easy to scan.
+            name = offer.title.split(' / ')[0]
+            surface.blit(game.hud.font.render(name,True,theme.TEXT),(rect.x+12,rect.y+9))
+        selected = rows[self.selection][0]
+        detail = selected.detail
+        if ' / ' in selected.title:
+            detail = selected.title.split(' / ',1)[1]+' · '+detail
+        for i,line in enumerate(theme.wrap(game.hud.small,detail,panel.width-40)[:2]):
+            surface.blit(game.hud.small.render(line,True,theme.ACCENT),(panel.x+20,panel.bottom-91+i*18))
+        for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-40)[:2]):
+            surface.blit(game.hud.small.render(line,True,theme.GOLD),(panel.x+20,panel.bottom-55+i*18))
+        surface.blit(game.hud.small.render('Click / Enter: buy     Arrows: choose     1–3: tabs     Esc: close',True,theme.MUTED),(panel.x+20,panel.bottom-23))

@@ -34,6 +34,8 @@ def main():
             game.upgrades.capacity_level = len(game.upgrades.CAPACITY_PRICES)
             game.upgrades.advanced_capacity_level = len(game.upgrades.ADVANCED_CAPACITY_PRICES)
             game.upgrades.speed_level = len(game.upgrades.SPEED_PRICES)
+            game.upgrades.value_level = len(game.upgrades.VALUE_PRICES)
+            game.upgrades.advanced_value_level = len(game.upgrades.ADVANCED_VALUE_PRICES)
             for store in (game.mall.stores[0],game.mall.east.stores[0]):
                 game.shop_menu.open = False
                 game.player.rect.center = store.position
@@ -47,6 +49,7 @@ def main():
             owner_store = game.mall.stores[1]
             game.player.rect.center = owner_store.position
             game.update(8,(0,0))
+            game.owner_requests.update(180,game.mall)
             game.owner_menu.visit(owner_store)
             game.draw()
             game.owner_menu.action(game)
@@ -56,6 +59,7 @@ def main():
             game.owner_requests.interact(game.owner_requests.spots[0])
             game.claim_request(owner_store)
             for level in (1,2):
+                game.owner_requests.update(180,game.mall)
                 game.owner_requests.accept(owner_store,game.mall)
                 for spot in game.owner_requests.spots:
                     game.player.rect.center = spot.position
@@ -71,6 +75,9 @@ def main():
                 game.owner_menu.visit(owner_store)
                 game.draw()
                 game.owner_menu.action(game)
+            game.journal.open = True
+            game.draw()
+            game.journal.open = False
             if owner_store.request_level != 3:
                 raise RuntimeError('Owner request smoke test did not earn all improvements')
             game.draw()

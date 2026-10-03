@@ -45,6 +45,8 @@ class RequestSpot:
 
 
 class OwnerRequests:
+    INTERVAL = 180.0
+
     def __init__(self):
         self.store = None
         self.spots = []
@@ -52,7 +54,17 @@ class OwnerRequests:
         self.greetings = set()
 
     def eligible(self, store):
-        return store.restored and not store.upgrade_shop and store.request_level < len(PROJECTS)
+        return store.restored and not store.upgrade_shop and store.request_level < len(PROJECTS) and store.request_wait <= 0
+
+    def update(self, dt, mall):
+        newly_ready = []
+        for store in mall.stores:
+            if store.restored and not store.upgrade_shop and store.request_level < len(PROJECTS):
+                before = store.request_wait
+                store.request_wait = max(0,store.request_wait-dt)
+                if before > 0 and store.request_wait == 0:
+                    newly_ready.append(store)
+        return newly_ready
 
     @property
     def project(self):
@@ -145,6 +157,7 @@ class OwnerRequests:
         _,_,improvement,bonus,reward = self.project
         store.request_level += 1
         store.request_bonus += bonus
+        store.request_wait = self.INTERVAL
         self.store = None
         self.spots = []
         self.parcel = False

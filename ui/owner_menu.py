@@ -2,6 +2,7 @@
 import pygame
 from systems.economy import money
 from systems.requests import OWNERS, PROJECTS
+from ui import theme
 
 
 class OwnerMenu:
@@ -44,38 +45,42 @@ class OwnerMenu:
 
     def draw(self, game):
         surface = game.screen
-        shade = pygame.Surface(surface.get_size(),pygame.SRCALPHA)
-        shade.fill((10,20,22,210)); surface.blit(shade,(0,0))
+        theme.dim(surface)
         panel,button = self.geometry(surface)
-        pygame.draw.rect(surface,(30,45,47),panel)
-        pygame.draw.rect(surface,(146,164,126),panel,2)
-        owner,store = OWNERS[self.store.name],self.store
-        surface.blit(game.hud.title.render(f'{owner.upper()} / {store.name}',True,(235,222,170)),(panel.x+20,panel.y+18))
-        summary = f'Shop improvements {store.request_level}/3 / +{money(store.request_bonus)} base rent / no deadlines'
-        surface.blit(game.hud.small.render(summary,True,(177,206,174)),(panel.x+20,panel.y+58))
+        theme.frame(surface,panel)
+        store = self.store
+        requests = game.owner_requests
+        surface.blit(game.hud.title.render(OWNERS[store.name],True,theme.TEXT),(panel.x+20,panel.y+18))
+        surface.blit(game.hud.small.render(store.name,True,theme.MUTED),(panel.x+20,panel.y+55))
+        for i in range(3):
+            pygame.draw.circle(surface,theme.GOLD if i<store.request_level else theme.BORDER,(panel.right-28-i*20,panel.y+38),5)
+        reward = ''
         if store.request_level == len(PROJECTS):
-            title = 'A familiar place'
-            description = 'You helped turn this shop into a neighborhood favorite. Thank you for bringing people back.'
-            reward = f'Permanent base rent: {money(store.rent)} every five seconds.'
-            status,action = 'All three improvements earned. Your work stays with this shop.','Back to the mall'
+            title = 'A neighborhood favorite'
+            description = 'All three improvements are complete. Thank you for making this place feel like home.'
+            status,action = '','Back to the mall'
+        elif requests.store is not store and store.request_wait>0:
+            title = 'A little time to settle in'
+            description = 'We are enjoying the shop as it is. Come back later and we will have a new idea to work on together.'
+            status,action = f'Next request in {theme.clock(store.request_wait)} of play','Back to the mall'
+        elif requests.store and requests.store is not store:
+            title = 'One small thing at a time'
+            description = f'You are helping {OWNERS[requests.store.name]} right now. Finish that request, then come see us.'
+            status,action = '','Back to your request'
         else:
-            title,description,improvement,bonus,cash = game.owner_requests.details(store)
-            reward = f'Earn {improvement} / +{money(bonus)} base rent / {money(cash)} thank-you'
-            if game.owner_requests.store is store:
-                status = game.owner_requests.objective
-                action = 'Complete request and improve shop' if game.owner_requests.ready else 'Keep helping'
-            elif game.owner_requests.store:
-                status = f'You are helping {OWNERS[game.owner_requests.store.name]} first. Come back any time.'
-                action = 'Back to current request'
-            else:
-                status,action = 'One request at a time. Take your time; nothing expires.','Accept request'
-        surface.blit(game.hud.font.render(title,True,(234,205,147)),(panel.x+20,panel.y+100))
-        for i,line in enumerate(game.hud.wrap(description,panel.width-40)):
-            surface.blit(game.hud.font.render(line,True,(206,220,196)),(panel.x+20,panel.y+137+i*25))
-        surface.blit(game.hud.small.render(reward,True,(174,212,175)),(panel.x+20,panel.y+236))
-        for i,line in enumerate(game.hud.wrap(status,panel.width-40)):
-            surface.blit(game.hud.font.render(line,True,(189,208,193)),(panel.x+20,panel.y+270+i*25))
-        pygame.draw.rect(surface,(76,100,78),button)
-        label = game.hud.font.render(action,True,(235,225,182))
+            title,description,improvement,bonus,cash = requests.details(store)
+            reward = f'{improvement}   ·   +{money(bonus)} rent   ·   {money(cash)} thanks'
+            status = requests.objective if requests.store is store else 'Take your time. There is no deadline.'
+            action = ('Claim improvement' if requests.ready else 'Keep helping') if requests.store is store else 'Accept request'
+        surface.blit(game.hud.font.render(title,True,theme.ACCENT),(panel.x+20,panel.y+101))
+        for i,line in enumerate(theme.wrap(game.hud.font,description,panel.width-40)):
+            surface.blit(game.hud.font.render(line,True,theme.TEXT),(panel.x+20,panel.y+140+i*25))
+        if reward:
+            theme.frame(surface,pygame.Rect(panel.x+20,panel.y+227,panel.width-40,38),theme.CARD,False)
+            surface.blit(game.hud.small.render(reward,True,theme.GOLD),(panel.x+30,panel.y+239))
+        for i,line in enumerate(theme.wrap(game.hud.font,status,panel.width-40)):
+            surface.blit(game.hud.font.render(line,True,theme.MUTED),(panel.x+20,panel.y+284+i*25))
+        theme.frame(surface,button,theme.CARD)
+        label = game.hud.font.render(action,True,theme.ACCENT)
         surface.blit(label,label.get_rect(center=button.center))
-        surface.blit(game.hud.small.render('Enter / click: choose   Esc / E: close   M: mute music and effects',True,(169,185,169)),(panel.x+20,panel.bottom-26))
+        surface.blit(game.hud.small.render('Enter / click: continue     Esc / E: close',True,theme.MUTED),(panel.x+20,panel.bottom-26))
