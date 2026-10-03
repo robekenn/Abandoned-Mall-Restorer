@@ -3,6 +3,8 @@ import pygame
 from entities.trash import Trash
 from entities.trash_bin import TrashBin
 from mall.store import Store
+from mall.furniture import bench_footprint, fountain_footprint
+from mall.delivery import DeliveryPoint
 
 
 def covered_positions(area, floor, obstacles, stores, bins, seeds=(), spawn=None):
@@ -57,9 +59,12 @@ class EastGallery:
             self.benches,('East gallery west bin','East gallery east bin'))]
         self.lamps = [((a.rect.right+b.rect.left)//2,385) for a,b in zip(self.stores,self.stores[1:])]
         self.plants = [(1860,580),(3480,580),(2360,930),(3080,930)]
-        self.obstacles = [self.back_wall,self.south_gate,self.fountain]+self.benches
-        self.obstacles += [s.rect for s in self.stores]+[b.rect for b in self.bins]
-        self.floor_tiles = floor_tiles(self.area,self.obstacles)
+        self.delivery = DeliveryPoint((3400,900),'East')
+        self.furniture_obstacles = [fountain_footprint(self.fountain)]+[bench_footprint(b) for b in self.benches]
+        structural = [self.back_wall,self.south_gate]+[s.rect for s in self.stores]
+        self.obstacles = structural+[b.rect for b in self.bins]+[self.delivery.rect]+self.furniture_obstacles
+        # Concourse floor continues beneath furniture and participates in dirt coverage.
+        self.floor_tiles = floor_tiles(self.area,structural)
         self.trash = [Trash(p,'dirt' if i%3 == 0 else 'trash') for i,p in enumerate(
             covered_positions(self.area,self.floor_tiles,self.obstacles,self.stores,self.bins))]
 

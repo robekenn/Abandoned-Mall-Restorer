@@ -4,13 +4,17 @@
 
 A top-down 2D restoration game built with Python and pygame-ce, without a commercial game engine.
 
+## A small beginning
+
+The game starts fullscreen on a short introduction to Northgate’s story. Choose **Start restoring** or press **Enter/Space** to fade into the mall. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**.
+
 ## First playable prototype
 
 Restore the north arcade of Northgate Mall. Collect litter and dust into a one-item bag, then sell the load at either of two marked trash bins for $1 per item. A full bag blocks further cleanup until sold. The HUD shows cash, bag space, floor cleanliness and one current goal. Press J for the mall journal, map and detailed stats.
 
 Reopen **Northgate Supplies** first for $10. Return to its marker and press E to open the upgrade shop. Buy larger bags (2/4/8/16/20 slots), better recycling contracts ($2/$4/$8/$15/$30 per item), and tools with longer reach and multi-item pickup. Each bench, lamp, planter, fountain and mosaic is purchased separately and adds $1 base rent per five seconds; there is no automatic scenery restoration or Tab scene cycling.
 
-The 48 starting cleanup tasks cover every walkable floor tile. Clearing all of them makes the opening floor 100% clean and unlocks the next business after Supplies: Pages Bookshop ($100, $5 rent), Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Open businesses pay rent every five seconds according to the playable arcade’s floor cleanliness: 0% pays nothing; above 0% and below 50% pays half; 50% through less than 100% pays normal rent; exactly 100% pays 1.5 times rent. Half-dollar payouts are retained. The journal shows the current payout and multiplier. Supplies is an upgrade shop and does not pay rent.
+The 48 starting cleanup tasks cover the entire concourse floor, including beneath furniture. Clearing all of them makes the opening floor 100% clean and unlocks the next business after Supplies: Pages Bookshop ($100, $5 rent), Retro Replay ($250, $8 rent), Bean Street ($450, $12 rent), and The Tailor ($700, $16 rent). Open businesses pay rent every five seconds according to the playable arcade’s floor cleanliness: 0% pays nothing; above 0% and below 50% pays half; 50% through less than 100% pays normal rent; exactly 100% pays 1.5 times rent. Half-dollar payouts are retained. The journal shows the current payout and multiplier. Supplies is an upgrade shop and does not pay rent.
 
 After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve recurring piles per eligible section. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
 
@@ -24,7 +28,7 @@ The game uses crisp pixel sprites with a four-direction animated worker displaye
 
 Shoppers begin returning when stores reopen. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation.
 
-Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: deliver supplies in a separate satchel, hold E while standing still to water community seedlings, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
+Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
 These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. There are at most three improvements per business. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Supplies and Workshop remain equipment shops. See [shoppers and requests](docs/shoppers-and-requests.md) for details.
 
@@ -50,14 +54,16 @@ python3 -m venv .venv
 
 - **WASD / Arrow keys:** move
 - **E:** collect nearby litter, sell at a trash bin, reopen a business open the east gate, enter an upgrade shop, meet an owner or greet a visitor
-- **Hold E while still:** water seedlings or set up a request sign
+- **Hold E while still:** set up a request sign
+- **1–3 / click in a display task:** place a product; **Backspace** undoes a choice
 - **M:** toggle music and effects
+- **F11:** switch between fullscreen and a resizable window
 - **J:** open/close the journal (map, stats and owner request countdowns)
 - **Esc:** close an open menu/journal, or quit from the mall
 
 Inside either upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
 
-The camera follows the player. Walls, storefronts, trash bins, benches, and the fountain block movement. The window is resizable (minimum 800 x 600).
+The camera follows the player. Walls, storefronts, delivery platforms, bins, benches, and the fountain block movement. Bench and fountain collisions follow the visible ground bases; people render behind tall props when passing behind them. Floor beneath furniture gets dirty and cleans with nearby litter, like the rest of the concourse. The window is resizable (minimum 800 x 600).
 
 ## Development
 

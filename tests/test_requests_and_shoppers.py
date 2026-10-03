@@ -64,24 +64,21 @@ class LivingMallTests(unittest.TestCase):
         self.assertEqual(g.cash,50)
         self.assertEqual(store.request_level,1)
 
-    def test_watering_requires_hold_and_stillness_then_unlocks_next_improvement(self):
+    def test_display_puzzle_requires_the_shelf_plan_then_unlocks_next_improvement(self):
         g = self.game; store = self.open_pages()
         store.request_level = 1; store.request_bonus = .5
         self.accept(store)
-        first,second = g.owner_requests.spots
-        g.player.rect.center = first.position
-        g.update(1,(0,0),False)
-        self.assertEqual(first.progress,0)
-        g.update(.75,(0,0),True)
-        self.assertAlmostEqual(first.progress,.75)
-        g.update(.1,(1,0),True)
-        self.assertEqual(first.progress,0)
-        g.player.rect.center = first.position
-        g.update(1.5,(0,0),True)
-        self.assertTrue(first.completed)
+        spot = g.owner_requests.spots[0]
+        g.player.rect.center = spot.position
+        g.update(5,(0,0),True)
+        self.assertFalse(spot.completed)  # Holding E cannot bypass the arrangement.
+        g.interact()
+        self.assertTrue(g.display_menu.open)
+        for index in (0,1,2):g.display_menu.choose(index,g)
         self.assertFalse(g.owner_requests.ready)
-        g.player.rect.center = second.position
-        g.update(1.5,(0,0),True)
+        self.assertEqual(g.display_menu.arrangement,[])
+        for index in g.owner_requests.display_plan:g.display_menu.choose(index,g)
+        self.assertFalse(g.display_menu.open)
         self.assertTrue(g.owner_requests.ready)
         cash = g.cash
         self.claim(store)

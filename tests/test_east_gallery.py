@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 import pygame
 from game.game import Game
+from mall.furniture import fountain_footprint
 from game.audio import Audio
 from systems.upgrades import Upgrades
 
@@ -166,7 +167,7 @@ class EastGalleryTests(unittest.TestCase):
         self.assertAlmostEqual(g.player.rect.centerx,1160,places=3)
         g.player.rect.center = (670,650)
         g.update(1,(1,0))
-        self.assertLessEqual(g.player.rect.right,g.mall.fountain.left)
+        self.assertLessEqual(g.player.rect.right,fountain_footprint(g.mall.fountain).left)
         self.assertTrue(g.player.walking)
 
     def test_east_cleanup_coverage_business_order_and_returning_litter(self):

@@ -2,6 +2,8 @@ import pygame
 from entities.trash import Trash
 from entities.trash_bin import TrashBin
 from mall.store import Store
+from mall.furniture import bench_footprint, fountain_footprint
+from mall.delivery import DeliveryPoint
 from mall.section import EastGallery, covered_positions, floor_tiles
 from game.settings import WORLD_SIZE
 
@@ -33,7 +35,11 @@ class Mall:
         self.obstacles = [pygame.Rect(0, 0, w, 40), pygame.Rect(0, h-40, w, 40),
                           pygame.Rect(0, 0, 40, h), pygame.Rect(w-40, 0, 40, h)]
         self.back_wall = pygame.Rect(40, 40, 1720, 300)
-        self.obstacles += [s.rect for s in self.stores] + [self.fountain] + self.benches + self.gates + [self.back_wall] + [d.rect for d in self.trash_bins]
+        self.delivery = DeliveryPoint((100,900),'North')
+        self.furniture_obstacles = [fountain_footprint(self.fountain)]+[bench_footprint(b) for b in self.benches]
+        self.obstacles += [s.rect for s in self.stores]+self.gates+[self.back_wall]
+        self.floor_obstacles = list(self.obstacles)
+        self.obstacles += [d.rect for d in self.trash_bins]+[self.delivery.rect]+self.furniture_obstacles
         # Closed sections still have collision geometry and a sealed southern boundary.
         self.obstacles += self.east.obstacles
         self.distant_stores = list(self.east.stores)
@@ -42,7 +48,7 @@ class Mall:
                      (1150,560),(1410,450),(1540,620),(1450,820),(1110,870),(940,790),
                      (680,870),(500,780),(220,840)]
         positions = [p for p in positions if not any(d.position.distance_squared_to(p) < 100**2 for d in self.trash_bins)]
-        self.floor_tiles = floor_tiles(self.opening_area,self.obstacles)
+        self.floor_tiles = floor_tiles(self.opening_area,self.floor_obstacles)
         self.dirty_tiles = set(self.floor_tiles)
         self._initial_cleanup_complete = False
         positions += self._coverage_positions(positions)
@@ -203,8 +209,6 @@ class Mall:
         if self.east.ready(self):
             self.east.draw_marker(surface,camera,font,target is self.east)
         if self.east.unlocked:
-            art.draw(surface,'fountain_clean' if 'fountain_east' in upgrades.decor else 'fountain_dirty',
-                     camera.point(self.east.fountain.center),(245,165))
             if 'mosaic_east' in upgrades.decor:
                 art.draw(surface,'mosaic',camera.point((2690,790)),(210,125))
         if 'mosaic' in upgrades.decor:
@@ -214,10 +218,9 @@ class Mall:
                 glow = camera.rect(store.rect.inflate(24,40).move(0,20))
                 pygame.draw.rect(surface, (172,151,95), glow, 3)
             store.draw(surface,camera,font,art,target is store)
-        art.draw(surface,'fountain_clean' if 'fountain' in upgrades.decor else 'fountain_dirty',
-                 camera.point(self.fountain.center),(245,165))
-        for i,bench in enumerate(self.benches):
-            art.draw(surface,'bench_clean' if f'bench_{i}' in upgrades.decor else 'bench_dirty',camera.point(bench.center),(145,85))
+        self.delivery.draw(surface,camera,art,font)
+        if self.east.unlocked:
+            self.east.delivery.draw(surface,camera,art,font)
         for i,point in enumerate(self.plants):
             art.draw(surface,'plant_clean' if f'plant_{i}' in upgrades.decor else 'plant_dirty',camera.point(point),(65,90))
         for i,point in enumerate(self.lamps):
@@ -226,3 +229,17 @@ class Mall:
             trash_bin.draw(surface,camera,art,font,target is trash_bin)
         for trash in self.trash:
             trash.draw(surface,camera,art,target is trash)
+
+    def furniture(self, upgrades):
+        """Sort tall props by their ground bases alongside people."""
+        result = [(fountain_footprint(self.fountain).centery,
+                   'fountain_clean' if 'fountain' in upgrades.decor else 'fountain_dirty',
+                   self.fountain.center,(245,165))]
+        if self.east.unlocked:
+            result.append((fountain_footprint(self.east.fountain).centery,
+                           'fountain_clean' if 'fountain_east' in upgrades.decor else 'fountain_dirty',
+                           self.east.fountain.center,(245,165)))
+        result.extend((bench_footprint(b).centery,
+                       'bench_clean' if f'bench_{i}' in upgrades.decor else 'bench_dirty',
+                       b.center,(145,85)) for i,b in enumerate(self.benches))
+        return result

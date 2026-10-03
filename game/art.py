@@ -18,7 +18,7 @@ def box(s, color, rect):
     pygame.draw.rect(s, PALETTE[color], rect)
 
 
-def store(kind, clean):
+def store(kind, clean, door_open=False):
     s = canvas((48, 40))
     box(s, 'ink', (1, 2, 46, 36))
     box(s, 'teal' if clean else 'shadow', (3, 4, 42, 32))
@@ -29,7 +29,14 @@ def store(kind, clean):
     box(s, 'gold' if clean else 'stone', (30, 18, 11, 13))
     box(s, 'ink', (21, 16, 6, 20))
     box(s, 'water' if clean else 'shadow', (22, 18, 4, 12))
-    box(s, 'cream', (25, 28, 1, 1))
+    if door_open:
+        # Right-hand hinge and folded leaf; the left half reveals the interior.
+        box(s,'ink',(22,18,4,12))
+        box(s,'water',(24,18,2,12))
+        box(s,'light',(26,17,1,18))
+        box(s,'cream',(24,28,1,1))
+    else:
+        box(s, 'cream', (22, 28, 1, 1))
     if clean:
         for x in range(4, 44, 5):
             box(s, 'rust' if kind == 'cafe' else 'teal', (x, 12, 3, 3))
@@ -117,13 +124,12 @@ def prop(name):
         box(s,'teal',(4,9,16,12))
         box(s,'cream',(10,9,4,12))
         box(s,'cream',(6,12,3,3))
-    elif name == 'request_seedlings':
+    elif name == 'request_display':
         box(s,'ink',(2,14,20,8))
         box(s,'wood',(3,15,18,6))
-        for x in (5,11,17):
-            box(s,'green',(x,8,2,8))
-            box(s,'leaf',(x-2,9,6,2))
-        box(s,'water',(16,4,2,3))
+        for x,color in ((4,'teal'),(10,'gold'),(16,'rust')):
+            box(s,color,(x,7,4,8))
+            box(s,'cream',(x+1,9,2,2))
     elif name == 'request_sign':
         box(s,'wood',(4,6,2,16))
         box(s,'wood',(18,6,2,16))
@@ -156,6 +162,20 @@ def prop(name):
                 box(s, 'teal' if (x + y) % 8 else 'gold', (x, y, 2, 2))
         box(s, 'rust', (9, 9, 6, 6))
         box(s, 'gold', (11, 11, 2, 2))
+    return s
+
+
+def delivery_station():
+    s=canvas((48,32))
+    box(s,'ink',(4,22,40,9))
+    box(s,'wood',(5,23,38,6))
+    for x in (7,20,33):
+        box(s,'rust',(x,24,8,2))
+    for x,y in ((7,12),(23,10),(15,1)):
+        box(s,'ink',(x,y,15,13))
+        box(s,'teal' if x==23 else 'wood',(x+1,y+1,13,11))
+        box(s,'cream',(x+6,y+1,3,11))
+        box(s,'light',(x+2,y+4,3,3))
     return s
 
 
@@ -224,9 +244,11 @@ class Art:
         for kind in ('bookshop', 'cafe'):
             for state in ('dirty', 'clean'):
                 self.sprites[f'{kind}_{state}'] = store(kind, state == 'clean')
+            self.sprites[f'{kind}_clean_open'] = store(kind,True,True)
         for name in ('trash_bags', 'litter', 'dirt', 'bench_dirty', 'bench_clean',
-                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_seedlings', 'request_sign'):
+                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign'):
             self.sprites[name] = prop(name)
+        self.sprites['delivery_station'] = delivery_station()
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):
                 self.sprites[f'player_{facing}_{frame}'] = worker(facing, frame)

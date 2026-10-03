@@ -73,7 +73,7 @@ Returning litter permits earning more money even if all initial proceeds were sp
 
 ## East gallery and Workshop
 
-The east marker and interaction prompt are hidden until the north sweep is complete and all five north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 42 initial tasks cover every walkable floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
+The east marker and interaction prompt are hidden until the north sweep is complete and all five north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 42 initial tasks cover all concourse floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
 
 The first east business is **Eastgate Workshop ($2,000)**. It can open before finishing the east sweep. It does not pay store rent; its individually purchased fixtures do. Supplies keeps the original tools and recycling contracts, and now caps bag capacity at 20. Workshop upgrades continue from that cap:
 
@@ -120,7 +120,7 @@ Progress still resets on close. Saving, the south galleries and further economic
 
 ## Owner-led shop improvements
 
-Reopened rent-paying stores now have owners with three optional projects. Earn improvements by delivering supplies, watering seedlings and welcoming shoppers; there is no escalating building-upgrade price schedule. Each business can gain $3.5 additional base rent in total. Equipment shops remain unchanged. See [the living mall guide](shoppers-and-requests.md) for controls, rewards and visitor behavior.
+Reopened rent-paying stores now have owners with three optional projects. Earn improvements by delivering supplies, arranging window displays and welcoming shoppers; there is no escalating building-upgrade price schedule. Each business can gain $3.5 additional base rent in total. Equipment shops remain unchanged. See [the living mall guide](shoppers-and-requests.md) for controls, rewards and visitor behavior.
 
 ## Workshop recycling contracts
 
