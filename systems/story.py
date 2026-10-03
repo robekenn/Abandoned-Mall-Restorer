@@ -235,15 +235,22 @@ class Story:
                 lanterns=[game.camera.point(p) for p in self.lantern_positions(store)]
                 north=store.facing=='up'
                 if north:
-                    # Front-corner uprights lift the string above the low roof.
-                    # The lamps hang from it, matching the upper row's fixtures.
-                    for x in (store.rect.left+18,store.rect.right-18):
-                        base=game.camera.point((x,store.rect.top+12))
-                        tip=game.camera.point((x,store.rect.top-88))
-                        pygame.draw.line(game.screen,(41,56,59),base,tip,4)
-                        pygame.draw.line(game.screen,(133,110,76),base,tip,2)
-                pygame.draw.line(game.screen,(133,110,76),(lanterns[0].x-22,lanterns[0].y-24),
-                                 (lanterns[-1].x+22,lanterns[-1].y-24),2)
+                    # Individual wall brackets anchor inside the roof's front
+                    # trim and reach above each lamp's suspension loop.
+                    for (x,y),lamp in zip(self.lantern_positions(store),lanterns):
+                        anchor=game.camera.point((x+18,store.rect.top+12))
+                        brace_anchor=game.camera.point((x+30,store.rect.top+12))
+                        hook=game.camera.point((x,y-30))
+                        brace=game.camera.point((x+9,(store.rect.top+12+y-30)/2))
+                        pygame.draw.rect(game.screen,(41,56,59),(anchor.x-4,anchor.y-6,8,12))
+                        pygame.draw.rect(game.screen,(133,110,76),(anchor.x-2,anchor.y-4,4,8))
+                        pygame.draw.lines(game.screen,(41,56,59),False,(anchor,hook),4)
+                        pygame.draw.lines(game.screen,(133,110,76),False,(anchor,hook),2)
+                        pygame.draw.line(game.screen,(133,110,76),brace_anchor,brace,2)
+                        pygame.draw.line(game.screen,(133,110,76),hook,(lamp.x,lamp.y-22),2)
+                else:
+                    pygame.draw.line(game.screen,(133,110,76),(lanterns[0].x-22,lanterns[0].y-24),
+                                     (lanterns[-1].x+22,lanterns[-1].y-24),2)
                 for n,p in enumerate(lanterns):
                     name='festival_lantern_north_' if north else 'festival_lantern_'
                     game.art.draw(game.screen,name+str((int(self.elapsed*2)+n)%2),p,(48,48))
