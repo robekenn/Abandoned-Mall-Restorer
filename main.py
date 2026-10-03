@@ -8,6 +8,7 @@ def main():
     parser.add_argument('--smoke-test', action='store_true',
                         help='Render a frame and exit using a headless display')
     parser.add_argument('--windowed', action='store_true',help='Start in a resizable window instead of fullscreen')
+    parser.add_argument('--dev',action='store_true',help='Enable F3 developer playtest shortcuts')
     args = parser.parse_args()
     if args.smoke_test:
         os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -15,7 +16,7 @@ def main():
     from game.game import Game
     if args.smoke_test:
         import pygame
-        game = Game(start_screen=True)
+        game = Game(start_screen=True,developer=args.dev)
         try:
             game.update(.7,(0,0))
             game.draw()
@@ -115,13 +116,18 @@ def main():
             if not all(j.cleaned for j in game.janitors.people.values()):raise RuntimeError('Janitor cleanup failed')
             game.draw()
             game.journal.open = False
+            if args.dev:
+                game.developer.open=True
+                game.developer.act('cash_10000',game)
+                game.draw()
+                game.developer.open=False
             if owner_store.request_level != 3:
                 raise RuntimeError('Owner request smoke test did not earn all improvements')
             game.draw()
         finally:
             pygame.quit()
         return
-    Game(fullscreen=not args.windowed,start_screen=True).run()
+    Game(fullscreen=not args.windowed,start_screen=True,developer=args.dev).run()
 
 
 if __name__ == "__main__":

@@ -179,6 +179,37 @@ def prop(name):
     return s
 
 
+def north_store(kind, clean, door_open=False):
+    """A shallow roof seen from above, with its court-facing edge at the top."""
+    s=canvas((48,24))
+    box(s,'ink',(1,1,46,23))
+    box(s,'teal' if clean else 'shadow',(3,8,42,13))
+    box(s,'light' if clean else 'stone',(3,1,42,2))
+    # Narrow glazing reads as an edge, rather than an upside-down tall facade.
+    for x in (5,28):
+        box(s,'ink',(x,3,15,5))
+        box(s,'gold' if clean else 'stone',(x+1,4,13,3))
+        if not clean:box(s,'wood',(x,5,15,2))
+        elif kind=='cafe':
+            for dx in range(0,13,4):box(s,'rust',(x+1+dx,4,2,2))
+        else:
+            for dx in (2,6,10):box(s,'wood',(x+dx,5,2,2))
+    box(s,'ink',(21,0,6,8))
+    box(s,'water' if clean else 'shadow',(22,1,4,6))
+    if door_open:
+        box(s,'ink',(22,1,4,6));box(s,'water',(24,1,2,6))
+        box(s,'light',(26,0,1,8))
+    else:box(s,'cream',(22,2,1,1))
+    box(s,'stone',(4,9,40,1))
+    box(s,'ink',(7,12,9,6));box(s,'stone',(8,13,7,4))
+    for y in (13,15):box(s,'shadow',(9,y,5,1))
+    box(s,'ink',(34,13,7,5));box(s,'light' if clean else 'stone',(35,14,5,3))
+    box(s,'shadow',(4,21,40,2))
+    if not clean:
+        box(s,'rust',(24,13,4,2));box(s,'wood',(19,19,5,1))
+    return s
+
+
 def delivery_station():
     s=canvas((48,32))
     box(s,'ink',(4,22,40,9))
@@ -264,7 +295,7 @@ class Art:
             self.sprites[name] = prop(name)
         for kind in ('bookshop','cafe'):
             for state in ('dirty','clean','clean_open'):
-                self.sprites[f'{kind}_{state}_up']=pygame.transform.flip(self.sprites[f'{kind}_{state}'],False,True)
+                self.sprites[f'{kind}_{state}_up']=north_store(kind,state!='dirty',state=='clean_open')
         self.sprites['delivery_station'] = delivery_station()
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):

@@ -40,7 +40,9 @@ jobs:
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
       - name: Test launch and rendering
-        run: python main.py --smoke-test
+        run: |
+          python main.py --smoke-test
+          python main.py --smoke-test --dev
   packages:
     name: Build install-free packages
     needs: tests

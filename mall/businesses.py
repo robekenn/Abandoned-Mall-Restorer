@@ -19,6 +19,6 @@ def opposite_stores(key, area):
     from mall.store import Store
     result=[]
     for i,(name,cost,rent,kind,*_) in enumerate(OPPOSITE[key]):
-        store=Store((area.left+224+i*300,area.bottom-280,280,240),name,False,cost,rent,kind,facing='up')
+        store=Store((area.left+224+i*300,area.bottom-280,280,144),name,False,cost,rent,kind,facing='up')
         store.section_key=key;result.append(store)
     return result

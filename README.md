@@ -80,6 +80,10 @@ python -m unittest discover -s tests -v
 
 Tests use SDL's dummy display driver, so they also run without a desktop.
 
+## Developer playtesting
+
+Launch with `python main.py --dev` (Windows: `py main.py --dev`). After starting, press **F3** to add $10,000/$100,000/$1,000,000, clean the current court or jump to the next area. Use 1–5 or click a button; F3/Esc closes the panel. These controls are disabled during normal launches. See [developer playtesting](docs/developer-playtesting.md) for windowed and packaged-build commands.
+
 ## CI and downloadable builds
 
 GitHub Actions tests Windows, Linux and macOS with Python 3.12/3.13, then builds and smoke-tests standalone packages. Download development builds from the CI run artifacts. Pushing a `v` version tag prepares a draft release after all checks pass. See [CI and release guide](docs/ci-and-releases.md) for local packaging and publishing steps.

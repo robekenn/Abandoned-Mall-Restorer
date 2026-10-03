@@ -23,10 +23,11 @@ from ui.display_menu import DisplayMenu
 from ui.welcome import Welcome
 from ui.speech import Speech
 from ui.tutorial import Tutorial
+from ui.developer import Developer
 
 
 class Game:
-    def __init__(self, *, fullscreen=False, start_screen=False):
+    def __init__(self, *, fullscreen=False, start_screen=False, developer=False):
         pygame.display.init()
         pygame.font.init()
         self.fullscreen=fullscreen
@@ -51,6 +52,7 @@ class Game:
         self.welcome = Welcome(start_screen)
         self.speech=Speech()
         self.tutorial=Tutorial()
+        self.developer=Developer(developer)
         self.total_collected=self.total_sold=0
         self.owner_requests = OwnerRequests()
         self.shoppers = Shoppers()
@@ -137,7 +139,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open:
             return
         target = self.target()
         if isinstance(target,Trash):
@@ -230,7 +232,7 @@ class Game:
             self.welcome.update(dt)
             if not self.welcome.open and self.welcome.tutorial_enabled:self.tutorial.start(self)
             return
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.frame_camera(viewport)
@@ -304,7 +306,12 @@ class Game:
             self.feedback.draw(self.screen,self.camera,self.hud.font)
             self.hud.draw(self,target)
             self.speech.draw(self)
-            if self.shop_menu.open:
+            if self.developer.enabled:
+                badge=self.hud.small.render('DEV · F3',True,(230,194,124))
+                self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
+            if self.developer.open:
+                self.developer.draw(self)
+            elif self.shop_menu.open:
                 self.shop_menu.draw(self)
             elif self.owner_menu.open:
                 self.owner_menu.draw(self)
@@ -334,6 +341,11 @@ class Game:
                             self.shop_menu.notice = message
                     elif self.welcome.open:
                         self.welcome.handle(event,self)
+                    elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
+                        if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):
+                            self.developer.open=not self.developer.open
+                    elif self.developer.open:
+                        self.developer.handle(event,self)
                     elif self.display_menu.open:
                         self.display_menu.handle(event,self)
                     elif self.shop_menu.open:

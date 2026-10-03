@@ -13,3 +13,5 @@ Bench layout rectangles are not collision boxes: the 3x sprite has a 60x24 groun
 Repeatable favors add native 24x24 keepsake, plaque, notice, toolkit, lantern and chalk markers. Garden Arcade and Community Commons reuse the established storefront and fixture art with their own two-row court layouts. Conversations use a readable panel and small pointer above the speaker; the guide and journal retain the existing muted UI palette.
 
 Every court has opposing five-store rows, with doors facing the concourse and upright shop names. The camera gradually looks toward the lower row when approached. Janitors use the worker’s sixteen directional animation frames with a blue uniform and a small cleaning progress bar, sharing prop depth ordering. Larger courts preserve the fountain, benches, bins and delivery station clearances.
+
+North-facing shops now use dedicated 48×24 overhead sprites instead of flipped facades: narrow court-edge glazing and doors, broad flat roofs with vents, compact 144px building depth and upright roof labels. Their 240px counterparts on the opposite side retain the original storefront presentation. Owner decorations follow the shallow front edge.

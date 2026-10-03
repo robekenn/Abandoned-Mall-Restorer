@@ -202,8 +202,8 @@ class WelcomeAndErrandsTests(unittest.TestCase):
 
     def test_launcher_defaults_fullscreen_with_optional_windowed_mode(self):
         import main
-        for args,fullscreen in (([],True),(['--windowed'],False)):
+        for args,fullscreen,developer in (([],True,False),(['--windowed'],False,False),(['--dev','--windowed'],False,True)):
             with patch('sys.argv',['main.py']+args),patch('game.game.Game') as game:
                 main.main()
-                game.assert_called_once_with(fullscreen=fullscreen,start_screen=True)
+                game.assert_called_once_with(fullscreen=fullscreen,start_screen=True,developer=developer)
                 game.return_value.run.assert_called_once()

@@ -25,8 +25,9 @@ def main():
     env = dict(os.environ, SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy',
                PYGAME_HIDE_SUPPORT_PROMPT='1')
     # A different launch directory detects accidental source-tree dependencies.
-    subprocess.run([str(executable), '--smoke-test'], cwd=ROOT.parent,
-                   env=env, check=True, timeout=30)
+    for mode in ([],['--dev']):
+        subprocess.run([str(executable), '--smoke-test']+mode, cwd=ROOT.parent,
+                       env=env, check=True, timeout=30)
     shutil.copy2(ROOT / 'packaging' / 'README.txt', folder / 'README.txt')
     destination = ROOT / 'dist' / 'releases'
     destination.mkdir(parents=True, exist_ok=True)
