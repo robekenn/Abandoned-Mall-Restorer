@@ -28,7 +28,7 @@ Cleaning upgrades reduce pickup time to **4, 3, then 2 seconds**. Walking upgrad
 
 Janitors wander locally when no litter is present. If the player picks up a janitor's target, the janitor stops that work and looks for another piece; no duplicate sale is possible. Janitor cleanup restores floor cleanliness and can complete a first sweep, but does not count toward the player's tutorial or personal collection/sale favors. Gameplay menus pause janitor walking and work, including the journal itself. Close the journal to see a new hire start working.
 
-Use **1/2** or **Tab** for Overview/Janitors. In the Janitors tab, **Up/Down** selects a court, **Enter/Space** hires, **C** upgrades cleaning and **W** upgrades walking. Mouse controls work for every button. **J/Esc/E** returns to the mall. Progress, including hired janitors, still resets on close.
+Use **1/2/3** or **Tab** for Overview/Janitors/Story. In the Janitors tab, **Up/Down** selects a court, **Enter/Space** hires, **C** upgrades cleaning and **W** upgrades walking. Mouse controls work for every button. **J/Esc/E** returns to the mall. Progress, including janitors and unfinished cleaning work, saves on exit and resumes with Continue. Helpers leave the litter needed for your active collection favor; see [saving and story](saving-and-lantern-story.md).
 
 ## Review
 

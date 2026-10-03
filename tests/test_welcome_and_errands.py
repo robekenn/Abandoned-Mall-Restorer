@@ -205,5 +205,5 @@ class WelcomeAndErrandsTests(unittest.TestCase):
         for args,fullscreen,developer in (([],True,False),(['--windowed'],False,False),(['--dev','--windowed'],False,True)):
             with patch('sys.argv',['main.py']+args),patch('game.game.Game') as game:
                 main.main()
-                game.assert_called_once_with(fullscreen=fullscreen,start_screen=True,developer=developer)
+                game.assert_called_once_with(fullscreen=fullscreen,start_screen=True,developer=developer,persistence=True)
                 game.return_value.run.assert_called_once()

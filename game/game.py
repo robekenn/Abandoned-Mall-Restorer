@@ -24,10 +24,13 @@ from ui.welcome import Welcome
 from ui.speech import Speech
 from ui.tutorial import Tutorial
 from ui.developer import Developer
+from ui.story_menu import StoryMenu
+from systems.story import Story, StoryPoint
+from systems.saves import SaveStore
 
 
 class Game:
-    def __init__(self, *, fullscreen=False, start_screen=False, developer=False):
+    def __init__(self, *, fullscreen=False, start_screen=False, developer=False, persistence=False, save_dir=None):
         pygame.display.init()
         pygame.font.init()
         self.fullscreen=fullscreen
@@ -57,6 +60,11 @@ class Game:
         self.owner_requests = OwnerRequests()
         self.shoppers = Shoppers()
         self.janitors = Janitors()
+        self.story=Story();self.story.setup(self.mall)
+        self.story_menu=StoryMenu()
+        self.save_store=SaveStore(save_dir,developer,persistence)
+        self.save_started=persistence and not start_screen
+        self.welcome.has_save=self.save_store.available()
         self.cash = 0
         self.rent_timer = 0.0
         self.message = ''
@@ -75,6 +83,7 @@ class Game:
                        and origin.distance_to(r.position)<=INTERACTION_RADIUS]
         candidates += [p for p in self.shoppers.people if p.visible and origin.distance_to(p.position)<=64]
         candidates += [spot for spot in self.owner_requests.visible_spots if origin.distance_to(spot.position)<=72]
+        candidates += [p for p in self.story.visible_points(self.mall) if origin.distance_to(p.position)<=72]
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
@@ -92,6 +101,7 @@ class Game:
             return self.deny('Visit the reopened upgrade shop to buy upgrades.')
         self.cash,message,bought = self.upgrades.purchase(key,self.cash,self.shop_menu.shop)
         self.audio.play('milestone' if bought else 'blocked')
+        if bought:self.save_checkpoint()
         return '' if bought else message
 
     def sell_trash(self, trash_bin):
@@ -139,17 +149,19 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open:
             return
         target = self.target()
         if isinstance(target,Trash):
             self.collect(target)
         elif isinstance(target,TrashBin):
             self.sell_trash(target)
+        elif isinstance(target,StoryPoint):
+            self.story.action(target,self)
         elif isinstance(target,Shopper):
             self.owner_requests.greet(target)
             self.speech.timer=0
-            self.shoppers.greet(target)
+            self.shoppers.greet(target,self.story)
             self.audio.play('pickup')
         elif isinstance(target,RequestSpot):
             if target.kind == 'display':
@@ -165,6 +177,7 @@ class Game:
                 self.feedback.burst(target.position,'AREA OPEN',restored=True)
                 self.audio.play('milestone')
                 self.notify(f'{target.name} is open. Begin with {target.stores[0].name}.')
+                self.save_checkpoint()
         elif target is not None:
             if not target.available:
                 self.deny(target.label)
@@ -188,6 +201,8 @@ class Game:
                     next_shop = self.mall.next_store
                     self.notify(f'{target.name} is open.' + (f' Next: {next_shop.name} (${next_shop.cost}).' if next_shop else ' All businesses reopened.')+f' E here to meet {OWNERS[target.name]}.')
 
+                self.save_checkpoint()
+
         else:
             self.deny('Nothing within reach. Move closer to litter, a bin, a shop or the gallery gate.')
 
@@ -201,6 +216,7 @@ class Game:
         self.feedback.burst(store.position,f'+{money(reward)}',restored=True)
         self.audio.play('milestone')
         rent=f' Our rent grows by {money(bonus)}.' if bonus else ''
+        self.save_checkpoint()
         self.say_owner(store,f'Thank you. Here is {money(reward)} for your help.'+rent+' Northgate feels a little more like home.')
         return True
 
@@ -213,6 +229,15 @@ class Game:
         self.shop_menu.open = True
         self.shop_menu.category = self.shop_menu.selection = 0
         self.shop_menu.notice = ''
+
+    def save_checkpoint(self):
+        return self.save_store.save(self) if self.save_started else False
+
+    def continue_game(self):
+        if self.save_store.load(self):
+            self.welcome.continuing=True;self.welcome.start();return True
+        self.welcome.status=self.save_store.status
+        return False
 
     def toggle_fullscreen(self):
         self.fullscreen=not self.fullscreen
@@ -230,9 +255,12 @@ class Game:
         self.frame_camera(viewport)
         if self.welcome.open:
             self.welcome.update(dt)
-            if not self.welcome.open and self.welcome.tutorial_enabled:self.tutorial.start(self)
+            if not self.welcome.open:
+                self.save_started=self.save_store.enabled
+                if self.welcome.tutorial_enabled and not self.welcome.continuing:self.tutorial.start(self)
+                if not self.welcome.continuing:self.save_checkpoint()
             return
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open:
+        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open:
             return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.frame_camera(viewport)
@@ -240,7 +268,8 @@ class Game:
         self.speech.update(dt)
         self.tutorial.update(self)
         self.feedback.update(dt)
-        self.litter_spawner.update(dt,self.mall,self.player.rect.center)
+        self.story.update(dt,self.mall)
+        self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
         self.janitors.update(dt,self)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
@@ -265,6 +294,8 @@ class Game:
                 if multiplier:
                     self.feedback.burst(self.player.rect.center,f'+{money(self.rent_income)} rent',restored=True)
                 self.rent_timer -= 5
+        self.save_store.elapsed+=dt
+        if self.save_started and self.save_store.elapsed>=30:self.save_checkpoint()
 
     @property
     def rent_multiplier(self):
@@ -277,6 +308,7 @@ class Game:
     def draw(self):
         target = self.target()
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
+        self.story.draw(self)
         for spot in self.owner_requests.scene_spots:
             spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
         # Tall furniture and people share depth, so walking behind a prop looks natural.
@@ -309,7 +341,9 @@ class Game:
             if self.developer.enabled:
                 badge=self.hud.small.render('DEV · F3',True,(230,194,124))
                 self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
-            if self.developer.open:
+            if self.story_menu.open:
+                self.story_menu.draw(self)
+            elif self.developer.open:
                 self.developer.draw(self)
             elif self.shop_menu.open:
                 self.shop_menu.draw(self)
@@ -341,6 +375,10 @@ class Game:
                             self.shop_menu.notice = message
                     elif self.welcome.open:
                         self.welcome.handle(event,self)
+                    elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:
+                        self.save_checkpoint()
+                    elif self.story_menu.open:
+                        self.story_menu.handle(event,self)
                     elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
                         if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):
                             self.developer.open=not self.developer.open
@@ -374,4 +412,5 @@ class Game:
                 self.update(dt,direction,keys[pygame.K_e] and pygame.key.get_focused())
                 self.draw()
         finally:
+            self.save_checkpoint()
             pygame.quit()

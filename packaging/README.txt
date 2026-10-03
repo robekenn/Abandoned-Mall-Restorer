@@ -22,7 +22,7 @@ Press E at a rent-paying store to meet its owner. Enter/click accepts a request.
 Deliver supplies, hold E while still to water seedlings or set up a welcome sign,
 and greet visitors. Return to the owner for permanent shop improvements and rent.
 Blue directory markers and the request tracker show where to go; no deadlines.
-Progress currently resets when the game closes.
+Progress saves automatically every 30 seconds and on exit. F5 saves manually; Continue resumes your checkpoint. --dev uses a separate developer save.
 
 Developer playtesting: launch MallRestorer with --dev, then press F3
 after starting to add money, clean the current court or jump to the next.

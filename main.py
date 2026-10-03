@@ -123,11 +123,37 @@ def main():
                 game.developer.open=False
             if owner_store.request_level != 3:
                 raise RuntimeError('Owner request smoke test did not earn all improvements')
+            # Render all four story encounters and exercise a real checkpoint in
+            # source and frozen builds without touching a player's save directory.
+            from tempfile import TemporaryDirectory
+            from systems.saves import SaveStore
+            from systems.story import CHAPTERS
+            enabled=game.developer.enabled;game.developer.enabled=True
+            for i in range(4):
+                if not game.story.prepare(game):raise RuntimeError('Story preparation failed')
+                game.story_menu.visit(i,CHAPTERS[i].ending,'claim')
+                game.draw();game.story_menu.open=False
+                if not game.story.confirm(game,i,'claim'):raise RuntimeError('Story claim failed')
+            game.developer.enabled=enabled
+            if not game.story.confirm(game,3,'festival'):raise RuntimeError('Festival did not begin')
+            game.draw();game.story_menu.open=False;game.story.update(0,game.mall)
+            game.journal.open=True;game.journal.tab=2
+            for i in range(4):
+                game.journal.chapter=i
+                for memories in (False,True):game.journal.memories_view=memories;game.draw()
+            game.journal.open=False
+            with TemporaryDirectory() as directory:
+                game.save_store=SaveStore(directory,developer=args.dev,enabled=True)
+                cash=game.cash
+                if not game.save_store.save(game):raise RuntimeError('Checkpoint write failed')
+                game.cash=0
+                if not game.save_store.load(game) or game.cash!=cash or not game.story.festival:
+                    raise RuntimeError('Checkpoint roundtrip failed')
             game.draw()
         finally:
             pygame.quit()
         return
-    Game(fullscreen=not args.windowed,start_screen=True,developer=args.dev).run()
+    Game(fullscreen=not args.windowed,start_screen=True,developer=args.dev,persistence=True).run()
 
 
 if __name__ == "__main__":

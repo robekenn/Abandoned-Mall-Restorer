@@ -57,4 +57,4 @@ See [community favors and expansion](community-favors-and-expansion.md) for the 
 6. Open the east gallery and verify Remy/Ada use east work sites. Check that shops, benches, fountains and sealed galleries keep safe walking routes.
 7. Check both owner conversations and the tracker at 800x600, mouse/keyboard controls, journal pause, countdowns, J/Esc and M mute.
 
-Progress still resets when the game closes, as before.
+Owner requests, cooldowns and rewards now persist in checkpoints. See [saving and story](saving-and-lantern-story.md).

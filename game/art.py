@@ -151,6 +151,24 @@ def prop(name):
         else:
             box(s,'wood' if name=='request_plaque' else 'light',(7,10,10,2))
             box(s,'wood' if name=='request_plaque' else 'light',(7,14,7,2))
+    elif name=='community_board':
+        box(s,'ink',(3,2,18,16));box(s,'wood',(4,3,16,14))
+        box(s,'cream',(6,5,5,5));box(s,'teal',(13,6,5,6))
+        box(s,'gold',(8,13,10,2));box(s,'wood',(5,18,2,6));box(s,'wood',(17,18,2,6))
+    elif name.startswith('festival_lantern_'):
+        box(s,'wood',(11,0,2,5));box(s,'ink',(6,5,12,16))
+        box(s,'gold',(7,6,10,14));box(s,'cream' if name.endswith('1') else 'rust',(10,7,4,12))
+        box(s,'wood',(7,5,10,2));box(s,'wood',(7,19,10,2));box(s,'gold',(11,21,2,3))
+    elif name in ('story_north','story_east','story_garden','story_commons'):
+        box(s,'ink',(3,5,18,15));box(s,'cream',(4,6,16,13))
+        if name=='story_north':
+            box(s,'teal',(6,8,12,8));box(s,'gold',(10,10,4,5))
+        elif name=='story_east':
+            box(s,'ink',(6,9,12,7));box(s,'stone',(8,11,3,3));box(s,'stone',(13,11,3,3))
+        elif name=='story_garden':
+            box(s,'green',(11,8,2,9));box(s,'leaf',(7,10,5,3));box(s,'rust',(10,7,5,3))
+        else:
+            box(s,'teal',(6,9,12,2));box(s,'wood',(6,13,9,1));box(s,'wood',(6,16,11,1))
     elif name == 'trash_bags':
         for x, y in ((2, 9), (11, 5)):
             box(s, 'ink', (x, y + 3, 10, 10))
@@ -297,6 +315,8 @@ class Art:
             for state in ('dirty','clean','clean_open'):
                 self.sprites[f'{kind}_{state}_up']=north_store(kind,state!='dirty',state=='clean_open')
         self.sprites['delivery_station'] = delivery_station()
+        for name in ('community_board','festival_lantern_0','festival_lantern_1','story_north','story_east','story_garden','story_commons'):
+            self.sprites[name]=prop(name)
         for facing in ('down', 'up', 'left', 'right'):
             for frame in range(4):
                 self.sprites[f'player_{facing}_{frame}'] = worker(facing, frame)

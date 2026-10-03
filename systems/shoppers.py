@@ -113,7 +113,9 @@ class Shopper:
             self.state,self.wait = 'resting',0
         elif self.state == 'resting':
             self.wait += dt
-            if self.wait >= 4:
+            community=getattr(mall,'community_spots',())
+            linger=12 if any(self.position.distance_to(p)<32 for p in community) else 4
+            if self.wait >= linger:
                 self.path = manager.walkways.route(self.position,self.entrance)
                 self.state,self.wait = 'leaving',0
         elif self.state == 'leaving':
@@ -145,7 +147,24 @@ class Shoppers:
         for region in mall.active_regions:
             if f'fountain_{region.key}' in upgrades.decor:
                 points.append((region.fountain.centerx,region.fountain.bottom+45))
+        points.extend(getattr(mall,'community_spots',()))
         return points
+
+    def gather(self, area, goals, mall):
+        """Invite a few real visitors along safe routes, respecting the population cap."""
+        self.walkways.refresh(mall)
+        stores=[s for s in mall.stores if s.restored and area.collidepoint(s.position)]
+        if not stores:return
+        neighbors=[p for p in self.people if p.visible and area.collidepoint(p.position)
+                   and p.state not in ('entering','exiting')][:3]
+        limit=12+4*max(0,len(mall.active_regions)-1)
+        while len(neighbors)<3 and len(self.people)<limit:
+            store=stores[len(neighbors)%len(stores)];region=mall.region_for_store(store)
+            person=Shopper(self.next_identity,region.entrance if region else (160,1000),store,self.walkways)
+            self.next_identity+=1;self.people.append(person);neighbors.append(person)
+        for person,goal in zip(neighbors,goals):
+            person.path=self.walkways.route(person.position,goal)
+            person.state='strolling';person.wait=0
 
     def update(self, dt, mall, upgrades, preferred_store=None):
         self.walkways.refresh(mall)
@@ -166,9 +185,15 @@ class Shoppers:
             self.people.append(Shopper(self.next_identity,origin,store,self.walkways))
             self.next_identity += 1
 
-    def greet(self, person):
+    def greet(self, person, story=None):
         for other in self.people:other.speech_time=0
         person.speech='Good to see you again. These halls feel more like home.' if person.greeted else self.random.choice(SHOPPER_LINES)
+        if story and not person.greeted:
+            if story.festival:person.speech='My little one made a lantern. Thank you for giving us somewhere to bring it.'
+            elif any(story.completed):person.speech=self.random.choice(('I came for the shops. I stayed because someone made room at the table.',
+                'Mara saved a chair for me at the reading circle. I had forgotten how that feels.',
+                'Someone has started folding lanterns again. They are all different, just like before.',
+                'I brought a neighbor today. Next time, maybe we will bring two.'))
         person.greeted=True
         person.speech_time=max(5,min(10,len(person.speech)/14))
         return f'{person.name}: '+person.speech

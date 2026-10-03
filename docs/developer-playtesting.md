@@ -23,11 +23,12 @@ After the opening screen, press **F3** to open the Developer playtest panel. Mov
 | 3 | Add $1,000,000 |
 | 4 | Clean all litter in your current unlocked court |
 | 5 | Finish the preceding court's sweep and reopen its stores, open the next court without charging, then move to its equipment shop |
+| 6 | Prepare the next story chapter's care goals and move to its board; E / Enter there claims it normally |
 | Up/Down + Enter | Select and apply an action |
 | F3 / Esc / E | Close the panel |
 
 Actions also work by clicking. You can add money repeatedly. Jumping follows North → East → Garden → Commons; the newly opened court begins dirty with closed businesses, so you can still test its progression. Jumping skips the introductory guide. Cleaning and jumps do not grant personal pickup/sale progress or extra cash. A DEV · F3 label identifies enabled sessions.
 
-F3 opens the panel from the mall after other menus are closed. Normal launches ignore F3 and cannot use developer actions. These shortcuts do not change the regular economy. Progress still resets when you exit, so restart without `--dev` for a fresh playthrough.
+F3 opens the panel from the mall after other menus are closed. Normal launches ignore F3 and cannot use developer actions. These shortcuts do not change the regular economy. Developer progress saves to `developer.json`; normal launches use a separate `progress.json`. Continue and New game apply only to the current mode. See [saving and story](saving-and-lantern-story.md) for backup locations and a fast four-chapter review.
 
 For automated rendering checks, run `python main.py --smoke-test` and `python main.py --smoke-test --dev`. Regression tests also cover developer input, pause behavior, cash grants, sequential jumps, normal-mode gating and the new shallow shop art.
