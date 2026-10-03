@@ -47,7 +47,8 @@ class Game:
             return min(trash_bins,key=lambda d: origin.distance_squared_to(d.position))
         candidates = [t for t in self.mall.trash if not t.cleaned and origin.distance_to(t.position) <= self.upgrades.tool[1]]
         candidates += [s for s in self.mall.stores if origin.distance_to(s.position) <= INTERACTION_RADIUS]
-        if not self.mall.east.unlocked and origin.distance_to(self.mall.east.position) <= INTERACTION_RADIUS:
+        if (not self.mall.east.unlocked and self.mall.east.ready(self.mall)
+                and origin.distance_to(self.mall.east.position) <= INTERACTION_RADIUS):
             candidates.append(self.mall.east)
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
@@ -217,6 +218,12 @@ class Game:
                         self.running = False
                     elif event.type == pygame.VIDEORESIZE:
                         self.screen = pygame.display.set_mode((max(800,event.w),max(600,event.h)),pygame.RESIZABLE)
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+                        muted = self.audio.toggle()
+                        message = 'Music and effects muted.' if muted else 'Music and effects on.'
+                        self.notify(message)
+                        if self.shop_menu.open:
+                            self.shop_menu.notice = message
                     elif self.shop_menu.open:
                         self.shop_menu.handle(event,self)
                     elif event.type == pygame.KEYDOWN:
@@ -224,9 +231,6 @@ class Game:
                             self.running = False
                         elif event.key == pygame.K_e:
                             self.interact()
-                        elif event.key == pygame.K_m:
-                            muted = self.audio.toggle()
-                            self.notify('Sound muted.' if muted else 'Sound on.')
                 keys = pygame.key.get_pressed()
                 direction = (int(keys[pygame.K_d] or keys[pygame.K_RIGHT])-int(keys[pygame.K_a] or keys[pygame.K_LEFT]),
                              int(keys[pygame.K_s] or keys[pygame.K_DOWN])-int(keys[pygame.K_w] or keys[pygame.K_UP]))

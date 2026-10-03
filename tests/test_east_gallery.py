@@ -51,7 +51,9 @@ class EastGalleryTests(unittest.TestCase):
         g.player.move((1,0),1,g.mall.obstacles,1.5)
         self.assertLessEqual(g.player.rect.right,gate.left)
         g.player.rect.center = g.mall.east.position
-        with patch.object(g.audio,'play') as sound:
+        self.assertIsNot(g.target(),g.mall.east)
+        # The transaction guard also rejects an ineligible target if called directly.
+        with patch.object(g,'target',return_value=g.mall.east),patch.object(g.audio,'play') as sound:
             g.interact()
             sound.assert_called_with('blocked')
         self.assertFalse(g.mall.east.unlocked)
@@ -80,6 +82,29 @@ class EastGalleryTests(unittest.TestCase):
         g.player.rect.center = (2500,1030)
         g.player.move((0,1),1,g.mall.obstacles,1.5)
         self.assertLessEqual(g.player.rect.bottom,g.mall.east.south_gate.top)
+
+    def test_gate_marker_and_prompt_stay_hidden_until_all_north_stores_open(self):
+        g = self.game
+        g.player.rect.center = g.mall.east.position
+        with patch.object(g.mall.east,'draw_marker') as marker:
+            g.draw()
+            marker.assert_not_called()
+            self.assertIsNot(g.target(),g.mall.east)
+            for t in g.mall.north_trash:
+                g.mall.clean_trash(t)
+            for store in g.mall.north_stores[:-1]:
+                store.restored = True
+            g.mall.refresh_businesses()
+            g.draw()
+            marker.assert_not_called()
+            self.assertIsNot(g.target(),g.mall.east)
+            g.mall.north_stores[-1].restored = True
+            g.mall.refresh_businesses()
+            g.draw()
+            marker.assert_called_once()
+            self.assertIs(g.target(),g.mall.east)
+            self.assertFalse(g.mall.east.unlocked)
+            self.assertIn('$1,500',g.target().label)
 
     def test_workshop_price_access_and_shop_specific_upgrade_caps(self):
         self.open_gallery()

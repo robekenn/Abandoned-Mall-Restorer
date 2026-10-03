@@ -200,7 +200,8 @@ class Mall:
             else:
                 for x in range(r.left, r.right, 12):
                     pygame.draw.line(surface, (100,108,96), (x,r.top), (x,r.bottom), 3)
-        self.east.draw_marker(surface,camera,font,target is self.east)
+        if self.east.ready(self):
+            self.east.draw_marker(surface,camera,font,target is self.east)
         if self.east.unlocked:
             art.draw(surface,'fountain_clean' if 'fountain_east' in upgrades.decor else 'fountain_dirty',
                      camera.point(self.east.fountain.center),(245,165))

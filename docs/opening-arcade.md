@@ -73,7 +73,7 @@ Returning litter permits earning more money even if all initial proceeds were sp
 
 ## East gallery and Workshop
 
-After completing the north sweep and reopening all five north businesses, go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 42 initial tasks cover every walkable floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
+The east marker and interaction prompt are hidden until the north sweep is complete and all five north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 42 initial tasks cover every walkable floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
 
 The first east business is **Eastgate Workshop ($2,000)**. It can open before finishing the east sweep. It does not pay store rent; its individually purchased fixtures do. Supplies keeps the original tools and recycling contracts, and now caps bag capacity at 20. Workshop upgrades continue from that cap:
 
@@ -98,7 +98,7 @@ Finishing the east sweep unlocks **Vinyl & Company ($3,000, $25 base rent)** aft
 
 ## Sound feedback
 
-A brief rising chime accompanies each 1.5x rent payment. A short low tone signals a full bag, empty sale, insufficient money, unmet prerequisites, a maxed/owned upgrade, or an interaction with nothing in reach. The message explains what to do next. M mutes all effects; gameplay still works when audio hardware is unavailable.
+A brief rising chime accompanies each 1.5x rent payment. A short low tone signals a full bag, empty sale, insufficient money, unmet prerequisites, a maxed/owned upgrade, or an interaction with nothing in reach. The message explains what to do next. An original 80 BPM, eight-bar four-level chiptune plays quietly beneath effects on a reserved channel. Short note ramps and softened edges keep it gentle. Music loops during gameplay and shopping. M pauses the music and mutes effects; unmuting resumes the loop. Gameplay still works when audio hardware is unavailable.
 
 ## Review checklist
 

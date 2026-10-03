@@ -9,11 +9,11 @@ Linux requires a desktop and SDL-compatible system graphics/audio libraries.
 macOS builds are unsigned arm64 binaries; Windows builds are also unsigned.
 These builds are intended for testing; code signing is a future release task.
 
-Move: WASD / arrows. Interact: E. Sound: M. Quit: Esc.
+Move: WASD / arrows. Interact: E. Music/effects mute: M. Quit: Esc.
 Collect litter into your bag and sell it at a SELL trash bin. Reopen Northgate
 Supplies first, then visit it with E to buy gear and individual fixtures.
 Each fixture adds $1 base rent. Reopen all north businesses, then pay $1,500
-at the east gate. Eastgate Workshop costs $2,000 and sells bigger bags and
+at the east gate (its marker appears once the north stores are all open). Eastgate Workshop costs $2,000 and sells bigger bags and
 faster walking. Supplies caps bags at 20; Workshop continues to 40.
 Shop: click a row to buy, 1-3 or Tab to change tabs, arrows to select,
 Enter to buy, and Esc or E to close. The game pauses while shopping.

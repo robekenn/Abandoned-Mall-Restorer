@@ -78,4 +78,4 @@ class UpgradeShop:
         lines = game.hud.wrap(self.notice,panel.width-32)
         for i,line in enumerate(lines[:2]):
             surface.blit(game.hud.small.render(line,True,(223,202,151)),(panel.x+16,panel.bottom-65+i*18))
-        surface.blit(game.hud.small.render('Click to buy / 1-3: tabs / arrows: select / Enter: buy / Esc or E: close',True,(169,185,169)),(panel.x+16,panel.bottom-23))
+        surface.blit(game.hud.small.render('Click to buy / 1-3: tabs / arrows: select / Enter: buy / M: mute / Esc or E: close',True,(169,185,169)),(panel.x+16,panel.bottom-23))

@@ -14,9 +14,9 @@ The 48 starting cleanup tasks cover every walkable floor tile. Clearing all of t
 
 After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve recurring piles per eligible section. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
 
-After all five north businesses reopen, pay **$1,500** at the east gate to open the next gallery. Reopen **Eastgate Workshop for $2,000** for 25/30/35/40-item bags (requires the 20-slot Supplies bag), three walking-speed upgrades up to 1.5x, and east-gallery fixtures. Clean its 42 starting patches and reopen Vinyl & Company and The Green Table for further rent. Both sections have two bins and independent first-sweep progression. Cleanliness now includes all unlocked floors.
+The east unlock marker stays hidden until all five north businesses reopen. Then pay **$1,500** at the east gate to open the next gallery. Reopen **Eastgate Workshop for $2,000** for 25/30/35/40-item bags (requires the 20-slot Supplies bag), three walking-speed upgrades up to 1.5x, and east-gallery fixtures. Clean its 42 starting patches and reopen Vinyl & Company and The Green Table for further rent. Both sections have two bins and independent first-sweep progression. Cleanliness now includes all unlocked floors.
 
-A rising chime rewards 1.5x rent; a short low tone and an explanatory message signal full bags and unavailable actions. M mutes all effects.
+A rising chime rewards 1.5x rent; a short low tone and an explanatory message signal full bags and unavailable actions. An original, quiet four-level chiptune loop plays beneath the effects. M mutes music and effects, then resumes music when unmuted.
 
 The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving, shoppers and the southern galleries remain future milestones. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
 
