@@ -123,7 +123,7 @@ class Story:
 
     @staticmethod
     def lantern_positions(store):
-        y=store.rect.top+110 if store.facing=='down' else store.rect.top-64
+        y=store.rect.top+110 if store.facing=='down' else store.rect.top+24
         return [(store.rect.left+dx,y) for dx in (40,100,store.rect.width-100,store.rect.width-40)]
 
     def requirements(self, game, i):
@@ -235,19 +235,12 @@ class Story:
                 lanterns=[game.camera.point(p) for p in self.lantern_positions(store)]
                 north=store.facing=='up'
                 if north:
-                    # Individual wall brackets anchor inside the roof's front
-                    # trim and reach above each lamp's suspension loop.
-                    for (x,y),lamp in zip(self.lantern_positions(store),lanterns):
-                        anchor=game.camera.point((x+18,store.rect.top+12))
-                        brace_anchor=game.camera.point((x+30,store.rect.top+12))
-                        hook=game.camera.point((x,y-30))
-                        brace=game.camera.point((x+9,(store.rect.top+12+y-30)/2))
-                        pygame.draw.rect(game.screen,(41,56,59),(anchor.x-4,anchor.y-6,8,12))
-                        pygame.draw.rect(game.screen,(133,110,76),(anchor.x-2,anchor.y-4,4,8))
-                        pygame.draw.lines(game.screen,(41,56,59),False,(anchor,hook),4)
-                        pygame.draw.lines(game.screen,(133,110,76),False,(anchor,hook),2)
-                        pygame.draw.line(game.screen,(133,110,76),brace_anchor,brace,2)
-                        pygame.draw.line(game.screen,(133,110,76),hook,(lamp.x,lamp.y-22),2)
+                    # Short strings sit directly on the two front coping panels.
+                    # The central doorway stays clear; lamps overlap the facade.
+                    for left,right in ((24,114),(store.rect.width-114,store.rect.width-24)):
+                        start=game.camera.point((store.rect.left+left,store.rect.top+6))
+                        end=game.camera.point((store.rect.left+right,store.rect.top+6))
+                        pygame.draw.line(game.screen,(133,100,72),start,end,3)
                 else:
                     pygame.draw.line(game.screen,(133,110,76),(lanterns[0].x-22,lanterns[0].y-24),
                                      (lanterns[-1].x+22,lanterns[-1].y-24),2)

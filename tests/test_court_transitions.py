@@ -147,14 +147,14 @@ class CourtTransitionTests(unittest.TestCase):
         for store in stores:
             positions=g.story.lantern_positions(store)
             if store.facing=='up':
-                self.assertTrue(all(store.rect.left<x<store.rect.right and y==store.rect.top-64 for x,y in positions))
+                self.assertTrue(all(store.rect.left<x<store.rect.right and y==store.rect.top+24 for x,y in positions))
             else:self.assertTrue(all(store.rect.collidepoint(p) for p in positions))
         north_calls=[c for c in calls if c.args[1].startswith('festival_lantern_north_')]
         self.assertEqual(len(north_calls),4*sum(s.facing=='up' for s in stores))
         self.assertTrue(all(c.args[3]==(48,48) for c in north_calls))
         # The angled rectangular lamp is drawn separately from the facade lamp.
         sprite=g.art.sprites['festival_lantern_north_0']
-        self.assertEqual(sprite.get_size(),(24,24))
+        self.assertEqual(sprite.get_size(),(8,8))
         original=pygame.transform.flip(g.art.sprites['festival_lantern_0'],False,True)
         self.assertNotEqual(pygame.image.tobytes(sprite,'RGBA'),pygame.image.tobytes(original,'RGBA'))
 

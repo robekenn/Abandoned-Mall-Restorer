@@ -311,20 +311,17 @@ def shopper(variant, facing, frame):
 
 
 def north_lantern(frame):
-    """The same framed paper lamp, with a visible top and shaded right side."""
-    s=canvas((24,24))
-    box(s,'wood',(11,0,2,4))
-    # A narrow top plane gives the court's raised, downward viewing angle.
-    pygame.draw.polygon(s,PALETTE['ink'],[(6,6),(9,3),(18,3),(18,18),(15,21),(6,21)])
-    pygame.draw.polygon(s,PALETTE['wood'],[(7,6),(10,4),(17,4),(15,6)])
-    pygame.draw.line(s,PALETTE['light'],(10,4),(16,4))
-    # Keep the regular lamp's long gold panels and wooden caps.
-    box(s,'gold',(7,7,8,12))
-    box(s,'cream' if frame else 'rust',(10,7,3,12))
-    pygame.draw.polygon(s,PALETTE['rust'],[(16,7),(17,6),(17,17),(16,18)])
-    box(s,'wood',(7,6,9,2));box(s,'wood',(7,19,9,2))
-    pygame.draw.line(s,PALETTE['wood'],(16,19),(17,17))
-    box(s,'gold',(10,21,2,3))
+    """Foreshortened facade lamp on the north storefront's six-pixel grid."""
+    s=canvas((8,8))
+    # A short hanging loop meets the building's front coping, not the court.
+    box(s,'wood',(3,0,1,2))
+    box(s,'ink',(1,2,6,5))
+    # Broad top cap and shaded right edge match the shallow roof perspective.
+    box(s,'wood',(2,2,4,1));box(s,'light',(2,2,3,1))
+    box(s,'gold',(2,3,3,3));box(s,'cream',(2,3,3,1))
+    box(s,'cream' if frame else 'rust',(3,4,1,2))
+    box(s,'rust',(5,3,1,3))
+    box(s,'wood',(2,6,4,1));box(s,'gold',(3,7,1,1))
     return s
 
 
