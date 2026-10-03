@@ -20,6 +20,8 @@ Tests simulate keyboard events, movement/collisions, cleanup and income, scenery
 
 PR #15 adds VERSION `0.1.0` and `docs/releases/v0.1.0.md`. Merging the PR changes VERSION on main and triggers **Prepare release**. After all six test jobs and three package jobs pass, the workflow verifies the three archives and SHA-256 checksums, creates tag `v0.1.0` at the tested merge commit, uploads the downloads into a draft, and publishes it as **v0.1.0 — First Playable Preview** with the pre-release flag.
 
+Checksum files are written with LF on every platform; release verification also normalizes CRLF files from older Windows packages. Updating the release workflow on main or using **Prepare release → Run workflow → main** retries an unpublished version with the corrected workflow.
+
 The tag created by GitHub's workflow token does not start a second workflow run. Nothing publishes from the PR branch. A failed check or missing platform archive prevents publication. The workflow refuses to modify a published release or reuse a tag pointing at another commit. If a failed upload leaves a draft, rerun the failed workflow on the same commit to finish it.
 
 For future preview releases, update VERSION and add matching `docs/releases/vX.Y.Z.md` notes in a PR. The current preview title is intended for the first release and should be revised when planning the second. Published tags must never be moved. A manually pushed version tag still produces a draft for human review, following the existing procedure.

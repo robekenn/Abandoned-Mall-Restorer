@@ -3,8 +3,10 @@ name: Prepare release
 on:
   push:
     branches: [main]
-    paths: [VERSION]
+    paths: [VERSION, .github/workflows/release.yml]
+
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -38,7 +40,10 @@ jobs:
           for pattern in ('MallRestorer-windows-*.zip', 'MallRestorer-linux-*.tar.gz', 'MallRestorer-darwin-*.tar.gz'):
               matches = list(assets.glob(pattern))
               assert len(matches) == 1, f'Expected one archive for {pattern}'
-              assert matches[0].with_name(matches[0].name + '.sha256').is_file(), 'Missing checksum'
+              checksum = matches[0].with_name(matches[0].name + '.sha256')
+              assert checksum.is_file(), 'Missing checksum'
+              # Accept checksum files from older Windows builds as well.
+              checksum.write_bytes(checksum.read_bytes().replace(b'\r\n', b'\n'))
           PY
           cd release-assets
           sha256sum --check *.sha256

@@ -11,6 +11,14 @@ ROOT = Path(__file__).resolve().parents[1]
 NAME = 'MallRestorer'
 
 
+def write_checksum(archive):
+    """Use LF even on Windows so every platform can verify the download."""
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    checksum = archive.with_name(archive.name + '.sha256')
+    checksum.write_text(f'{digest}  {archive.name}\n', encoding='utf-8', newline='\n')
+    return checksum
+
+
 def main():
     subprocess.run([
         sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean',
@@ -35,8 +43,7 @@ def main():
     archive_format = 'zip' if sys.platform == 'win32' else 'gztar'
     archive = Path(shutil.make_archive(str(destination / archive_name), archive_format,
                                       root_dir=folder.parent, base_dir=folder.name))
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    archive.with_name(archive.name + '.sha256').write_text(f'{digest}  {archive.name}\n')
+    write_checksum(archive)
     print(f'Built and verified: {archive.name}')
 
 
