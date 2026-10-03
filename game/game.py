@@ -27,7 +27,7 @@ from ui.developer import Developer
 from ui.story_menu import StoryMenu
 from systems.story import Story, StoryPoint
 from systems.saves import SaveStore
-from systems.mall_life import MallLife, EventSpot
+from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.pause import PauseMenu
 from ui.community_menu import CommunityMenu
 
@@ -84,6 +84,8 @@ class Game:
         story_targets=[p for p in self.story.visible_points(self.mall)+self.story.visible_neighbors(self.mall)
                        if p.memory>=0 and origin.distance_to(p.position)<=(64 if p.source=='neighbor' else 32)]
         if story_targets:return min(story_targets,key=lambda p:origin.distance_squared_to(p.position))
+        event_tasks=[t for t in self.life.visible_tasks if origin.distance_to(t.position)<=32]
+        if event_tasks:return min(event_tasks,key=lambda t:origin.distance_squared_to(t.position))
         candidates = [t for t in self.mall.trash if not t.cleaned and origin.distance_to(t.position) <= self.upgrades.tool[1]]
         candidates += [s for s in self.mall.stores if origin.distance_to(s.position) <= INTERACTION_RADIUS]
         candidates += [r for r in self.mall.regions if not r.unlocked and r.ready(self.mall)
@@ -93,6 +95,7 @@ class Game:
         candidates += [p for p in self.story.visible_neighbors(self.mall) if origin.distance_to(p.position)<=64]
         candidates += [p for p in self.story.visible_points(self.mall) if origin.distance_to(p.position)<=72]
         if self.life.spot and origin.distance_to(self.life.spot.position)<=72:candidates.append(self.life.spot)
+        candidates += [t for t in self.life.visible_tasks if origin.distance_to(t.position)<=64]
         candidates += trash_bins
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
@@ -158,7 +161,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
+        if self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         target = self.target()
         if isinstance(target,Trash):
@@ -174,6 +177,8 @@ class Game:
             self.audio.play('pickup')
         elif isinstance(target,EventSpot):
             self.community_menu.open=True;self.community_menu.selection=0
+        elif isinstance(target,EventTask):
+            self.life.touch(self,target)
         elif isinstance(target,RequestSpot):
             if target.kind == 'display':
                 self.display_menu.visit()
@@ -285,11 +290,13 @@ class Game:
             return
         if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
+        if self.tutorial.paused:return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.frame_camera(viewport)
         self.message_timer = max(0,self.message_timer-dt)
         self.speech.update(dt)
         self.tutorial.update(self)
+        if self.tutorial.paused:return
         self.feedback.update(dt)
         self.story.update(dt,self.mall)
         self.life.update(dt,self)
@@ -299,6 +306,7 @@ class Game:
         if ready and not self.owner_requests.store:
             self.notify(f'{OWNERS[ready[0].name]} has a new request. Visit {ready[0].name}.')
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
+        self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:
             if spot.progress:
@@ -336,6 +344,7 @@ class Game:
         self.life.draw(self)
         for spot in self.owner_requests.scene_spots:
             spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
+        for task in self.life.tasks:task.draw(self.screen,self.camera,self.art,self.hud.small,target is task)
         # Tall furniture and people share depth, so walking behind a prop looks natural.
         layers=[(depth,'furniture',(name,center,size)) for depth,name,center,size in self.mall.furniture(self.upgrades)]
         if self.life.spot:
@@ -375,7 +384,9 @@ class Game:
             if self.developer.enabled:
                 badge=self.hud.small.render('DEV · F3',True,(230,194,124))
                 self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
-            if self.community_menu.open:
+            if self.tutorial.paused:
+                self.tutorial.draw(self)
+            elif self.community_menu.open:
                 self.community_menu.draw(self)
             elif self.story_menu.open:
                 self.story_menu.draw(self)
@@ -407,6 +418,7 @@ class Game:
         elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:self.save_checkpoint()
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
+        elif self.tutorial.paused:self.tutorial.handle(event,self)
         elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
             if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):self.developer.open=not self.developer.open
         elif self.developer.open:self.developer.handle(event,self)

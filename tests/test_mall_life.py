@@ -48,7 +48,12 @@ class MallLifeTests(unittest.TestCase):
         for court in g.janitors.courts(g.mall):
             k=court[0];self.assertTrue(g.life.start(g,k));title=g.life.event.title;cash=g.cash
             for n in range(3):
-                correct=g.life.event.guests[n][2]
+                if g.life.tasks:
+                    task=g.life.visible_tasks[0];g.player.rect.center=task.position
+                    if task.duration:g.life.work(task.duration,g,True,True)
+                    else:g.life.touch(g,task)
+                    continue
+                correct=g.life.round if g.life.activity=='recipe' else g.life.event.guests[n][2]
                 self.assertFalse(g.life.choose(g,(correct+1)%3));self.assertEqual(g.life.round,n)
                 self.assertTrue(g.life.choose(g,correct));self.assertEqual(g.cash,cash)
             self.assertTrue(g.life.choose(g,0));self.assertGreater(g.cash,cash)
@@ -59,7 +64,12 @@ class MallLifeTests(unittest.TestCase):
             g.life.update(299,g);self.assertFalse(g.life.start(g,k));g.life.update(1,g)
             self.assertTrue(g.life.start(g,k))
             # Complete this second gathering before moving to the next court.
-            for n in range(3):g.life.choose(g,g.life.event.guests[n][2])
+            for n in range(3):
+                if g.life.tasks:
+                    task=g.life.visible_tasks[0];g.player.rect.center=task.position
+                    if task.duration:g.life.work(task.duration,g,True,True)
+                    else:g.life.touch(g,task)
+                else:g.life.choose(g,g.life.round if g.life.activity=='recipe' else g.life.event.guests[n][2])
             g.life.choose(g,0)
 
     def test_gathering_and_owner_conversations_survive_json_save_and_old_slots_load(self):

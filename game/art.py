@@ -392,23 +392,62 @@ def community_table(variant):
 
 
 
+def chapter_board(variant):
+    s=prop('community_board')
+    # Completed chapters remember what each court contributes.
+    box(s,('teal','blue','green','rust')[variant],(5,6,14,9))
+    if variant==0:
+        box(s,'cream',(7,8,4,5));box(s,'gold',(12,8,4,5));box(s,'wood',(11,8,1,5))
+    elif variant==1:
+        pygame.draw.circle(s,PALETTE['ink'],(12,10),4);pygame.draw.circle(s,PALETTE['gold'],(12,10),1)
+        box(s,'cream',(17,7,1,5));box(s,'cream',(18,7,2,1))
+    elif variant==2:
+        box(s,'wood',(8,7,8,1));box(s,'gold',(9,8,6,5));box(s,'cream',(11,9,2,3))
+    else:
+        box(s,'wood',(7,10,10,3));box(s,'cream',(8,8,3,2));box(s,'gold',(13,8,3,2))
+    return s
+
+
+def event_item(index):
+    if index<3:
+        s=prop('plant_clean')
+        if index==0:
+            box(s,'green',(8,6,8,5));box(s,'leaf',(10,4,4,3))
+        elif index==1:
+            for x,y in ((7,6),(13,4),(16,8)):
+                box(s,'gold',(x-1,y-1,3,3));box(s,'cream',(x,y,1,1))
+        else:
+            for y in (4,7,10):box(s,'leaf',(6,y,12,2))
+    else:
+        s=canvas()
+        if index==3:
+            box(s,'wood',(4,7,16,12));box(s,'cream',(5,5,13,10));box(s,'gold',(7,8,9,2))
+        elif index==4:
+            box(s,'ink',(5,6,14,12));box(s,'rust',(6,7,12,10));box(s,'gold',(11,7,2,10));box(s,'cream',(6,11,12,2))
+        else:
+            box(s,'wood',(5,5,14,14));box(s,'ink',(8,8,8,8));box(s,'gold',(5,5,14,2))
+    return s
+
 
 class Art:
     def __init__(self):
         self.sprites = {}
         self.cache = {}
+        for i in range(4):self.sprites[f'chapter_board_{i}']=chapter_board(i)
+        for i in range(6):self.sprites[f'event_item_{i}']=event_item(i)
         for kind in ('bookshop', 'cafe'):
             for state in ('dirty', 'clean'):
                 self.sprites[f'{kind}_{state}'] = store(kind, state == 'clean')
             self.sprites[f'{kind}_clean_open'] = store(kind,True,True)
         for name in ('trash_bags', 'litter', 'litter_paper', 'litter_cup', 'litter_bottle', 'dirt', 'bench_dirty', 'bench_clean',
-                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign', 'request_keepsake', 'request_plaque', 'request_notice', 'request_toolkit', 'request_lantern', 'request_chalk'):
+                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_plant', 'request_parcel', 'request_display', 'request_sign', 'request_keepsake', 'request_plaque', 'request_notice', 'request_toolkit', 'request_lantern', 'request_chalk'):
             self.sprites[name] = prop(name)
         for kind in ('bookshop','cafe'):
             for state in ('dirty','clean','clean_open'):
                 self.sprites[f'{kind}_{state}_up']=north_store(kind,state!='dirty',state=='clean_open')
         self.sprites['delivery_station'] = delivery_station()
         self.sprites['main_entrance']=entrance()
+        self.sprites['request_plant']=prop('plant_clean')
         for frame in range(2):self.sprites[f'festival_lantern_north_{frame}']=north_lantern(frame)
         for name in ('community_board','festival_lantern_0','festival_lantern_1','story_north','story_east','story_garden','story_commons'):
             self.sprites[name]=prop(name)

@@ -30,12 +30,15 @@ class CommunityMenu:
         if not life.event:self.open=False;return
         theme.dim(game.screen);panel,rows=self.geometry(game.screen);theme.frame(game.screen,panel)
         game.screen.blit(game.hud.title.render(life.event.title,True,theme.TEXT),(panel.x+26,panel.y+25))
-        game.screen.blit(game.hud.small.render(f'Little connections · {life.round}/3 · No deadline',True,theme.GOLD),(panel.x+26,panel.y+67))
-        if life.round<3:
-            name,clue,_=life.guest(life.round);description=name+': '+clue;choices=life.event.choices
-        else:description='Everyone found something to take home. Northgate feels a little more like a neighborhood.';choices=('Thank the neighbors and collect your reward','','')
+        game.screen.blit(game.hud.small.render(f'{life.activity.title()} · {life.round}/3 · No deadline',True,theme.GOLD),(panel.x+26,panel.y+67))
+        description,choices=life.menu_content()
         for i,line in enumerate(theme.wrap(game.hud.font,description,panel.width-52)):
             game.screen.blit(game.hud.font.render(line,True,theme.TEXT),(panel.x+26,panel.y+115+i*26))
+        if not choices:
+            for task,row in zip(life.tasks,rows):
+                theme.frame(game.screen,row,theme.CARD)
+                label=('Done · ' if task.completed else 'Hold E · ' if task.duration else 'E · ')+task.title
+                game.screen.blit(game.hud.font.render(label,True,theme.ACCENT if task.completed else theme.TEXT),(row.x+12,row.y+9))
         for i,(choice,row) in enumerate(zip(choices,rows)):
             if not choice:continue
             theme.frame(game.screen,row,theme.CARD)
@@ -43,4 +46,4 @@ class CommunityMenu:
             game.screen.blit(game.hud.font.render((str(i+1)+'  ' if life.round<3 else '')+choice,True,theme.ACCENT),(row.x+12,row.y+9))
         for i,line in enumerate(theme.wrap(game.hud.small,life.notice,panel.width-52)[:3]):
             game.screen.blit(game.hud.small.render(line,True,theme.MUTED),(panel.x+26,panel.y+389+i*19))
-        game.screen.blit(game.hud.small.render('1 / 2 / 3 · Enter / click · Esc / E: return to the mall',True,theme.MUTED),(panel.x+26,panel.bottom-27))
+        game.screen.blit(game.hud.small.render(('Esc / E: return to the court · J: map' if not choices else '1 / 2 / 3 · Enter / click · Esc / E: return to the mall'),True,theme.MUTED),(panel.x+26,panel.bottom-27))

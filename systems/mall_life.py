@@ -1,6 +1,8 @@
 """Optional gatherings and evolving conversations, independent of restoration gates."""
 from dataclasses import dataclass
 import pygame
+import random
+from systems.requests import RequestSpot
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,25 @@ class EventSpot:
     def label(self):return 'Join '+self.title
 
 
+@dataclass(eq=False)
+class EventTask(RequestSpot):
+    @property
+    def label(self):return ('Hold E: ' if self.duration else 'E: ')+self.title
+
+    def draw(self, surface, camera, art, font, selected):
+        point=camera.point(self.position)
+        names=('Plant kitchen herbs','Plant sunny flowers','Plant shade-loving leaves','Find donated paper','Find spare ribbon','Find wooden frames')
+        sprite='event_item_'+str(names.index(self.title)) if self.title in names else 'request_'+self.kind
+        art.draw(surface,sprite,(point.x,point.y-16),(48,48))
+        if not self.completed:
+            pygame.draw.circle(surface,(130,196,180),point,12,2)
+        if selected:pygame.draw.circle(surface,(230,194,124),point,20,2)
+        if self.duration and self.progress and not self.completed:
+            bar=pygame.Rect(point.x-24,point.y-48,48,5)
+            pygame.draw.rect(surface,(38,56,57),bar)
+            pygame.draw.rect(surface,(130,196,180),(bar.x,bar.y,round(48*self.progress/self.duration),5))
+
+
 class MallLife:
     COOLDOWN=300.0
 
@@ -86,6 +107,7 @@ class MallLife:
         self.elapsed=0.0
         self.owner=None
         self.owner_time=0.0
+        self.tasks=[];self.activity='match'
 
     @staticmethod
     def local_cleanliness(mall, area):
@@ -108,8 +130,13 @@ class MallLife:
     def start(self, game, key):
         if self.active or self.cooldowns[key]>0 or not self.available(game,key):return False
         court=self.court(game,key);game.shoppers.walkways.refresh(game.mall)
-        fountain=game.mall.fountain if key=='north' else next(r.fountain for r in game.mall.regions if r.key==key)
-        goal=pygame.Vector2(fountain.centerx,fountain.bottom+160)
+        index=self.event_index(key)
+        # Four distinct neighborhoods within each court, with repeat-visit variation.
+        goals=((court[2].left+260,court[2].top+580),
+               (court[2].right-270,court[2].top+560),
+               (court[2].left+280,court[2].bottom-450),
+               (court[2].right-280,court[2].bottom-460))
+        goal=pygame.Vector2(goals[index])+pygame.Vector2(random.uniform(-80,80),random.uniform(-64,64))
         nodes=sorted(game.shoppers.walkways.nodes,key=lambda p:(pygame.Vector2(p).distance_squared_to(goal),p))
         point=next((p for p in nodes if court[2].contains(pygame.Rect(p[0]-90,p[1]-100,180,180))
                     and not any(w.colliderect(pygame.Rect(p[0]-90,p[1]-82,180,162)) for w in game.mall.obstacles)
@@ -119,7 +146,31 @@ class MallLife:
                     and game.shoppers.walkways.route(game.mall.entrance,p) is not None),None)
         if point is None:return False
         self.active=key;self.spot=EventSpot(pygame.Vector2(point),self.event.title);self.round=0;self.elapsed=30;self.participants=[]
-        self.notice='Three neighbors have something in mind. Listen, then help them find it.'
+        self.activity=('match','recipe','plant','hunt')[index]
+        self.tasks=[]
+        if self.activity in ('plant','hunt'):
+            desired=[(court[2].left+180,court[2].top+440),
+                     (court[2].right-180,court[2].top+600),
+                     (court[2].centerx,court[2].bottom-380)]
+            for i,goal in enumerate(desired):
+                safe=[p for p in nodes if court[2].contains(pygame.Rect(p[0]-24,p[1]-32,48,64))
+                      and pygame.Vector2(p).distance_squared_to(point)>140**2
+                      and all(pygame.Vector2(p).distance_squared_to(t.position)>100**2 for t in self.tasks)
+                      and not any(w.colliderect(pygame.Rect(p[0]-24,p[1]-32,48,64)) for w in game.mall.obstacles)
+                      ]
+                if not safe:
+                    self.active=None;self.spot=None;self.tasks=[];return False
+                nearest=sorted(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(goal))[:24]
+                reachable=[p for p in nearest if game.shoppers.walkways.route(point,p) is not None]
+                if not reachable:
+                    self.active=None;self.spot=None;self.tasks=[];return False
+                pos=pygame.Vector2(random.choice(reachable[:8]))
+                title=('Plant kitchen herbs','Plant sunny flowers','Plant shade-loving leaves')[i] if self.activity=='plant' else ('Find donated paper','Find spare ribbon','Find wooden frames')[i]
+                self.tasks.append(EventTask(pos,title,'plant' if self.activity=='plant' else 'toolkit',2 if self.activity=='plant' else 0))
+        self.notice={'match':'Listen to each reader and choose a book for them.',
+                     'recipe':'Prepare the cafe tasting in order: brew tea, toast bread, then plate cake.',
+                     'plant':'Visit three green markers and hold E to plant a community trail.',
+                     'hunt':'Explore three green markers for donated materials, then return to the makers table.'}[self.activity]
         self.sync_spots(game.mall);self.update(0,game)
         game.audio.play('milestone');game.save_checkpoint();return True
 
@@ -132,10 +183,47 @@ class MallLife:
             if obstacle is not None:mall.obstacles.append(obstacle)
             mall.event_obstacle=obstacle
         mall.event_spots=[tuple(self.spot.position+pygame.Vector2(dx,68)) for dx in (-64,0,64)] if self.spot else []
+        mall.event_task_markers=[tuple(t.position) for t in self.visible_tasks]
 
     def guest(self, index):
         name,clue,answer=self.event.guests[index]
         return (self.participants[index] if index<len(self.participants) else name),clue,answer
+
+    @property
+    def visible_tasks(self):return [t for t in self.tasks if not t.completed]
+
+    def touch(self, game, task):
+        if task not in self.visible_tasks or task.duration:return False
+        task.completed=True;self.round=sum(t.completed for t in self.tasks)
+        game.feedback.burst(task.position,'Material found',restored=True)
+        game.audio.play('pickup');game.save_checkpoint();return True
+
+    def work(self, dt, game, held, stationary):
+        for task in self.visible_tasks:
+            if not task.duration:continue
+            if held and stationary and task.position.distance_squared_to(game.player.rect.center)<=64**2:
+                task.progress=min(task.duration,task.progress+dt)
+                game.player.use_tool('setup',task.position)
+                if task.progress>=task.duration:
+                    task.completed=True;self.round=sum(t.completed for t in self.tasks)
+                    game.feedback.burst(task.position,'Planted',restored=True)
+                    game.audio.play('pickup');game.save_checkpoint()
+            else:task.progress=0
+
+    def menu_content(self):
+        if self.round>=3:
+            endings=('Books have new readers. The swap shelf will keep their stories moving.',
+                     'Tea, toast and cake are ready. The cafe tasting can begin.',
+                     'The herb, flower and shade beds make a living trail through the court.',
+                     'Donated scraps are ready for the makers. Nothing good needs to be wasted.')
+            return endings[self.event_index(self.active)],('Thank the neighbors and collect your reward','','')
+        if self.activity=='recipe':
+            return ('First, brew a warm drink.','Next, prepare the warm cinnamon toast.','Finally, plate the berry dessert.')[self.round],('Brew mint tea','Toast cinnamon bread','Plate berry cake')
+        if self.activity in ('plant','hunt'):
+            instruction='Visit the three green markers and hold E to plant the beds.' if self.activity=='plant' else 'Explore the three green markers and press E to collect donated materials.'
+            return instruction+f' Finished: {self.round}/3. J opens the map.',()
+        name,clue,_=self.guest(self.round)
+        return name+': '+clue,self.event.choices
 
     def choose(self, game, choice):
         if not self.active:return False
@@ -144,10 +232,12 @@ class MallLife:
             reward=(200,500,1000,1800)[list(self.completed).index(self.active)]
             key=self.active;game.cash+=reward;self.completed[key]+=1;self.cooldowns[key]=self.COOLDOWN
             game.feedback.burst(self.spot.position,f'+${reward} · Neighbors together',restored=True)
-            game.audio.play('milestone');self.active=None;self.spot=None;self.round=0;self.notice='';self.participants=[]
+            game.audio.play('milestone');self.active=None;self.spot=None;self.round=0;self.notice='';self.participants=[];self.tasks=[];self.activity='match'
             for person in game.shoppers.people:person.event_clue=''
             self.sync_spots(game.mall);game.save_checkpoint();return True
+        if self.activity in ('plant','hunt'):return False
         name,_,answer=self.guest(self.round)
+        if self.activity=='recipe':name='Iris';answer=self.round
         if choice!=answer:
             self.notice=f'{name}: A kind thought, but listen to what I am looking for. You can try again.'
             game.audio.play('blocked');return False

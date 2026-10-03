@@ -1,6 +1,7 @@
 """Three initial owner projects followed by paced, repeatable community favors."""
 from dataclasses import dataclass
 import pygame
+import random
 from systems.favors import FAVORS
 from mall.businesses import OPPOSITE
 
@@ -82,6 +83,8 @@ class RequestSpot:
 
 class OwnerRequests:
     INTERVAL = 180.0
+    RECURRING_MIN = 180.0
+    RECURRING_MAX = 600.0
 
     def __init__(self):
         self.store = None
@@ -282,7 +285,7 @@ class OwnerRequests:
         if self.favor:store.recurring_completed += 1
         else:store.request_level += 1
         store.request_bonus += bonus
-        store.request_wait = self.INTERVAL
+        store.request_wait = random.uniform(self.RECURRING_MIN,self.RECURRING_MAX) if store.request_level>=len(PROJECTS) else self.INTERVAL
         self.store = None
         self.spots = []
         self.parcel = False
