@@ -88,6 +88,16 @@ class CalmGuideTests(unittest.TestCase):
             self.assertFalse(g.life.choose(g,0));self.assertEqual(g.life.tasks,[])
         self.assertEqual(activities,{'match','recipe','plant','hunt'})
 
+    def test_event_marker_interaction_takes_priority_over_litter_on_its_tile(self):
+        g=self.open_all();g.life.completed['north']=3
+        self.assertTrue(g.life.start(g,'north'))
+        task=g.life.tasks[0];trash=g.mall.trash[0]
+        trash.position=task.position.copy();trash.cleaned=False
+        g.player.rect.center=task.position
+        self.assertIs(g.target(),task);g.interact()
+        self.assertTrue(task.completed);self.assertFalse(trash.cleaned)
+        self.assertEqual(g.life.round,1)
+
     def test_old_active_gathering_retains_matching_rules(self):
         g=self.open_all();g.life.start(g,'east');data=snapshot(g)
         del data['life']['activity'];del data['life']['tasks']

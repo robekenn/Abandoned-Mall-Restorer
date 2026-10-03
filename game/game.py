@@ -84,6 +84,8 @@ class Game:
         story_targets=[p for p in self.story.visible_points(self.mall)+self.story.visible_neighbors(self.mall)
                        if p.memory>=0 and origin.distance_to(p.position)<=(64 if p.source=='neighbor' else 32)]
         if story_targets:return min(story_targets,key=lambda p:origin.distance_squared_to(p.position))
+        event_tasks=[t for t in self.life.visible_tasks if origin.distance_to(t.position)<=32]
+        if event_tasks:return min(event_tasks,key=lambda t:origin.distance_squared_to(t.position))
         candidates = [t for t in self.mall.trash if not t.cleaned and origin.distance_to(t.position) <= self.upgrades.tool[1]]
         candidates += [s for s in self.mall.stores if origin.distance_to(s.position) <= INTERACTION_RADIUS]
         candidates += [r for r in self.mall.regions if not r.unlocked and r.ready(self.mall)
