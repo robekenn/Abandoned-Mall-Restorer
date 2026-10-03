@@ -15,6 +15,7 @@ class Welcome:
 
     def __init__(self, open=True):
         self.open=open
+        self.tutorial_enabled=True
         self.elapsed=0.0
         self.leaving=False
         self.fade=0.0
@@ -26,6 +27,10 @@ class Welcome:
         start=pygame.Rect(panel.x+30,panel.bottom-103,panel.width-156,46)
         quit=pygame.Rect(start.right+12,start.y,84,46)
         return panel,start,quit
+
+    def tutorial_rect(self, surface):
+        panel,_,_=self.geometry(surface)
+        return pygame.Rect(panel.x+30,panel.bottom-142,panel.width-60,25)
 
     def start(self):
         if not self.leaving:
@@ -45,7 +50,8 @@ class Welcome:
             elif event.key==pygame.K_ESCAPE:game.running=False
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
             _,start,quit=self.geometry(game.screen)
-            if start.collidepoint(event.pos):self.start()
+            if self.tutorial_rect(game.screen).collidepoint(event.pos):self.tutorial_enabled=not self.tutorial_enabled
+            elif start.collidepoint(event.pos):self.start()
             elif quit.collidepoint(event.pos):game.running=False
 
     def draw(self, game):
@@ -61,6 +67,8 @@ class Welcome:
             for line in theme.wrap(game.hud.font,paragraph,panel.width-60):
                 overlay.blit(game.hud.font.render(line,True,theme.TEXT),(panel.x+30,y));y+=24
             y+=14
+        option='First steps guide: '+('On' if self.tutorial_enabled else 'Off')+'  ·  click to change'
+        overlay.blit(game.hud.small.render(option,True,theme.ACCENT),self.tutorial_rect(overlay).topleft)
         hover=start.collidepoint(pygame.mouse.get_pos())
         theme.frame(overlay,start,(53,88,79) if hover else theme.CARD)
         text=game.hud.font.render('Start restoring',True,theme.ACCENT)

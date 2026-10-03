@@ -6,7 +6,7 @@ A top-down 2D restoration game built with Python and pygame-ce, without a commer
 
 ## A small beginning
 
-The game starts fullscreen on a short introduction to Northgate’s story. Choose **Start restoring** or press **Enter/Space** to fade into the mall. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**.
+The game starts fullscreen on a short introduction to Northgate’s story. Choose **Start restoring** or press **Enter/Space** to fade into the mall. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**. The optional first-steps guide can be disabled before starting, skipped with **T**, or replayed with **H**.
 
 ## First playable prototype
 
@@ -18,19 +18,19 @@ The 48 starting cleanup tasks cover the entire concourse floor, including beneat
 
 After the first sweep and Supplies reopening, litter returns every **four seconds** (twice the previous rate), capped at twelve recurring piles per eligible section. Reclean it, fill your bag and sell another load. Floor cleanliness recovers fully when all litter is collected; purchased fixtures and businesses remain upgraded.
 
-The east unlock marker stays hidden until all five north businesses reopen. Then pay **$1,500** at the east gate to open the next gallery. Reopen **Eastgate Workshop for $2,000** for 25/30/35/40-item bags (requires the 20-slot Supplies bag), three walking-speed upgrades up to 1.5x, recycling contracts worth $45/$60/$80 per item (requires Supplies’ $30 contract), and east-gallery fixtures. Clean its 42 starting patches and reopen Vinyl & Company and The Green Table for further rent. Both sections have two bins and independent first-sweep progression. Cleanliness now includes all unlocked floors.
+The east unlock marker stays hidden until all five north businesses reopen. Then pay **$1,500** at the east gate to open the next gallery. Reopen **Eastgate Workshop for $2,000** for 25/30/35/40-item bags (requires the 20-slot Supplies bag), three walking-speed upgrades up to 1.5x, recycling contracts worth $45/$60/$80 per item (requires Supplies’ $30 contract), and east-gallery fixtures. Clean its 46 starting patches and reopen Vinyl & Company, The Green Table, Copper Kettle and Secondhand Stars. Finish the east businesses to unlock **Garden Arcade ($10,000)**, then finish Garden to unlock **Community Commons ($35,000)**. All four areas have five businesses, an equipment shop, two bins, a delivery station and independent first-sweep progression. Cleanliness now includes all unlocked floors.
 
 A rising chime rewards 1.5x rent; a short low tone and an explanatory message signal full bags and unavailable actions. An original, quiet four-level chiptune loop plays beneath the effects. M mutes music and effects, then resumes music when unmuted.
 
-The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving and the southern galleries remain future milestones. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
+The game uses crisp pixel sprites with a four-direction animated worker displayed at 48x72. Cleaning produces a brief tool stroke, dust, an item popup and quiet audio. Progress resets on close; saving remains a future milestone. See [the upgrade and opening guide](docs/opening-arcade.md) for prices, controls and a review checklist.
 
 ## A mall coming back to life
 
-Shoppers begin returning when stores reopen. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation.
+Shoppers begin returning when stores reopen. They walk around obstacles, enter shops, spend 10–14 seconds inside, walk back out, visit purchased benches and fountains, and leave again. Cleaner floors and restored amenities attract more visitors. Press E near a shopper for a friendly conversation in a speech bubble above their head. Speakers pause so you can read; routine pickups, sales and successful purchases use visual feedback without bottom-message chatter.
 
 Press E at any reopened rent-paying business to meet its owner. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
-These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. There are at most three improvements per business. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Supplies and Workshop remain equipment shops. See [shoppers and requests](docs/shoppers-and-requests.md) for details.
+These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A fresh three-minute wait follows every claim. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
 
 ## Run on Windows
 
@@ -53,15 +53,16 @@ python3 -m venv .venv
 ## Controls
 
 - **WASD / Arrow keys:** move
-- **E:** collect nearby litter, sell at a trash bin, reopen a business open the east gate, enter an upgrade shop, meet an owner or greet a visitor
+- **E:** collect nearby litter, sell at a trash bin, reopen a business, open a section gate, enter an upgrade shop, meet an owner or greet a visitor
 - **Hold E while still:** set up a request sign
 - **1–3 / click in a display task:** place a product; **Backspace** undoes a choice
+- **H:** replay the optional tutorial; **T:** skip an active tutorial
 - **M:** toggle music and effects
 - **F11:** switch between fullscreen and a resizable window
 - **J:** open/close the journal (map, stats and owner request countdowns)
 - **Esc:** close an open menu/journal, or quit from the mall
 
-Inside either upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
+Inside any upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
 
 The camera follows the player. Walls, storefronts, delivery platforms, bins, benches, and the fountain block movement. Bench and fountain collisions follow the visible ground bases; people render behind tall props when passing behind them. Floor beneath furniture gets dirty and cleans with nearby litter, like the rest of the concourse. The window is resizable (minimum 800 x 600).
 

@@ -11,6 +11,8 @@ class Store:
         self.base_rent = rent
         self.request_bonus = 0
         self.request_level = 0
+        self.recurring_completed = 0
+        self.section_key = 'north'
         self.request_wait = 180.0
         self.door_open = False
         self.kind = kind
@@ -62,7 +64,7 @@ class Store:
         if self.available:
             point = camera.point(self.position)
             pygame.draw.circle(surface, (105,181,147) if self.restored else (216,177,104), point, 12)
-            if self.restored and not self.upgrade_shop and self.request_level < 3 and self.request_wait <= 0:
+            if self.restored and not self.upgrade_shop and self.request_wait <= 0:
                 pygame.draw.line(surface,(173,217,210),(point.x,point.y-35),(point.x,point.y-27),3)
                 pygame.draw.circle(surface,(173,217,210),(point.x,point.y-22),2)
             if selected:

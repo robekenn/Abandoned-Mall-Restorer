@@ -10,7 +10,7 @@ Reopen Northgate Supplies for $10. It is the first business in the storefront ro
 
 Use the mouse to click an upgrade row. Keys 1/2/3 select Gear/Furniture/Garden; left/right or Tab switch menu tabs; up/down select a row; Enter/Space purchase; Esc/E close the menu. Esc closes the menu before it quits the game. Gameplay, litter and rent timers pause while shopping.
 
-Unaffordable purchases and already installed fixtures do not deduct money. Gear advances one tier at a time and cannot exceed its last tier. The menu reports the purchase result and updates its prices/stats immediately.
+Unaffordable purchases and already installed fixtures do not deduct money. Gear advances one tier at a time and cannot exceed its last tier. Successful purchases update prices/stats immediately without a notice; unavailable purchases explain their prerequisite.
 
 ## Gear prices
 
@@ -69,11 +69,11 @@ Fractional payouts are kept: Pages pays $2.5, $5 or $7.5 depending on the tier. 
 
 There are currently 48 reachable starting tasks, with tile-coverage checks ensuring the entire playable floor can be cleaned. Starting positions avoid storefront entrances and trash bins. Once the first sweep is complete and Supplies is open, fresh litter returns every four seconds instead of eight, capped at twelve active piles. The pool stays bounded and spawns stay away from the player.
 
-Returning litter permits earning more money even if all initial proceeds were spent on upgrades before opening a rent-paying business. Clearing fresh litter restores its dirty floor patch; overlapping piles retain their remaining dirt. Trash-bin sales and rents fund both equipment and business progression. The two upright indoor trash bins sit beside the west/east benches and serve the playable north arcade; the east gallery can be unlocked next, while the southern galleries remain closed.
+Returning litter permits earning more money even if all initial proceeds were spent on upgrades before opening a rent-paying business. Clearing fresh litter restores its dirty floor patch; overlapping piles retain their remaining dirt. Trash-bin sales and rents fund both equipment and business progression. The two upright indoor trash bins sit beside the west/east benches and serve the playable north arcade; the east gallery can be unlocked next, then Garden Arcade and Community Commons follow.
 
 ## East gallery and Workshop
 
-The east marker and interaction prompt are hidden until the north sweep is complete and all five north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 42 initial tasks cover all concourse floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
+The east marker and interaction prompt are hidden until the north sweep is complete and all five north businesses reopen. Then go to the gold marker by the east grille and press E. Pay **$1,500** once to open the gallery. Its 46 initial tasks cover all concourse floor tile, with two indoor trash bins beside benches. North cleanup and purchased upgrades stay intact. The HUD and directory show the new area and next objective.
 
 The first east business is **Eastgate Workshop ($2,000)**. It can open before finishing the east sweep. It does not pay store rent; its individually purchased fixtures do. Supplies keeps the original tools and recycling contracts, and now caps bag capacity at 20. Workshop upgrades continue from that cap:
 
@@ -92,7 +92,7 @@ The first east business is **Eastgate Workshop ($2,000)**. It can open before fi
 
 Speed upgrades are independent of the bag prerequisite. Faster movement keeps diagonal normalization, collision stepping and the existing animation behavior. Returning to Supplies never removes Workshop upgrades.
 
-Workshop also sells ten individual east fixtures: two benches ($140 each), two lamps ($80 each), four planters ($70 each), a fountain ($350) and a mosaic ($300). Each adds $1 base rent. North fixtures are only sold at Supplies; east fixtures are only sold at Workshop.
+Workshop also sells twelve individual east fixtures: two benches ($140 each), four lamps ($80 each), four planters ($70 each), a fountain ($350) and a mosaic ($300). Each adds $1 base rent. North fixtures are only sold at Supplies; east fixtures are only sold at Workshop.
 
 Finishing the east sweep unlocks **Vinyl & Company ($3,000, $25 base rent)** after Workshop, then **The Green Table ($4,500, $40 base rent)** after Vinyl. Recurring litter becomes eligible separately in each section after its first sweep and upgrade shop reopening. One pile returns every four seconds across eligible sections, with a cap of twelve recurring piles per section. Initial east litter does not block north recurring work.
 
@@ -116,11 +116,11 @@ A brief rising chime accompanies each 1.5x rent payment. A short low tone signal
 12. Listen for the bonus-rent chime and blocked-action tone, then mute them with M.
 13. Resize to 800x600 and inspect all three menu tabs. Try Esc/E to close, M for audio, and Tab outside the menu (it should not change scenery).
 
-Progress still resets on close. Saving, the south galleries and further economic balancing remain future work. Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
+Progress still resets on close. Saving and further economic balancing remain future work. The southern areas are playable; see [community favors and expansion](community-favors-and-expansion.md). Automated checks cover collection/sales, capacity, prices, purchase limits, input handling, fixture ownership, tool range/batches, full-floor coverage, business order, rent, doubled spawns and the existing animation/audio/collision behaviors.
 
 ## Owner-led shop improvements
 
-Reopened rent-paying stores now have owners with three optional projects. Earn improvements by delivering supplies, arranging window displays and welcoming shoppers; there is no escalating building-upgrade price schedule. Each business can gain $3.5 additional base rent in total. Equipment shops remain unchanged. See [the living mall guide](shoppers-and-requests.md) for controls, rewards and visitor behavior.
+Reopened rent-paying stores now have owners with three optional projects. Earn improvements by delivering supplies, arranging window displays and welcoming shoppers; there is no escalating building-upgrade price schedule. The first three projects add $3.5 base rent; repeatable favors can add further half-dollar increases. Equipment shops remain unchanged. See [the living mall guide](shoppers-and-requests.md) for controls, rewards and visitor behavior.
 
 ## Workshop recycling contracts
 
@@ -134,4 +134,4 @@ The Workshop adds three contracts after the $30-per-item Supplies contract:
 
 Buy them in order from the Workshop’s Gear tab. They use the same trash bag and bins, apply to the whole load at sale time, and stop at $80 per item. The Supplies contract track remains capped at $30. Equipment and fixture prices appear in a short list; only the selected upgrade’s description and location appear below it.
 
-The main HUD keeps cash, bag space, cleanliness and one objective visible. Press **J** to open the journal for the map, rental income, equipment and owner request countdowns. **J/Esc/E** closes it; it pauses the game and request timers. Owner requests begin three minutes after their store opens, with another three-minute pause after each improvement is claimed; each rent-paying store has three improvements total.
+The main HUD keeps cash, bag space, cleanliness and one objective visible. Press **J** to open the journal for the map, rental income, equipment and owner request countdowns. **J/Esc/E** closes it; it pauses the game and request timers. Owner requests begin three minutes after their store opens, with another three-minute pause after each improvement is claimed; each rent-paying store has three initial improvements followed by recurring favors.

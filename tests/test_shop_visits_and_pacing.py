@@ -36,7 +36,7 @@ class ShopVisitsAndPacingTests(unittest.TestCase):
         self.assertTrue(g.owner_requests.accept(store,g.mall))
         self.assertEqual(g.owner_requests.update(1,g.mall),[])
 
-    def test_claim_resets_only_its_store_timer_and_never_allows_fourth(self):
+    def test_claim_resets_only_its_timer_and_favors_follow_three_projects(self):
         g=self.game;store,other=self.open_stores()
         g.owner_requests.update(180,g.mall)
         self.assertTrue(g.owner_requests.accept(store,g.mall))
@@ -52,7 +52,9 @@ class ShopVisitsAndPacingTests(unittest.TestCase):
         g.owner_requests.store=None
         store.request_level=3
         g.owner_requests.update(999,g.mall)
-        self.assertFalse(g.owner_requests.accept(store,g.mall))
+        self.assertTrue(g.owner_requests.accept(store,g.mall))
+        self.assertIsNotNone(g.owner_requests.favor)
+        self.assertEqual(store.request_level,3)
 
     def test_waiting_owner_cannot_be_skipped_with_repeated_actions(self):
         g=self.game;store,_=self.open_stores()

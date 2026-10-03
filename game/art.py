@@ -137,6 +137,20 @@ def prop(name):
         box(s,'cream',(3,5,18,11))
         box(s,'teal',(5,8,14,2))
         box(s,'gold',(8,12,8,2))
+    elif name in ('request_keepsake','request_plaque','request_notice','request_toolkit','request_lantern','request_chalk'):
+        box(s,'ink',(3,5,18,16))
+        color={'request_keepsake':'cream','request_plaque':'gold','request_notice':'cream',
+               'request_toolkit':'wood','request_lantern':'shadow','request_chalk':'teal'}[name]
+        box(s,color,(4,6,16,14))
+        if name=='request_toolkit':
+            box(s,'light',(8,11,9,3));box(s,'rust',(10,4,5,3))
+        elif name=='request_lantern':
+            box(s,'gold',(8,8,8,8));box(s,'cream',(10,9,3,5))
+        elif name=='request_keepsake':
+            box(s,'teal',(7,9,10,7));box(s,'gold',(10,10,3,3))
+        else:
+            box(s,'wood' if name=='request_plaque' else 'light',(7,10,10,2))
+            box(s,'wood' if name=='request_plaque' else 'light',(7,14,7,2))
     elif name == 'trash_bags':
         for x, y in ((2, 9), (11, 5)):
             box(s, 'ink', (x, y + 3, 10, 10))
@@ -246,7 +260,7 @@ class Art:
                 self.sprites[f'{kind}_{state}'] = store(kind, state == 'clean')
             self.sprites[f'{kind}_clean_open'] = store(kind,True,True)
         for name in ('trash_bags', 'litter', 'dirt', 'bench_dirty', 'bench_clean',
-                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign'):
+                     'fountain_dirty', 'fountain_clean', 'plant_dirty', 'plant_clean', 'lamp', 'lamp_off', 'trash_bin', 'mosaic', 'request_parcel', 'request_display', 'request_sign', 'request_keepsake', 'request_plaque', 'request_notice', 'request_toolkit', 'request_lantern', 'request_chalk'):
             self.sprites[name] = prop(name)
         self.sprites['delivery_station'] = delivery_station()
         for facing in ('down', 'up', 'left', 'right'):

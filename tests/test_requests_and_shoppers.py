@@ -235,7 +235,9 @@ class LivingMallTests(unittest.TestCase):
         self.assertEqual((g.cash,g.rent_income),(cash,rent))
         self.assertEqual(g.upgrades.held,0)
         self.assertTrue(person.greeted)
-        self.assertIn(person.name,g.message)
+        self.assertTrue(person.speech)
+        self.assertGreater(person.speech_time,0)
+        self.assertEqual(g.message_timer,0)
         for variant in range(4):
             for facing in ('down','up','left','right'):
                 for frame in range(4):

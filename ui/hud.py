@@ -20,6 +20,7 @@ class HUD:
 
     def goal(self, game):
         mall=game.mall;requests=game.owner_requests
+        if game.tutorial.active:return game.tutorial.goal
         if requests.store:
             return f'{OWNERS[requests.store.name]}: {requests.project[0]}',requests.objective
         if game.upgrades.held == game.upgrades.capacity:
@@ -28,10 +29,11 @@ class HUD:
             return 'A small beginning','Reopen Supplies for $10.'
         if not mall.initial_cleanup_complete:
             return 'First sweep',f'Clean the north arcade. {sum(not t.cleaned for t in mall.north_trash)} patches left.'
-        if not mall.east.unlocked and mall.next_store is None:
-            return 'A new chapter','Open the east gallery for $1,500.'
-        if mall.east.unlocked and mall.east.stores[0].restored and not mall.east.initial_cleanup_complete:
-            return 'East gallery',f'Finish its first sweep. {sum(not t.cleaned for t in mall.east.trash)} patches left.'
+        for region in mall.active_regions:
+            if region.stores[0].restored and not region.initial_cleanup_complete:
+                return region.name,f'Finish its first sweep. {sum(not t.cleaned for t in region.trash)} patches left.'
+        ready=next((r for r in mall.regions if not r.unlocked and r.ready(mall)),None)
+        if ready:return 'A new chapter',f'Open {ready.name} · {money(ready.cost)}'
         if mall.next_store:
             return 'Next opening',f'{mall.next_store.name} · {money(mall.next_store.cost)}'
         return 'A welcoming mall','Visit owners when their next idea is ready.'
@@ -44,8 +46,8 @@ class HUD:
         if isinstance(target,RequestSpot):return ('Hold E' if target.duration else 'E'),target.title
         if isinstance(target,Store):
             if not target.restored:return 'E',f'Reopen {target.name}' if target.available else 'This store is still closed'
-            return 'E',('Enter Workshop' if target.upgrade_shop=='east' else 'Enter Supplies') if target.upgrade_shop else f'Talk to {OWNERS[target.name]}'
-        if target:return 'E','Open east gallery · $1,500'
+            return 'E',('Enter '+target.name) if target.upgrade_shop else f'Talk to {OWNERS[target.name]}'
+        if target:return 'E',f'Open {target.name} · {money(target.cost)}'
         return 'Move','WASD or arrow keys'
 
     def directory(self, surface, mall, player, requests=None, people=(), bounds=None):
@@ -56,7 +58,7 @@ class HUD:
         for area in mall.playable_areas:
             r=pygame.Rect(bounds.x+area.x*sx,bounds.y+area.y*sy,area.width*sx,area.height*sy)
             pygame.draw.rect(surface,(69,94,84),r)
-        for gate in mall.gates:
+        for gate in mall.barriers:
             r=pygame.Rect(bounds.x+gate.x*sx,bounds.y+gate.y*sy,max(2,gate.width*sx),max(2,gate.height*sy))
             pygame.draw.rect(surface,theme.GOLD,r)
         for store in mall.stores+mall.distant_stores:
@@ -65,13 +67,13 @@ class HUD:
         for bin in mall.trash_bins:
             p=(round(bounds.x+bin.position.x*sx),round(bounds.y+bin.position.y*sy))
             pygame.draw.rect(surface,theme.ACCENT,(p[0]-2,p[1]-2,4,4))
-        deliveries=[mall.delivery]+([mall.east.delivery] if mall.east.unlocked else [])
+        deliveries=mall.deliveries
         for depot in deliveries:
             p=(round(bounds.x+depot.position.x*sx),round(bounds.y+depot.position.y*sy))
             pygame.draw.rect(surface,theme.GOLD,(p[0]-3,p[1]-3,6,6),1)
         if requests and requests.store:
             destinations=[requests.store.position] if requests.ready else [s.position for s in requests.visible_spots]
-            if not destinations and requests.store.request_level==2:
+            if not destinations and requests.needs_greetings:
                 destinations=[p.position for p in people if p.visible and p.identity not in requests.greetings]
             for p in destinations:
                 pygame.draw.circle(surface,(111,211,233),(round(bounds.x+p.x*sx),round(bounds.y+p.y*sy)),4)
@@ -81,7 +83,7 @@ class HUD:
         surface=game.screen if surface is None else surface;width,height=surface.get_size();mall=game.mall
         pygame.draw.rect(surface,theme.BG,(0,0,width,76))
         surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
-        region='East gallery' if mall.east.unlocked and mall.east.area.collidepoint(game.player.rect.center) else 'North arcade'
+        region=mall.area_name(game.player.rect.center)
         surface.blit(self.small.render(region,True,theme.MUTED),(23,47))
         values=[('CLEAN',cleanliness_label(mall.cleanliness)),('CASH',money(game.cash)),('BAG',f'{game.upgrades.held} / {game.upgrades.capacity}')]
         for i,(label,value) in enumerate(values):
@@ -90,10 +92,13 @@ class HUD:
             color=theme.GOLD if label=='BAG' and game.upgrades.held==game.upgrades.capacity else theme.TEXT
             text=self.font.render(value,True,color);surface.blit(text,(r.x+12,r.y+27))
         title,objective=self.goal(game)
-        card=pygame.Rect(20,88,min(width-40,480),72);theme.frame(surface,card)
+        card=pygame.Rect(20,88,min(width-40,480),94 if game.tutorial.active else 72);theme.frame(surface,card)
         surface.blit(self.small.render(title,True,theme.ACCENT),(card.x+14,card.y+12))
-        for i,line in enumerate(theme.wrap(self.font,objective,card.width-28)[:2]):
+        for i,line in enumerate(theme.wrap(self.font,objective,card.width-28)[:3 if game.tutorial.active else 2]):
             surface.blit(self.font.render(line,True,theme.TEXT),(card.x+14,card.y+34+i*21))
+        if game.tutorial.active:
+            skip=game.tutorial.skip_rect(surface);theme.frame(surface,skip,theme.CARD,False)
+            label=self.small.render('T Skip',True,theme.MUTED);surface.blit(label,label.get_rect(center=skip.center))
         pygame.draw.rect(surface,theme.BG,(0,height-58,width,58))
         key,action=self.prompt(game,target)
         key_width=58 if key=='Hold E' else 44
@@ -102,7 +107,7 @@ class HUD:
         available=width-key_width-330
         for i,line in enumerate(theme.wrap(self.small,action,available)[:2]):
             surface.blit(self.small.render(line,True,theme.TEXT),(r.right+12,height-41+i*17))
-        controls=self.small.render('J Journal   M Sound   Esc Exit',True,theme.MUTED)
+        controls=self.small.render('J Journal   H Help   M Sound   Esc Exit',True,theme.MUTED)
         surface.blit(controls,controls.get_rect(midright=(width-20,height-29)))
         if game.message_timer:
             lines=theme.wrap(self.small,game.message,min(540,width-68))[:2]
