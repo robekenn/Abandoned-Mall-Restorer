@@ -78,8 +78,15 @@ def prop(name):
         for x in (4,18):
             box(s,'ink',(x,17,2,5));box(s,'stone',(x,17,1,4))
         if not clean:
-            box(s,'shadow',(10,7,4,2));box(s,'ink',(14,10,3,2))
-            box(s,'green',(4,15,3,1));box(s,'wood',(18,17,2,2))
+            # A collapsed back and seat, missing leg, and loose boards read as broken.
+            s.fill((0,0,0,0))
+            box(s,'ink',(2,10,3,9));box(s,'stone',(3,11,1,6))
+            box(s,'wood',(4,12,7,2));box(s,'wood',(15,14,7,2))
+            box(s,'shadow',(5,16,12,3));box(s,'ink',(5,18,2,4))
+            pygame.draw.line(s,'#856448',(6,5),(11,12),2)
+            pygame.draw.line(s,'#856448',(13,9),(21,6),2)
+            pygame.draw.line(s,'#856448',(10,20),(21,22),2)
+            box(s,'green',(5,15,5,2));box(s,'stone',(3,21,4,2))
     elif name.startswith('fountain'):
         clean = name.endswith('clean')
         box(s, 'ink', (3, 12, 18, 10))
@@ -429,6 +436,39 @@ def event_item(index):
     return s
 
 
+def young_shopper(age,variant,facing,frame):
+    s=shopper(variant,facing,frame)
+    bob=frame%2
+    if age=='teen':
+        box(s,'teal' if variant%2 else 'rust',(5,10+bob,6,5))
+        box(s,'cream',(7,11+bob,2,1));box(s,'blue',(6,16+bob,4,4))
+        if facing=='up':box(s,'wood',(5,10+bob,6,6));box(s,'gold',(6,11+bob,4,1))
+        else:box(s,'ink',(4,6+bob,1,3));box(s,'ink',(11,6+bob,1,3))
+    else:
+        box(s,'teal' if variant%2 else 'gold',(4,2+bob,8,2));box(s,'cream',(4,4+bob,7,1))
+        box(s,'leaf' if variant%2 else 'rust',(5,11+bob,6,4));box(s,'cream',(7,12+bob,2,2))
+    return s
+
+
+def social_table(broken=False,seats=(True,True)):
+    s=canvas((32,24))
+    if broken:
+        box(s,'shadow',(8,12,17,4));box(s,'wood',(7,9,7,3));box(s,'wood',(19,11,7,3))
+        box(s,'ink',(9,15,3,6));box(s,'green',(11,13,4,2))
+        pygame.draw.line(s,'#856448',(15,19),(24,22),2)
+    else:
+        box(s,'ink',(6,10,20,4));box(s,'wood',(7,8,18,5));box(s,'cream',(9,9,14,1))
+        box(s,'shadow',(9,14,3,7));box(s,'shadow',(21,14,3,7))
+        box(s,'cream',(12,6,3,3));box(s,'rust',(19,6,3,3));box(s,'leaf',(16,4,2,5))
+    for x,restored in zip((0,27),seats):
+        if restored:
+            box(s,'teal',(x,9,5,8));box(s,'wood',(x,16,5,4));box(s,'ink',(x+1,20,2,3))
+        else:
+            box(s,'stone',(x+1,14,4,4));box(s,'wood',(x,19,5,2))
+            pygame.draw.line(s,'#856448',(x,8),(x+4,14),2)
+    return s
+
+
 class Art:
     def __init__(self):
         self.sprites = {}
@@ -460,6 +500,12 @@ class Art:
                 self.sprites[f'janitor_{facing}_{frame}']=janitor_uniform(worker(facing,frame))
                 self.sprites[f'janitor_{facing}_clean_{frame}']=janitor_uniform(cleaning_worker(facing,frame))
 
+        self.sprites['social_table']=social_table()
+        self.sprites['social_table_broken']=social_table(True,(False,False))
+        for table in (0,1):
+            for left in (0,1):
+                for right in (0,1):
+                    self.sprites[f'social_table_{table}_{left}{right}']=social_table(not table,(left,right))
         for variant in range(4):
             self.sprites[f'community_table_{variant}']=community_table(variant)
             for facing in ('down','up','left','right'):
@@ -468,6 +514,14 @@ class Art:
                     owner=shopper(variant,facing,frame);box(owner,'teal',(5,13,6,4));box(owner,'cream',(5,13,6,1))
                     self.sprites[f'owner_{variant}_{facing}_{frame}']=owner
                 self.sprites[f'shopper_{variant}_{facing}_sit']=seated_shopper(variant,facing)
+
+        for age in ('child','teen'):
+            for variant in range(4):
+                for facing in ('up','down','left','right'):
+                    for frame in range(4):self.sprites[f'{age}_{variant}_{facing}_{frame}']=young_shopper(age,variant,facing,frame)
+                    seated=young_shopper(age,variant,'down',0);seated.fill((0,0,0,0),(0,17,16,7))
+                    for x in (4,9):box(seated,'blue',(x,17,4,3));box(seated,'ink',(x+1,20,3,2))
+                    self.sprites[f'{age}_{variant}_{facing}_sit']=seated
 
         bag=canvas((8,8));box(bag,'ink',(1,2,6,6));box(bag,'wood',(2,3,4,4));box(bag,'cream',(3,4,2,2));box(bag,'gold',(3,1,2,2))
         self.sprites['purchase_bag']=bag

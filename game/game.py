@@ -9,11 +9,13 @@ from game.feedback import Feedback
 from systems.litter import LitterSpawner
 from systems.janitors import Janitors
 from systems.shoppers import Shoppers, Shopper
+from systems.courtyard_visitors import CourtyardTravel
 from systems.requests import OwnerRequests, RequestSpot, OWNERS
 from systems.upgrades import Upgrades
 from systems.economy import money, rent_multiplier
 from game.settings import TITLE, WINDOW_SIZE, FPS, INTERACTION_RADIUS
 from mall.mall import Mall
+from mall.courtyard import Courtyard, SceneDoor
 from mall.section import RegionalGallery
 from ui.hud import HUD
 from ui.upgrade_shop import UpgradeShop
@@ -54,6 +56,9 @@ class Game:
         self.hud.font=HintFont(self.hud.font,self.preferences)
         self.hud.small=HintFont(self.hud.small,self.preferences)
         self.art = Art()
+        from game.patio_art import install
+        install(self.art)
+        self.courtyard=Courtyard();self.visitor_travel=CourtyardTravel();self.scene='mall';self.main_position=None;self.main_camera=self.camera
         self.audio = Audio()
         self.audio.set_volumes(self.preferences.music,self.preferences.effects)
         self.feedback = Feedback()
@@ -86,7 +91,12 @@ class Game:
         self.running = True
 
     def target(self):
+        if self.scene=='courtyard':return self.courtyard.target(self)
         origin = pygame.Vector2(self.player.rect.center)
+        door=self.courtyard.door(self.mall)
+        if not self.courtyard.unlocked and self.mall.commons.unlocked and origin.distance_to(door.position)<=110:
+            door.title='Open Courtyard passage ($50,000)' if self.courtyard.ready(self.mall) else 'Courtyard needs the Commons sweep and six reopened businesses'
+            return door
         # Selling takes priority at a trash bin when the player is carrying a load.
         trash_bins = [d for d in self.mall.trash_bins if origin.distance_to(d.position) <= INTERACTION_RADIUS]
         if trash_bins and self.upgrades.held:
@@ -108,7 +118,9 @@ class Game:
         candidates += [t for t in self.life.visible_tasks if origin.distance_to(t.position)<=64]
         candidates += trash_bins
         if not candidates:candidates=shoppers
-        return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
+        # Old checkpoints can contain a gathering at a story board's exact node.
+        # Give the active gathering the tie so it remains possible to join it.
+        return min(candidates,key=lambda t:(origin.distance_squared_to(t.position),0 if t is self.life.spot else 1),default=None)
 
     def notify(self, message):
         self.message,self.message_timer = message,3.0
@@ -119,7 +131,8 @@ class Game:
         return message
 
     def buy_upgrade(self, key):
-        store = next((s for s in self.mall.stores if s.upgrade_shop==self.shop_menu.shop),None)
+        stores=self.courtyard.world.stores if self.scene=='courtyard' else self.mall.stores
+        store = next((s for s in stores if s.upgrade_shop==self.shop_menu.shop),None)
         if not self.shop_menu.open or store is None or not store.restored:
             return self.deny('Visit the reopened upgrade shop to buy upgrades.')
         self.cash,message,bought = self.upgrades.purchase(key,self.cash,self.shop_menu.shop)
@@ -143,6 +156,7 @@ class Game:
     def pickup_at(self, screen_position):
         if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu)):
             return
+        if self.scene=='courtyard':self.courtyard.pickup_at(self,screen_position);return
         viewport=pygame.Rect(0,190 if self.tutorial.active else 170,self.screen.get_width(),self.screen.get_height()-(248 if self.tutorial.active else 228))
         if not viewport.collidepoint(screen_position):return
         point=pygame.Vector2(screen_position)+self.camera.offset
@@ -187,8 +201,11 @@ class Game:
     def interact(self):
         if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
+        if self.scene=='courtyard':self.courtyard.interact(self);return
         target = self.target()
-        if isinstance(target,Trash):
+        if isinstance(target,SceneDoor):
+            self.enter_courtyard()
+        elif isinstance(target,Trash):
             self.collect(target)
         elif isinstance(target,TrashBin):
             self.sell_trash(target)
@@ -271,6 +288,44 @@ class Game:
         self.shop_menu.category = self.shop_menu.selection = 0
         self.shop_menu.notice = ''
 
+    def enter_courtyard(self,*,save=True,position=None):
+        if self.scene=='courtyard':return False
+        if not self.courtyard.ready(self.mall):
+            self.deny('Finish the Commons sweep and reopen six businesses to unlock the Courtyard.');return False
+        if not self.courtyard.unlocked:
+            if self.cash<self.courtyard.COST:self.deny(f'The courtyard passage needs {money(self.courtyard.COST)} to restore.');return False
+            self.cash-=self.courtyard.COST;self.courtyard.unlocked=True
+        self.courtyard.ensure_world();self.courtyard.open_passage(self.mall);self.main_position=pygame.Vector2(self.player.rect.center)
+        self.scene='courtyard';self.camera=self.courtyard.camera;self.player.rect.center=position or self.courtyard.world.entrance
+        self.feedback.popups.clear();self.feedback.particles.clear();self.speech.timer=0;self.frame_camera(self.screen.get_size())
+        if save:self.save_checkpoint()
+        return True
+
+    def update_courtyard_visitors(self,dt):
+        if self.courtyard.unlocked:
+            self.courtyard.shoppers.update(dt,self.courtyard.world,self.upgrades)
+            self.visitor_travel.update(dt,self)
+
+    def update_janitors(self,dt):
+        self.janitors.update(dt,self)
+        if self.courtyard.unlocked:
+            self.courtyard.janitors.update(dt,self,self.courtyard.world)
+
+    @property
+    def cleanliness(self):
+        worlds=[self.mall]
+        if self.courtyard.unlocked:worlds.append(self.courtyard.world)
+        tiles=sum(len(world.floor_tiles) for world in worlds)
+        dirty=sum(len(world.dirty_tiles) for world in worlds)
+        return 1-dirty/tiles if tiles else 1
+
+    def leave_courtyard(self):
+        if self.scene!='courtyard':return
+        self.scene='mall';self.camera=self.main_camera
+        self.player.rect.center=self.courtyard.door(self.mall).position
+        self.main_position=None;self.feedback.popups.clear();self.feedback.particles.clear();self.speech.timer=0
+        self.frame_camera(self.screen.get_size());self.save_checkpoint()
+
     def save_checkpoint(self):
         return self.save_store.save(self) if self.save_started else False
 
@@ -287,6 +342,9 @@ class Game:
                                             pygame.FULLSCREEN if self.fullscreen else pygame.RESIZABLE)
 
     def frame_camera(self, viewport):
+        if self.scene=='courtyard':
+            bias=-50+120*max(0,min(1,(self.player.rect.centery-850)/180))
+            self.courtyard.camera.update((self.player.rect.centerx,self.player.rect.centery+bias),viewport);return
         # Blend framing within each vertical row, including the corridor between
         # them. Choosing a new court must not jump the camera by a hundred pixels.
         y=self.player.rect.centery
@@ -316,7 +374,9 @@ class Game:
         if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         if self.tutorial.paused:return
+        if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
+        if self.courtyard.crossing(self,direction):return
         self.frame_camera(viewport)
         self.message_timer = max(0,self.message_timer-dt)
         self.request_notice_timer=max(0,self.request_notice_timer-dt)
@@ -327,12 +387,13 @@ class Game:
         self.story.update(dt,self.mall)
         self.life.update(dt,self)
         self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
-        self.janitors.update(dt,self)
+        self.update_janitors(dt)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
             self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
             self.request_notice_timer=8
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
+        self.update_courtyard_visitors(dt)
         self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:
@@ -362,13 +423,17 @@ class Game:
 
     @property
     def rent_income(self):
-        return (sum(s.rent for s in self.mall.stores if s.restored)+self.upgrades.fixture_rent)*self.rent_multiplier
+        fixtures=sum(not k.startswith('courtyard_') for k in self.upgrades.decor)
+        return (sum(s.rent for s in self.mall.stores if s.restored)+fixtures)*self.rent_multiplier+self.courtyard.income(self.upgrades)
 
     def draw(self):
+        if self.scene=='courtyard':self.courtyard.draw(self);return
         target = self.target()
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
         self.story.draw(self)
         self.life.draw(self)
+        if self.mall.commons.unlocked:
+            self.courtyard.draw_passage(self,self.courtyard.door(self.mall))
         if self.owner_requests.store:
             p=self.camera.point(self.owner_requests.store.position)
             pygame.draw.circle(self.screen,(111,211,233),p,26,3)
@@ -461,17 +526,22 @@ class Game:
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
         elif self.tutorial.paused:self.tutorial.handle(event,self)
+        elif self.scene=='courtyard' and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:pass
         elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
             if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):self.developer.open=not self.developer.open
         elif self.developer.open:self.developer.handle(event,self)
         elif self.display_menu.open:self.display_menu.handle(event,self)
         elif self.shop_menu.open:self.shop_menu.handle(event,self)
         elif self.owner_menu.open:self.owner_menu.handle(event,self)
-        elif self.journal.open:self.journal.handle(event,self)
+        elif self.journal.open:
+            if self.scene=='courtyard':self.courtyard.journal_handle(event,self)
+            else:self.journal.handle(event,self)
         elif self.tutorial.active and self.tutorial.handle(event,self):pass
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:self.pickup_at(event.pos)
         elif event.type==pygame.KEYDOWN:
-            if event.key==pygame.K_h:self.tutorial.start(self)
+            if event.key==pygame.K_h:
+                if self.scene=='mall':self.tutorial.start(self)
+                else:self.journal.tab=0;self.journal.open=True
             elif event.key==pygame.K_j:self.tutorial.journal_seen=True;self.journal.open=True
             elif event.key==pygame.K_ESCAPE:self.pause.show()
             elif event.key==pygame.K_e:self.interact()

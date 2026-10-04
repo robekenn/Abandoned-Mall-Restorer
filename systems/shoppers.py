@@ -73,6 +73,7 @@ class Shopper:
         self.greeted = False
         self.speech = ''
         self.speech_time = 0
+        self.age='adult';self.group_id=None;self.leader=None;self.follow_slot=0;self.follow_timer=0.;self.table=None;self.table_seat=None
         self.visits=0;self.carrying=False;self.activity='';self.rest_seconds=4;self.seat=None;self.friend_name='';self.goal=None;self.event_clue=''
 
     @property
@@ -81,12 +82,15 @@ class Shopper:
 
     @property
     def visible(self):
-        return self.state != 'inside' and not self.done
+        return self.state != 'inside' and not self.done and (self.leader is None or self.leader.visible)
 
     def update(self, dt, manager, mall, upgrades):
         if self.speech_time and self.visible:
             self.speech_time=max(0,self.speech_time-dt)
             self.frame=0
+            return
+        if self.leader is not None:
+            self.update_follower(dt,manager)
             return
         if self.state == 'inside':
             self.wait += dt
@@ -96,21 +100,8 @@ class Shopper:
                 self.state,self.wait = 'exiting',0
                 self.carrying=True
             return
-        moving = False
-        budget = 86*dt
-        while self.path and budget > 0:
-            delta = self.path[0]-self.position
-            distance = delta.length()
-            if distance < 0.01:
-                self.path.pop(0); continue
-            self.facing = ('right' if delta.x > 0 else 'left') if abs(delta.x)>abs(delta.y) else ('down' if delta.y>0 else 'up')
-            step = min(distance,budget)
-            self.position += delta*(step/distance)
-            budget -= step; moving = True
-            if step == distance:
-                self.path.pop(0)
-        self.animation_time = self.animation_time+dt if moving else 0
-        self.frame = int(self.animation_time/0.18)%4 if moving else 0
+        speed=128 if self.age=='teen' and int(manager.traffic_elapsed//12)%2 else 104 if self.age=='teen' else 86
+        self.walk(dt,speed)
         if self.path:
             return
         if self.state == 'arriving':
@@ -131,6 +122,14 @@ class Shopper:
                     path=manager.walkways.route(self.position,store.position)
                     if path is not None:
                         self.store=store;self.path=path;self.state='arriving';return
+            seats=manager.table_seats(mall,upgrades)
+            local_seats=[(table,seat) for table,seat in seats if mall.area_for_store(self.store).collidepoint(seat)]
+            if local_seats and self.identity%3!=0 and not (self.identity%4==2 and any(p is not self and p.state=='resting' and p.activity in ('fountain','gathering') and mall.area_for_store(self.store).collidepoint(p.position) for p in manager.people)):
+                table,seat=local_seats[0]
+                route=manager.walkways.route(self.position,seat)
+                if route is not None:
+                    self.table=table;self.table_seat=seat;self.goal=seat.copy();self.path=route
+                    self.activity='table';self.rest_seconds=24+getattr(mall,'comfort',0)*8;self.state='strolling';self.wait=0;return
             goals=manager.amenities(mall,upgrades)
             manager.random.shuffle(goals)
             # Visitors enjoy amenities in their own court, keeping trips manageable.
@@ -151,20 +150,58 @@ class Shopper:
         elif self.state == 'strolling':
             if self.goal is not None and self.position.distance_to(self.goal)>1:
                 self.path=manager.walkways.route(self.position,self.goal) or [];return
-            if self.activity!='meeting':self.activity=manager.activity(self.position,mall,upgrades)
+            if self.activity not in ('meeting','table'):self.activity=manager.activity(self.position,mall,upgrades)
             if self.activity=='gathering':self.rest_seconds=max(self.rest_seconds,20)
             self.state,self.wait = 'resting',0
+            if self.activity=='table':
+                friend=next((p for p in manager.people if p is not self and p.table is self.table and p.state=='resting'),None)
+                if friend is not None:
+                    self.speech=f'{friend.name}, tell me how your week has been.';self.speech_time=5
+                    friend.speech='It is good to catch up somewhere we can take our time.';friend.speech_time=5
         elif self.state == 'resting':
             self.wait += dt
             if self.wait >= self.rest_seconds:
                 path=manager.walkways.route(self.position,self.entrance)
                 if path is None:return
-                self.path=path;self.activity=''
+                self.path=path;self.activity='';self.table=None;self.table_seat=None
                 self.state,self.wait = 'leaving',0
         elif self.state == 'leaving':
             # An exhausted/failed route never counts as leaving in mid-concourse.
             if self.position.distance_to(self.entrance)<1:self.done = True
             else:self.path=manager.walkways.route(self.position,self.entrance) or []
+
+    def walk(self,dt,speed):
+        moving=False;budget=speed*dt
+        while self.path and budget>0:
+            delta=self.path[0]-self.position;distance=delta.length()
+            if distance<.01:self.path.pop(0);continue
+            self.facing=('right' if delta.x>0 else 'left') if abs(delta.x)>abs(delta.y) else ('down' if delta.y>0 else 'up')
+            step=min(distance,budget);self.position+=delta*(step/distance);budget-=step;moving=True
+            if step==distance:self.path.pop(0)
+        self.animation_time=self.animation_time+dt if moving else 0
+        self.frame=int(self.animation_time/.18)%4 if moving else 0
+
+    def update_follower(self,dt,manager):
+        leader=self.leader
+        if leader.done:self.done=True;return
+        self.store=leader.store;self.follow_timer-=dt
+        if not leader.visible:self.path=[];self.frame=0;return
+        if leader.state=='resting' and leader.activity=='table':
+            if self.table is None:
+                free=[(t,p) for t,p in manager.table_seats(manager.mall) if t is leader.table]
+                if free:
+                    self.table,self.table_seat=free[0];self.path=manager.walkways.route(self.position,self.table_seat) or []
+            if self.table_seat is not None:
+                self.walk(dt,110)
+                if not self.path and self.position.distance_to(self.table_seat)<1:self.activity='table';self.frame=0
+                return
+        self.table=None;self.table_seat=None;self.activity=''
+        if self.follow_timer<=0:
+            self.follow_timer=1.2
+            offset=pygame.Vector2(-64 if self.follow_slot%2 else 64,64)
+            destination=manager.walkways.nearest(leader.position+offset)
+            self.path=manager.walkways.route(self.position,destination) or []
+        self.walk(dt,145 if self.age=='teen' else 112)
 
     @property
     def display_position(self):
@@ -174,8 +211,9 @@ class Shopper:
         if not self.visible:
             return
         point = camera.point(self.display_position)
-        pose='sit' if self.state=='resting' and self.activity=='bench' else str(self.frame)
-        art.draw(surface,f'shopper_{self.variant}_{self.facing}_{pose}',(point.x,point.y-12),(48,72))
+        pose='sit' if self.activity=='table' and not self.path or self.state=='resting' and self.activity=='bench' else str(self.frame)
+        prefix=self.age if self.age in ('child','teen') else 'shopper'
+        art.draw(surface,f'{prefix}_{self.variant}_{self.facing}_{pose}',(point.x,point.y-(7 if self.age=='child' else 12)),(32,48) if self.age=='child' else (48,72))
         if self.carrying:
             side=-21 if self.facing=='left' else 21
             art.draw(surface,'purchase_bag',(point.x+side,point.y+4),(24,24))
@@ -195,6 +233,57 @@ class Shoppers:
         self.random = random.Random(97)
         self.elapsed = 8.0
         self.next_identity = 0
+        self.traffic_elapsed=0.;self.mall=None;self.party_count=0;self.upgrades=None
+
+    @property
+    def traffic(self):
+        phase=self.traffic_elapsed%480
+        return 'Busy hours' if 180<=phase<360 else 'Quiet hours' if 90<=phase<180 or phase>=360 else 'Steady hours'
+
+    def population_limit(self,mall):return min(36,12+6*len(mall.active_regions)+getattr(mall,'comfort',0)*2)
+
+    def desired_population(self,mall,upgrades):
+        opened=sum(s.restored for s in mall.stores)
+        if not opened:return 0
+        base=opened+(2 if mall.cleanliness>=.5 else 0)+len(self.amenities(mall,upgrades))//2
+        factor=1.7 if self.traffic=='Busy hours' else .45 if self.traffic=='Quiet hours' else 1
+        return min(self.population_limit(mall),max(1,round(base*factor)))
+
+    def table_seats(self,mall,upgrades=None):
+        upgrades=upgrades or self.upgrades
+        seats=[]
+        for table in getattr(mall,'social_tables',[]):
+            if table.fixture_key and (upgrades is None or table.fixture_key not in upgrades.decor):continue
+            stores=[s for s in mall.stores if s.section_key==table.section and not s.upgrade_shop and s.restored]
+            if len(stores)<2:continue
+            for key,seat in zip(table.seat_keys,table.seats):
+                if key and key not in upgrades.decor:continue
+                if not any(p.table is table and p.table_seat==seat and not p.done for p in self.people):seats.append((table,seat))
+        return seats
+
+    def spawn_party(self,mall,store,room):
+        identity=self.next_identity
+        kind=('solo','family','teens','solo')[self.party_count%4];self.party_count+=1
+        count=min(room,3 if kind=='family' else 2 if kind=='teens' else 1)
+        leader=None
+        for slot in range(count):
+            person=Shopper(self.next_identity,mall.entrance,store,self.walkways);self.next_identity+=1
+            person.group_id=identity if count>1 else None
+            person.age='teen' if kind=='teens' else 'child' if kind=='family' and slot==2 else 'adult'
+            if slot:person.leader=leader;person.follow_slot=slot;person.state='following'
+            else:leader=person
+            self.people.append(person)
+
+    def depart(self,name,variant,position,mall):
+        self.walkways.refresh(mall)
+        if len(self.people)>=self.population_limit(mall):return None
+        stores=[s for s in mall.stores if s.restored]
+        if not stores:return None
+        path=self.walkways.route(position,mall.entrance)
+        if path is None:return None
+        person=Shopper(self.next_identity,position,stores[0],self.walkways);self.next_identity+=1
+        person.name=name;person.variant=variant;person.entrance=pygame.Vector2(mall.entrance)
+        person.path=path;person.state='leaving';self.people.append(person);return person
 
     def amenities(self, mall, upgrades):
         points = [(b.centerx,b.bottom+40) for i,b in enumerate(mall.benches) if f'bench_{i}' in upgrades.decor and not any(p.activity=='bench' and p.state in ('strolling','resting') and pygame.Vector2(p.goal if p.state=='strolling' and p.goal is not None else p.position).distance_to((b.centerx,b.bottom+40))<1 for p in self.people)]
@@ -219,7 +308,7 @@ class Shoppers:
         stores=[s for s in mall.stores if s.restored and area.collidepoint(s.position)]
         if not stores:return
         neighbors=[p for p in self.people if p.visible and area.collidepoint(p.position)
-                   and p.state not in ('entering','exiting')][:3]
+                   and p.state not in ('entering','exiting','leaving','following')][:3]
         limit=12+4*max(0,len(mall.active_regions)-1)
         while len(neighbors)<3 and len(self.people)<limit:
             store=stores[len(neighbors)%len(stores)]
@@ -231,7 +320,8 @@ class Shoppers:
             if path is not None:person.path=path;person.goal=pygame.Vector2(goal);person.state='strolling';person.wait=0;person.activity='gathering';person.rest_seconds=20
         return neighbors
 
-    def update(self, dt, mall, upgrades, preferred_store=None):
+    def update(self, dt, mall, upgrades, preferred_store=None, *, spawn=True):
+        self.mall=mall;self.upgrades=upgrades;self.traffic_elapsed+=dt
         self.walkways.refresh(mall)
         if self.path_signature!=self.walkways.signature:
             self.path_signature=self.walkways.signature
@@ -244,15 +334,14 @@ class Shoppers:
         self.people = [p for p in self.people if not p.done]
         for store in mall.stores:
             store.door_open = any(p.store is store and p.state in ('entering','exiting') for p in self.people)
-        limit=12+4*max(0,len(mall.active_regions)-1)
-        desired = min(limit,len(opened)+(2 if mall.cleanliness >= 0.5 else 0)+len(self.amenities(mall,upgrades))//2) if opened else 0
-        self.elapsed += dt
-        if self.elapsed >= 8 and len(self.people)<desired:
-            self.elapsed = 0
-            store = preferred_store if preferred_store in opened else self.random.choice(opened)
+        desired=self.desired_population(mall,upgrades)
+        interval=3.5 if self.traffic=='Busy hours' else 12 if self.traffic=='Quiet hours' else 8
+        self.elapsed+=dt
+        if spawn and self.elapsed>=interval and len(self.people)<desired:
+            self.elapsed=0
+            store=preferred_store if preferred_store in opened else self.random.choice(opened)
             if self.walkways.route(mall.entrance,store.position) is None:return
-            self.people.append(Shopper(self.next_identity,mall.entrance,store,self.walkways))
-            self.next_identity += 1
+            self.spawn_party(mall,store,desired-len(self.people))
 
     def greet(self, person, story=None):
         for other in self.people:other.speech_time=0
@@ -267,8 +356,11 @@ class Shoppers:
             person.speech={'bench':'I meant to leave, but this is a lovely place to sit and catch up.',
                            'fountain':'Listen to the water. I remember that sound from when I was small.',
                            'gathering':'Someone saved a place for me at the table. I brought something to share.',
+                           'table':'We saved each other a chair. It is nice to have time to sit and talk.',
                            'meeting':f'I bumped into {person.friend_name}. We used to meet here after school. It is good to have our spot back.'}.get(person.activity,person.speech)
         elif person.carrying and person.greeted:person.speech='I found a little something to take home. It is nice to shop close to my neighbors again.'
+        if person.group_id is not None and not person.event_clue:
+            person.speech=('We came together after school. There is finally somewhere to hang out.' if person.age=='teen' else 'Can we stop for a snack after this?' if person.age=='child' else 'We brought the family for a wander and something to eat.')
         if person.event_clue:person.speech=person.event_clue
         person.greeted=True
         person.speech_time=max(5,min(10,len(person.speech)/14))

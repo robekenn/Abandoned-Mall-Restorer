@@ -1,6 +1,6 @@
 """Optional detail view: the map, income, equipment and owner readiness."""
 import pygame
-from systems.economy import money
+from systems.economy import money, rent_multiplier
 from systems.requests import OWNERS
 from systems.story import CHAPTERS
 from ui import theme
@@ -32,8 +32,17 @@ class Journal:
                 'clean':pygame.Rect(row.right-354,row.y+45,164,28),
                 'walk':pygame.Rect(row.right-178,row.y+45,164,28)}
 
+    @staticmethod
+    def staff_context(game):
+        return (game.courtyard.janitors,game.courtyard.world) if game.scene=='courtyard' else (game.janitors,game.mall)
+
+    def staff_courts(self,game):
+        manager,world=self.staff_context(game)
+        return manager.courts(world)
+
     def buy_staff(self, game, key, action):
-        success,self.notice=game.janitors.purchase(key,action,game)
+        manager,world=self.staff_context(game)
+        success,self.notice=manager.purchase(key,action,game,world)
         game.audio.play('milestone' if success else 'blocked')
         if success:game.save_checkpoint()
 
@@ -53,14 +62,14 @@ class Journal:
                 if event.key in (pygame.K_LEFT,pygame.K_RIGHT):self.chapter=max(0,min(3,self.chapter+(-1 if event.key==pygame.K_LEFT else 1)))
                 return
             if self.tab==1:
-                if event.key in (pygame.K_UP,pygame.K_DOWN):self.court=(self.court+(-1 if event.key==pygame.K_UP else 1))%4
+                if event.key in (pygame.K_UP,pygame.K_DOWN):self.court=(self.court+(-1 if event.key==pygame.K_UP else 1))%len(self.staff_courts(game))
                 action={pygame.K_RETURN:'hire',pygame.K_SPACE:'hire',pygame.K_c:'clean',pygame.K_w:'walk'}.get(event.key)
-                if action:self.buy_staff(game,game.janitors.courts(game.mall)[self.court][0],action)
+                if action:self.buy_staff(game,self.staff_courts(game)[self.court%len(self.staff_courts(game))][0],action)
                 return
             if event.key in (pygame.K_LEFT,pygame.K_RIGHT):self.page=max(0,self.page+(-1 if event.key==pygame.K_LEFT else 1))
         elif event.type==pygame.MOUSEWHEEL:
             if self.tab==0:self.page=max(0,self.page-event.y)
-            elif self.tab==1:self.court=(self.court-event.y)%4
+            elif self.tab==1:self.court=(self.court-event.y)%len(self.staff_courts(game))
             elif self.tab==2:self.chapter=max(0,min(3,self.chapter-event.y))
             else:self.court=(self.court-event.y)%4
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
@@ -79,10 +88,10 @@ class Journal:
                     if rect.collidepoint(event.pos):self.chapter=max(0,min(3,self.chapter+(-1 if i==0 else 1)))
                 return
             if self.tab==1:
-                for i,row in enumerate(self.staff_rows(game.screen)):
+                for i,row in enumerate(self.staff_rows(game.screen)[:len(self.staff_courts(game))]):
                     if row.collidepoint(event.pos):
-                        self.court=i;key=game.janitors.courts(game.mall)[i][0]
-                        actions=('clean','walk') if key in game.janitors.people else ('hire',)
+                        self.court=i;key=self.staff_courts(game)[i][0]
+                        actions=('clean','walk') if key in self.staff_context(game)[0].people else ('hire',)
                         for action in actions:
                             if self.staff_buttons(row)[action].collidepoint(event.pos):self.buy_staff(game,key,action)
                 return
@@ -94,6 +103,8 @@ class Journal:
         return [pygame.Rect(panel.x+22,panel.y+98+i*86,panel.width-44,78) for i in range(4)]
 
     def start_event(self, game, index):
+        if game.scene=='courtyard':
+            self.notice='Return to the indoor mall to host a gathering.';return
         key=list(game.life.completed)[index]
         if game.life.start(game,key):
             self.open=False;game.notify(game.life.event.title+' · Follow the gold table on your journal map.')
@@ -119,11 +130,13 @@ class Journal:
         game.screen.blit(game.hud.small.render('1–4: tabs   Up/Down: court   Enter: host   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
 
     def draw_staff(self, game, panel):
-        for i,((key,name,_,_,_,unlocked,_),row) in enumerate(zip(game.janitors.courts(game.mall),self.staff_rows(game.screen))):
+        manager,world=self.staff_context(game)
+        self.court%=len(manager.courts(world))
+        for i,((key,name,_,_,_,unlocked,_),row) in enumerate(zip(manager.courts(world),self.staff_rows(game.screen))):
             theme.frame(game.screen,row,theme.CARD)
             if i==self.court:pygame.draw.rect(game.screen,theme.ACCENT,row,1,border_radius=8)
             game.screen.blit(game.hud.font.render(name,True,theme.TEXT),(row.x+12,row.y+9))
-            person=game.janitors.people.get(key)
+            person=manager.people.get(key)
             if person:
                 detail=f'{person.clean_seconds}s pickup · {person.speed}px/s · {person.cleaned} cleaned · earned {money(person.earnings)}'
                 actions=('clean','walk')
@@ -133,9 +146,9 @@ class Journal:
             game.screen.blit(game.hud.small.render(detail,True,theme.MUTED),(row.x+12,row.y+32))
             for action in actions:
                 button=self.staff_buttons(row)[action]
-                if action=='hire':label='Hire '+money(game.janitors.hire_cost(key,game.mall)) if unlocked else 'Court locked'
+                if action=='hire':label='Hire '+money(manager.hire_cost(key,world)) if unlocked else 'Court locked'
                 else:
-                    price=game.janitors.upgrade_price(key,action,game.mall)
+                    price=manager.upgrade_price(key,action,world)
                     values=person.CLEAN_SECONDS if action=='clean' else person.WALK_SPEEDS
                     level=getattr(person,action+'_level');value=values[min(3,level+1)]
                     label=('Clean '+str(value)+'s' if action=='clean' else 'Walk '+str(value))+' · '+(money(price) if price is not None else 'Max')
@@ -186,33 +199,36 @@ class Journal:
         if self.tab==3:self.draw_life(game,panel);return
         if self.tab==1:self.draw_staff(game,panel);return
         if self.tab==2:self.draw_story(game,panel);return
-        stats=[('Rent per 5 seconds',money(game.rent_income)),('Cleanliness bonus',f'{game.rent_multiplier:g}×'),
+        outside=game.scene=='courtyard';world=game.courtyard.world if outside else game.mall
+        visitors=game.courtyard.shoppers if outside else game.shoppers
+        stats=[('Rent per 5 seconds',money(game.rent_income)),('Cleanliness bonus',f'{rent_multiplier(world.cleanliness):g}×'),
                ('Trash value',money(game.upgrades.unit_value)+' / item'),('Walking speed',f'{game.upgrades.speed_multiplier:g}×'),
-               ('Visitors',str(len(game.shoppers.people))),('Fixture income',money(game.upgrades.fixture_rent)+' base')]
+               ('Visitors',str(len(visitors.people))),('Fixture income',money(sum(k.startswith('courtyard_') for k in game.upgrades.decor) if outside else sum(not k.startswith('courtyard_') for k in game.upgrades.decor))+' base')]
         half=(panel.width-66)//2
         for i,(label,value) in enumerate(stats):
             y=panel.y+92+i*27
             surface.blit(game.hud.small.render(label,True,theme.MUTED),(panel.x+22,y))
             text=game.hud.font.render(value,True,theme.TEXT);surface.blit(text,text.get_rect(topright=(panel.x+22+half,y-2)))
         map_rect=pygame.Rect(panel.x+44+half,panel.y+86,half,176)
-        game.hud.directory(surface,game.mall,game.player.rect.center,game.owner_requests,game.shoppers.people,map_rect)
+        game.hud.directory(surface,world,game.player.rect.center,None if outside else game.owner_requests,visitors.people,map_rect)
         surface.blit(game.hud.small.render('White: you   Blue: task   Gold: story / delivery',True,theme.MUTED),(map_rect.x,map_rect.bottom+10))
         y=panel.y+304
-        owners=[s for s in game.mall.stores if not s.upgrade_shop]
+        owners=[s for s in world.stores if not s.upgrade_shop]
         pages=max(1,(len(owners)+5)//6);self.page=min(self.page,pages-1)
-        surface.blit(game.hud.font.render(f'Store owners · {self.page+1}/{pages}',True,theme.ACCENT),(panel.x+22,y))
+        surface.blit(game.hud.font.render(f'{"Restaurants" if outside else "Store owners"} · {self.page+1}/{pages}',True,theme.ACCENT),(panel.x+22,y))
         for label,rect in zip(('<','>'),self.page_buttons(surface)):
             theme.frame(surface,rect,theme.CARD);text=game.hud.font.render(label,True,theme.ACCENT);surface.blit(text,text.get_rect(center=rect.center))
         for i,store in enumerate(owners[self.page*6:self.page*6+6]):
             r=pygame.Rect(panel.x+22,y+35+i*27,panel.width-44,24)
             if i%2==0:theme.frame(surface,r,theme.CARD,False)
             if not store.restored:status='Store closed'
+            elif outside:status='Kitchen open'
             elif game.owner_requests.store is store:status='Your active request'
             elif store.request_wait>0:status='Next idea in '+theme.clock(store.request_wait)
             else:status='New favor ready' if store.request_level==3 else 'New request ready'
-            surface.blit(game.hud.small.render(f'{OWNERS[store.name]} · {store.name}',True,theme.TEXT),(r.x+8,r.y+5))
+            surface.blit(game.hud.small.render(store.name if outside else f'{OWNERS[store.name]} · {store.name}',True,theme.TEXT),(r.x+8,r.y+5))
             text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready') else theme.MUTED)
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
-        surface.blit(game.hud.small.render('F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
+        surface.blit(game.hud.small.render('Provisions: service & patio upgrades · Walk through west wall opening' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
         surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))

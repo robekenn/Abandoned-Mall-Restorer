@@ -162,10 +162,11 @@ class EastGalleryTests(unittest.TestCase):
         g.buy_upgrade('speed')
         self.assertEqual(g.cash,before)
         g.shop_menu.open = False
-        g.player.rect.center = (800,800)
+        g.player.rect.center = (800,970)
         g.update(1,(1,0))
         self.assertAlmostEqual(g.player.rect.centerx,1160,places=3)
-        g.player.rect.center = (670,650)
+        footprint=fountain_footprint(g.mall.fountain)
+        g.player.rect.center = (footprint.left-30,footprint.centery)
         g.update(1,(1,0))
         self.assertLessEqual(g.player.rect.right,fountain_footprint(g.mall.fountain).left)
         self.assertTrue(g.player.walking)
@@ -264,17 +265,17 @@ class FixtureAndSoundTests(unittest.TestCase):
                 _,_,bought = g.upgrades.purchase(offer.key,10000)
                 self.assertFalse(bought)
                 self.assertEqual(g.upgrades.fixture_rent,before+1)
-        self.assertEqual(g.upgrades.fixture_rent,12)
+        self.assertEqual(g.upgrades.fixture_rent,18)
         # No paying stores are needed for fixtures to earn; normal cleanliness tiers apply.
         with patch.object(g.litter_spawner,'update'),patch.object(g.audio,'play') as sound:
-            for dirty_count,payout in [(len(g.mall.floor_tiles),0),(len(g.mall.floor_tiles)-1,6),(1,12),(0,18)]:
+            for dirty_count,payout in [(len(g.mall.floor_tiles),0),(len(g.mall.floor_tiles)-1,9),(1,18),(0,27)]:
                 g.mall.dirty_tiles = set(g.mall.floor_tiles[:dirty_count])
                 g.cash = 0
                 g.rent_timer = 0
                 sound.reset_mock()
                 g.update(5,(0,0))
                 self.assertEqual(g.cash,payout)
-                if payout == 18:
+                if payout == 27:
                     sound.assert_called_once_with('bonus_rent')
                 else:
                     sound.assert_not_called()

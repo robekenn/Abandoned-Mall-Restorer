@@ -116,13 +116,13 @@ class CourtTransitionTests(unittest.TestCase):
         self.open_all();restore_state(snapshot(g),g)
         self.assertEqual([(tuple(p.position),p.source) for p in g.story.points],original)
 
-    def test_talking_to_a_keeper_with_full_bag_recovers_once_and_neighbor_stays(self):
+    def test_talking_to_a_keeper_with_full_bag_recovers_once_and_neighbor_leaves(self):
         g=self.game;g.story.confirm(g,0,'begin');g.upgrades.held=1
         keeper=g.story.visible_neighbors(g.mall)[0];g.player.rect.center=keeper.position
         self.assertIs(g.target(),keeper);g.interact()
         self.assertTrue(g.story.memories[0][keeper.memory]);self.assertEqual(g.upgrades.held,1)
-        self.assertIn(keeper,g.story.visible_neighbors(g.mall));self.assertIn('found this',g.speech.text)
-        cash=g.cash;g.interact();self.assertEqual(g.cash,cash);self.assertIn('keepsake found',g.speech.text)
+        self.assertNotIn(keeper,g.story.visible_neighbors(g.mall));self.assertIn('found this',g.speech.text)
+        cash=g.cash;self.assertFalse(g.story.action(keeper,g));self.assertEqual(g.cash,cash)
         self.assertFalse(g.story_menu.open)
 
     def test_old_checkpoints_migrate_discovery_without_losing_completed_memories(self):

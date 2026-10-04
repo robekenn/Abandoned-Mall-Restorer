@@ -67,18 +67,21 @@ class Janitor:
         self.frame=int(self.animation_time/.2)%4 if used else 0
         return max(0,dt-used/self.speed)
 
-    def update(self, dt, pool, game):
-        before=self.paths.signature;self.paths.refresh(game.mall)
+    def update(self, dt, pool, game, world=None):
+        world=game.mall if world is None else world
+        before=self.paths.signature;self.paths.refresh(world)
         if before!=self.paths.signature and self.path:
             destination=self.target.position if self.target else self.path[-1]
-            route=self.route_to(destination,game.mall)
+            route=self.route_to(destination,world)
             self.path=route or []
             if route is None:self.target=None;self.progress=0
         requests=game.owner_requests
+        visible=(world is game.mall and game.scene=='mall') or (world is game.courtyard.world and game.scene=='courtyard')
+        player_position=game.player.rect.center if visible else (game.main_position if world is game.mall and game.main_position is not None else world.entrance)
         protected=[]
         if requests.favor and requests.favor.mode=='collect' and requests.progress<requests.amount:
             remaining=requests.amount-requests.progress
-            protected=sorted((t for t in game.mall.trash if not t.cleaned),key=lambda t:t.position.distance_squared_to(game.player.rect.center))[:remaining]
+            protected=sorted((t for t in world.trash if not t.cleaned),key=lambda t:t.position.distance_squared_to(player_position))[:remaining]
         if self.target in protected:self.target=None;self.path=[];self.progress=0
         if self.target and (self.target.cleaned or getattr(self.target,'revision',0)!=self.target_revision):
             self.target=None;self.path=[];self.progress=0
@@ -89,12 +92,12 @@ class Janitor:
                 return sum(pygame.Vector2(a).distance_to(b) for a,b in zip([self.position]+path,path))
             remaining_distance=length(self.path)
             for trash in sorted(closer,key=lambda t:self.position.distance_squared_to(t.position)):
-                route=self.route_to(trash.position,game.mall)
+                route=self.route_to(trash.position,world)
                 # A shortcut must shorten the walk, avoiding oscillation around obstacles.
                 if route is not None and length(route)+64<remaining_distance:
                     self.target=trash;self.target_revision=getattr(trash,'revision',0)
                     self.path=route;self.progress=0;break
-        if not self.target and self.choose_work(pool,game.mall,protected):self.idle_wait=0
+        if not self.target and self.choose_work(pool,world,protected):self.idle_wait=0
         if not self.target:
             if not self.path:
                 self.idle_wait+=dt
@@ -107,10 +110,10 @@ class Janitor:
         if self.path:return
         self.frame=0;self.progress+=remaining
         if self.progress+1e-9<self.clean_seconds:return
-        if game.mall.clean_trash(self.target):
+        if world.clean_trash(self.target):
             payout=game.upgrades.unit_value*.75
             game.cash+=payout;self.earnings+=payout;self.cleaned+=1
-            game.feedback.burst(self.target.position,f'+${payout:g}',restored=True)
+            if visible:game.feedback.burst(self.target.position,f'+${payout:g}',restored=True)
         self.target=None;self.progress=0;self.path=[]
 
     def draw(self, game):
@@ -132,6 +135,8 @@ class Janitors:
 
     @staticmethod
     def courts(mall):
+        if getattr(mall,'is_courtyard',False):
+            return [('courtyard','Courtyard',mall.opening_area,mall.stores,mall.trash,True,mall.entrance)]
         return [('north','North arcade',mall.opening_area,mall.north_stores,mall.north_trash,True,mall.delivery.position)]+[
             (r.key,r.name,r.area,r.stores,r.trash,r.unlocked,r.delivery.position) for r in mall.regions]
 
@@ -141,23 +146,25 @@ class Janitors:
         person=self.people[key];level=getattr(person,track+'_level')
         return None if level==3 else self.hire_cost(key,mall)*(1,2,4)[level]//4
 
-    def purchase(self, key, action, game):
-        court=next((c for c in self.courts(game.mall) if c[0]==key),None)
+    def purchase(self, key, action, game, mall=None):
+        mall=game.mall if mall is None else mall
+        court=next((c for c in self.courts(mall) if c[0]==key),None)
         if court is None or not court[5]:return False,'Open this court before hiring.'
         if action=='hire':
             if key in self.people:return False,'This court already has its janitor.'
-            price=self.hire_cost(key,game.mall)
+            price=self.hire_cost(key,mall)
         elif action in ('walk','clean') and key in self.people:
-            price=self.upgrade_price(key,action,game.mall)
+            price=self.upgrade_price(key,action,mall)
             if price is None:return False,'This upgrade is already at its maximum.'
         else:return False,'Hire this court’s janitor first.'
         if game.cash<price:return False,f'You need ${price-game.cash:g} more.'
         game.cash-=price
-        if action=='hire':self.people[key]=Janitor(key,court[2],court[6],game.mall)
+        if action=='hire':self.people[key]=Janitor(key,court[2],court[6],mall)
         else:
             person=self.people[key];setattr(person,action+'_level',getattr(person,action+'_level')+1)
         return True,''
 
-    def update(self, dt, game):
-        for key,_,_,_,pool,_,_ in self.courts(game.mall):
-            if key in self.people:self.people[key].update(dt,pool,game)
+    def update(self, dt, game, mall=None):
+        mall=game.mall if mall is None else mall
+        for key,_,_,_,pool,_,_ in self.courts(mall):
+            if key in self.people:self.people[key].update(dt,pool,game,mall)

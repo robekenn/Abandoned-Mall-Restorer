@@ -6,6 +6,7 @@ from mall.store import Store
 from mall.furniture import bench_footprint, fountain_footprint
 from mall.delivery import DeliveryPoint
 from mall.businesses import opposite_stores
+from mall.social import arrange_gallery
 
 
 def covered_positions(area, floor, obstacles, stores, bins, seeds=(), spawn=None, entrance_buffer=90):
@@ -73,6 +74,7 @@ class RegionalGallery:
         self.floor_tiles=floor_tiles(self.area,structural)
         self.trash=[Trash(point,'dirt' if i%3==0 else 'trash') for i,point in enumerate(
             covered_positions(self.area,self.floor_tiles,self.obstacles,self.stores,self.bins,entrance_buffer=72 if south else 90))]
+        arrange_gallery(self)
 
     def ready(self, mall):
         if self.prerequisite=='north':

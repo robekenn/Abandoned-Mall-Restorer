@@ -77,7 +77,7 @@ class Story:
     def __init__(self):
         self.seed=random.SystemRandom().randrange(2**31)
         self.started=[False]*4;self.memories=[[False]*3 for _ in range(4)];self.completed=[False]*4
-        self.layout=2
+        self.layout=3
         self.festival=False;self.elapsed=0.;self.celebrations=[0.]*4;self.points=[]
 
     @property
@@ -94,6 +94,7 @@ class Story:
             goals=((area.left+340,area.top+680),(area.right-330,area.top+520),
                    (area.left+300,area.bottom-480),(area.right-360,area.bottom-450))
             goal=goals[i] if self.layout>=2 else (area.left+488,area.top+760)
+            goal=(area.left+145 if i%2==0 else area.right-145,area.top+610)
             board=min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(goal))
             self.points.append(StoryPoint(i,pygame.Vector2(board),-1,'board'))
             keeper=rng.randrange(3);ground=0;chosen=[board]
@@ -120,7 +121,7 @@ class Story:
                 p.chapter==self.current and self.started[p.chapter] and not self.memories[p.chapter][p.memory])]
 
     def visible_neighbors(self, mall):
-        return [p for p in self.points if p.source=='neighbor' and p.chapter<=len(mall.active_regions) and self.started[p.chapter]]
+        return [p for p in self.points if p.source=='neighbor' and p.chapter<=len(mall.active_regions) and self.started[p.chapter] and not self.memories[p.chapter][p.memory]]
 
     def clue(self, chapter, memory):
         return next(p.clue for p in self.points if p.chapter==chapter and p.memory==memory)
@@ -153,6 +154,7 @@ class Story:
                 item=(('photograph','fountain drawing','festival program'),('record sleeve','cassette','old ticket'),
                       ('flower pattern','spool of thread','lantern sketch'),('guest book','table plan','invitation'))[i][point.memory]
                 text=f'I found this {item} lying around while I was walking here. I thought {CHAPTERS[i].speaker} might know its story. Here, take it back to the community board.'
+                game.shoppers.depart(point.name,point.variant,point.position,game.mall)
                 game.feedback.burst(point.position,'KEEPSAKE',restored=True)
                 game.save_checkpoint()
             else:text='I am glad that little keepsake found its way home. Come say hello whenever you pass.'

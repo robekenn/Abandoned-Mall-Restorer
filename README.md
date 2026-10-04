@@ -110,3 +110,9 @@ Merging PR #27 publishes **v0.1.1 — Playable Preview** after all platform test
 ### Playtester controls and settings
 
 Open **F2 → Settings** or **Esc → Settings** for independent music/effects sliders, fullscreen, tutorial/reminder preferences, and custom keys. Upgrade rows are now inspect-only; use the Purchase button or Enter to buy. Equipment shops are marked UPGRADES, and active owner favors identify their business. See [issue-by-issue changes and playtest notes](docs/playtester-issues.md).
+
+### Courtyard and social visitors (development branch)
+
+Families and teen groups join shoppers, busy/quiet hours vary foot traffic, and restored indoor seating provides places to sit and chat. Story boards move to room edges and keepsake-givers leave after handing over their finds. From Community Commons, complete its sweep and reopen six businesses to pay $50,000 once with E at the hanging Courtyard wall sign, then walk through its opening in either direction. Outside is a separate food-court map with seven restaurants, picnic seating, and service, comfort and compost upgrades. Both maps and your current location save through Continue. See [Courtyard and social life](docs/courtyard-and-social-life.md) for progression and review steps.
+
+Food-court visitors now walk from the front entrance through the mall to the Courtyard, queue at visible restaurant counters, and return indoors carrying restaurant-specific food. Outside, J → Janitors hires the local cleaner with saved upgrades and partial work. Larger framed doors, restored picnic benches, kitchen-side herb boxes, a framed Provisions sign and five-second rent popups improve courtyard readability. Indoor Furniture purchases repair visibly broken benches.

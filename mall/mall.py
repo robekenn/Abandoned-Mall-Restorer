@@ -7,6 +7,7 @@ from mall.furniture import bench_footprint, fountain_footprint
 from mall.delivery import DeliveryPoint
 from mall.section import EastGallery, later_galleries, covered_positions, floor_tiles
 from game.settings import WORLD_SIZE
+from mall.social import SocialTable
 
 
 class Mall:
@@ -44,6 +45,7 @@ class Mall:
         self.commons.gate_rects=[self.commons_divider,self.east.south_gate]
         self.obstacles = [pygame.Rect(0, 0, w, 40), pygame.Rect(0, h-40, w, 40),
                           pygame.Rect(0, 0, 40, h), pygame.Rect(w-40, 0, 40, h)]
+        self.boundary_walls = [r.copy() for r in self.obstacles]
         self.back_wall = pygame.Rect(40, 40, 1720, 300)
         self.front_wall=pygame.Rect(232,self.opening_area.bottom-280,1528,280)
         self.delivery = DeliveryPoint((100,900),'North')
@@ -66,6 +68,28 @@ class Mall:
         self.initial_litter_count = len(self.trash)
         self.north_trash = list(self.trash)
         self.north_floor_tiles = list(self.floor_tiles)
+        # Generate the original litter IDs first so Continue preserves cleanup progress.
+        self._arrange_north_arcade()
+        self.social_tables=[]
+        for i,x in enumerate((455,1287)):
+            table=SocialTable(pygame.Vector2(x,681),
+                              (pygame.Vector2(x-64,711),pygame.Vector2(x+64,711)),
+                              'north',f'table_{i}')
+            self.social_tables.append(table);self.obstacles.append(table.footprint)
+
+
+
+    def _arrange_north_arcade(self):
+        for footprint in self.furniture_obstacles:self.obstacles.remove(footprint)
+        self.fountain.update(750,670,220,100)
+        self.benches[0].update(395,834,120,35)
+        self.benches[1].update(1227,834,120,35)
+        self.furniture_obstacles=[fountain_footprint(self.fountain)]+[bench_footprint(b) for b in self.benches]
+        self.obstacles += self.furniture_obstacles
+        for bin,position in zip(self.trash_bins,((640,775),(1100,775))):
+            bin.position.update(position);bin.rect.center=position
+        self.plants=[(100,600),(1670,600),(330,850),(1450,850)]
+        self.seating_areas=[pygame.Rect(340,600,250,340),pygame.Rect(1160,600,250,340)]
 
     def _coverage_positions(self, seeds):
         """Cover every walkable floor tile with a reachable cleanup task."""
@@ -125,6 +149,7 @@ class Mall:
         self.trash_bins += region.bins
         self.lamps += region.lamps
         self.plants += region.plants
+        self.social_tables += region.social_tables
         self.refresh_businesses()
         return True
 
@@ -221,7 +246,11 @@ class Mall:
         # Faded wayfinding inlays make the generous concourse read as public space.
         for rect in [(40, 400, 1720, 6), (40, 948, 1720, 6), (80, 400, 6, 554)]:
             pygame.draw.rect(surface, (118, 116, 91), camera.rect(rect))
-        for wall in self.obstacles[:4]:
+        for area in self.seating_areas+[pad for region in self.active_regions for pad in region.seating_areas]:
+            # Bordered floor inlays group furniture without obstructing the concourse.
+            pygame.draw.rect(surface,(118,116,91),camera.rect(area),3)
+            pygame.draw.rect(surface,(160,155,125),camera.rect(area.inflate(-12,-12)),1)
+        for wall in self.boundary_walls:
             pygame.draw.rect(surface,(53,65,65),camera.rect(wall))
         pygame.draw.rect(surface, (39,53,54), camera.rect(self.back_wall))
         pygame.draw.rect(surface,(39,53,54),camera.rect(self.front_wall))
@@ -249,7 +278,7 @@ class Mall:
             if region.unlocked and f'mosaic_{region.key}' in upgrades.decor:
                 art.draw(surface,'mosaic',camera.point((region.fountain.centerx,region.fountain.bottom+90)),(210,125))
         if 'mosaic' in upgrades.decor:
-            art.draw(surface,'mosaic',camera.point((810,790)),(210,125))
+            art.draw(surface,'mosaic',camera.point((self.fountain.centerx,self.fountain.bottom+90)),(210,125))
         for store in self.stores:
             if store.restored:
                 glow = camera.rect(store.rect.inflate(24,40).move(0,20))
@@ -279,4 +308,6 @@ class Mall:
         result.extend((bench_footprint(b).centery,
                        'bench_clean' if f'bench_{i}' in upgrades.decor else 'bench_dirty',
                        b.center,(145,85)) for i,b in enumerate(self.benches))
+        result.extend((t.position.y,t.sprite(upgrades.decor),
+                       t.position,(96,72)) for t in self.social_tables)
         return result
