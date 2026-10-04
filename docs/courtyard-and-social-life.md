@@ -25,7 +25,7 @@ All four indoor sections share North arcade’s two aligned seating areas flanki
 | Garden court | $600 | $600 | $300 |
 | Community Commons | $900 | $900 | $450 |
 
-Cash, carried items and existing equipment travel with you. Visitors continue their journeys on both maps; inactive litter, cleaning work, story and owner-task timers pause. Both maps earn their rent during active play, and gameplay menus pause both. A collection favor accepted indoors also counts player pickups outside; return indoors to claim it. J outside opens the Courtyard map and progression guide, and F2/Pause keeps the usual settings and save/exit controls.
+Cash, carried items and existing equipment travel with you. Visitors and hired janitors continue working on both maps during live play; inactive litter, story and owner-task timers pause. The HUD’s Clean percentage counts clean floor tiles across every opened indoor section and the unlocked Courtyard, weighted by floor size, and stays the same when changing maps. Unopened areas do not count. Local cleanliness still determines each building’s rent bonus; background janitor earnings are credited without showing popups on the wrong map. Both maps earn their rent during active play, and gameplay menus pause both. A collection favor accepted indoors also counts player pickups outside; return indoors to claim it. J outside opens the Courtyard map and progression guide, and F2/Pause keeps the usual settings and save/exit controls.
 
 ## Reopen the kitchens
 

@@ -125,7 +125,7 @@ class HUD:
         surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
         region=mall.area_name(game.player.rect.center)
         surface.blit(self.small.render(region+" · "+(game.courtyard.shoppers if outside else game.shoppers).traffic,True,theme.MUTED),(23,47))
-        values=[('CLEAN',cleanliness_label(mall.cleanliness)),('CASH',money(game.cash)),('BAG',f'{game.upgrades.held} / {game.upgrades.capacity}')]
+        values=[('CLEAN',cleanliness_label(game.cleanliness)),('CASH',money(game.cash)),('BAG',f'{game.upgrades.held} / {game.upgrades.capacity}')]
         for i,(label,value) in enumerate(values):
             r=pygame.Rect(width-450+i*145,10,133,56);theme.frame(surface,r,theme.PANEL,False)
             surface.blit(self.small.render(label,True,theme.MUTED),(r.x+12,r.y+8))

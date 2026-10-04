@@ -76,10 +76,12 @@ class Janitor:
             self.path=route or []
             if route is None:self.target=None;self.progress=0
         requests=game.owner_requests
+        visible=(world is game.mall and game.scene=='mall') or (world is game.courtyard.world and game.scene=='courtyard')
+        player_position=game.player.rect.center if visible else (game.main_position if world is game.mall and game.main_position is not None else world.entrance)
         protected=[]
         if requests.favor and requests.favor.mode=='collect' and requests.progress<requests.amount:
             remaining=requests.amount-requests.progress
-            protected=sorted((t for t in world.trash if not t.cleaned),key=lambda t:t.position.distance_squared_to(game.player.rect.center))[:remaining]
+            protected=sorted((t for t in world.trash if not t.cleaned),key=lambda t:t.position.distance_squared_to(player_position))[:remaining]
         if self.target in protected:self.target=None;self.path=[];self.progress=0
         if self.target and (self.target.cleaned or getattr(self.target,'revision',0)!=self.target_revision):
             self.target=None;self.path=[];self.progress=0
@@ -111,7 +113,7 @@ class Janitor:
         if world.clean_trash(self.target):
             payout=game.upgrades.unit_value*.75
             game.cash+=payout;self.earnings+=payout;self.cleaned+=1
-            game.feedback.burst(self.target.position,f'+${payout:g}',restored=True)
+            if visible:game.feedback.burst(self.target.position,f'+${payout:g}',restored=True)
         self.target=None;self.progress=0;self.path=[]
 
     def draw(self, game):

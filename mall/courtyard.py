@@ -185,7 +185,7 @@ class Courtyard:
         self.spawner.update(dt,world,game.player.rect.center)
         game.shoppers.update(dt,game.mall,game.upgrades,game.owner_requests.store)
         game.update_courtyard_visitors(dt)
-        self.janitors.update(dt,game,world)
+        game.update_janitors(dt)
         game.rent_timer+=dt
         while game.rent_timer>=5:
             income=game.rent_income;game.cash+=income;game.rent_timer-=5

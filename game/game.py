@@ -306,6 +306,19 @@ class Game:
             self.courtyard.shoppers.update(dt,self.courtyard.world,self.upgrades)
             self.visitor_travel.update(dt,self)
 
+    def update_janitors(self,dt):
+        self.janitors.update(dt,self)
+        if self.courtyard.unlocked:
+            self.courtyard.janitors.update(dt,self,self.courtyard.world)
+
+    @property
+    def cleanliness(self):
+        worlds=[self.mall]
+        if self.courtyard.unlocked:worlds.append(self.courtyard.world)
+        tiles=sum(len(world.floor_tiles) for world in worlds)
+        dirty=sum(len(world.dirty_tiles) for world in worlds)
+        return 1-dirty/tiles if tiles else 1
+
     def leave_courtyard(self):
         if self.scene!='courtyard':return
         self.scene='mall';self.camera=self.main_camera
@@ -374,7 +387,7 @@ class Game:
         self.story.update(dt,self.mall)
         self.life.update(dt,self)
         self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
-        self.janitors.update(dt,self)
+        self.update_janitors(dt)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
             self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
