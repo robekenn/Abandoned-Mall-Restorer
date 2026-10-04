@@ -314,6 +314,13 @@ class Game:
         if self.courtyard.unlocked:
             self.courtyard.janitors.update(dt,self,self.courtyard.world)
 
+    def update_litter(self,dt):
+        position=self.player.rect.center if self.scene=='mall' else None
+        self.litter_spawner.update(dt,self.mall,position,self.owner_requests,traffic=self.shoppers.traffic)
+        if self.courtyard.unlocked:
+            position=self.player.rect.center if self.scene=='courtyard' else None
+            self.courtyard.spawner.update(dt,self.courtyard.world,position,traffic=self.courtyard.shoppers.traffic)
+
     @property
     def cleanliness(self):
         worlds=[self.mall]
@@ -390,14 +397,14 @@ class Game:
         self.feedback.update(dt)
         self.story.update(dt,self.mall)
         self.life.update(dt,self)
-        self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
-        self.update_janitors(dt)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
             self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
             self.request_notice_timer=8
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
         self.update_courtyard_visitors(dt)
+        self.update_litter(dt)
+        self.update_janitors(dt)
         self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:

@@ -8,7 +8,7 @@ This feature PR addresses #29–#35. VERSION stays at 0.1.1; CI creates review b
 | #30 | Two permanent social tables per indoor court. After two regular businesses reopen and the table and that individual chair are repaired in that court, visitors can reserve separate reachable seats and chat. Tables participate in collision and depth sorting; reservations end when the visitor leaves. |
 | #31 | Story community boards sit along alternate west/east room edges. Keepsakes and gatherings retain their separate roles; the map marks boards. |
 | #32 | Keepsake-givers hand over their item once, then depart as ordinary walking visitors. Collected-memory flags prevent stationary givers from reappearing after Continue. |
-| #33 | The Courtyard food court is a separate 2000×1440 map loaded on first entry, with eight distinct kiosk sprites, patio dining, brick pads, trees, herb pots and evening lights. Visitor routes run on both maps; litter, cleaning work and rendering remain local to the active map. |
+| #33 | The Courtyard food court is a separate 2000×1440 map loaded on first entry, with eight distinct kiosk sprites, patio dining, brick pads, trees, herb pots and evening lights. Visitor routes, litter and janitor work run on both maps during live play; rendering follows the active map. |
 | #34 | The original indoor connecting paths remain open, with their original paving. Added service overlays and wall caps have been removed following playtest feedback. |
 | #35 | An eight-minute live-play visitor cycle alternates steady, quiet and busy periods. The HUD names the period. Arrivals slow to twelve seconds during quiet hours and accelerate to 3.5 seconds during busy hours; populations remain bounded and visitors leave naturally. Menus pause the cycle and checkpoints retain its phase. |
 
@@ -25,11 +25,11 @@ All four indoor sections share North arcade’s two aligned seating areas flanki
 | Garden court | $600 | $600 | $300 |
 | Community Commons | $900 | $900 | $450 |
 
-Cash, carried items and existing equipment travel with you. Visitors and hired janitors continue working on both maps during live play; inactive litter, story and owner-task timers pause. The HUD’s Clean percentage counts clean floor tiles across every opened indoor section and the unlocked Courtyard, weighted by floor size, and stays the same when changing maps. Unopened areas do not count. Local cleanliness still determines each building’s rent bonus; background janitor earnings are credited without showing popups on the wrong map. Both maps earn their rent during active play, and gameplay menus pause both. A collection favor accepted indoors also counts player pickups outside; return indoors to claim it. J outside opens the Courtyard map and progression guide, and F2/Pause keeps the usual settings and save/exit controls.
+Cash, carried items and existing equipment travel with you. Visitors, recurring litter and hired janitors continue on both maps during live play; inactive story and owner-task timers pause. The HUD’s Clean percentage counts clean floor tiles across every opened indoor section and the unlocked Courtyard, weighted by floor size, and stays the same when changing maps. Unopened areas do not count. Local cleanliness still determines each building’s rent bonus; background janitor earnings are credited without showing popups on the wrong map. Both maps earn their rent during active play, and gameplay menus pause both. A collection favor accepted indoors also counts player pickups outside; return indoors to claim it. J outside opens the Courtyard map and progression guide, and F2/Pause keeps the usual settings and save/exit controls.
 
 ## Reopen the kitchens
 
-Reopen Provisions first. Finish the courtyard's first sweep, then reopen the seven restaurants in order. The courtyard maintains its own cleanliness and recurring litter, with the same four-second global spawn interval and twelve-item local cap used by an individual indoor court.
+Reopen Provisions first. Finish the courtyard's first sweep, then reopen the seven restaurants in order. The courtyard maintains its own cleanliness and recurring litter, with a twelve-item local cap, matching each indoor court. Recurring litter on each map follows its own traffic: every 2 seconds during Busy hours, 4 seconds during Steady hours, and 8 seconds during Quiet hours. The indoor spawner rotates fairly between eligible sections, spawning one patch per interval; the courtyard has its own spawner. Both keep running on the inactive map after its first sweep and upgrade shop reopening. Only the active map excludes spots within 100px of the player. Menus, tutorial explanations and cooking pause both spawners. Traffic changes preserve accumulated fractional spawn progress, which saves in baseline four-second units for compatibility with existing checkpoints.
 
 | Business | Reopening cost | Base income per 5s |
 | --- | ---: | ---: |
@@ -71,7 +71,7 @@ The courtyard’s open passage has broad, clearly marked edges and a continuous 
 
 ## Cook with the neighbors
 
-Reopened restaurants share one cooking request at a time. After a random **3–10 minutes of live play**, a kitchen asks for help; its request stays available, with a HUD notice on both maps and a Help Wanted badge at its counter. Visit that counter and press **E**, or click its storefront/counter while standing close. Idle kitchens cannot start cooking. The next request avoids the previous kitchen when another is open. Provisions keeps its equipment shop. Cooking is optional: restaurants keep their normal rent and visitor service without player involvement.
+Reopened restaurants share one cooking request at a time. After a random **3–10 minutes of live play**, a kitchen asks for help; its request stays available, with a HUD notice on both maps and the same exclamation-point marker used for indoor requests at its counter. Visit that counter and press **E**, or click its storefront/counter while standing close. Idle kitchens cannot start cooking. The next request avoids the previous kitchen when another is open. Provisions keeps its equipment shop. Cooking is optional: restaurants keep their normal rent and visitor service without player involvement.
 
 | Kitchen | Your activity | Controls |
 | --- | --- | --- |

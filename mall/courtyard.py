@@ -189,9 +189,9 @@ class Courtyard:
         if self.crossing(game,direction):return
         game.frame_camera(game.screen.get_size())
         game.feedback.update(dt);game.speech.update(dt);game.message_timer=max(0,game.message_timer-dt)
-        self.spawner.update(dt,world,game.player.rect.center)
         game.shoppers.update(dt,game.mall,game.upgrades,game.owner_requests.store)
         game.update_courtyard_visitors(dt)
+        game.update_litter(dt)
         game.update_janitors(dt)
         game.rent_timer+=dt
         while game.rent_timer>=5:
@@ -287,10 +287,7 @@ class Courtyard:
                 plaque=badge.get_rect(center=camera.point((store.rect.centerx,store.rect.top+140))).inflate(20,12)
                 theme.frame(surface,plaque,theme.PANEL,False);surface.blit(badge,badge.get_rect(center=plaque.center))
             if store.name==self.kitchen_requests.pending:
-                badge=game.hud.small.render('COOKING HELP WANTED',True,theme.GOLD)
-                point=camera.point(store.position+pygame.Vector2(0,40 if store.facing=='down' else -40))
-                plaque=badge.get_rect(center=point).inflate(16,10);theme.frame(surface,plaque)
-                surface.blit(badge,badge.get_rect(center=plaque.center))
+                Store.draw_request_marker(surface,camera.point(store.position))
             if store.available:
                 point=camera.point(store.position);pygame.draw.circle(surface,theme.ACCENT if store.restored else theme.GOLD,point,12,2)
                 if target is store:pygame.draw.circle(surface,theme.TEXT,point,21,2)
