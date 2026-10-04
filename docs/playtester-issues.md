@@ -1,6 +1,6 @@
 # First release playtester improvements
 
-This PR addresses issues #16–#26 and #28 without replacing the published v0.1.0 downloads. It does not change VERSION or the release workflow, so merging these fixes runs CI and creates development packages for review rather than attempting to overwrite the first release.
+This PR addresses issues #16–#26 and #28 and prepares v0.1.1. Merging it into main triggers tests, native packages and checksum verification, then publishes the new preview downloads. The published v0.1.0 release remains available.
 
 | Issue | Behavior |
 | --- | --- |

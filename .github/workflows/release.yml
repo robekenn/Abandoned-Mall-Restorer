@@ -61,7 +61,7 @@ jobs:
             tag="v$version"
             notes="docs/releases/$tag.md"
             [[ -f "$notes" ]] || { echo "Missing release notes: $notes"; exit 1; }
-            title="$tag — First Playable Preview"
+            title="$tag — Playable Preview"
             args=(--target "$RELEASE_SHA" --prerelease --notes-file "$notes")
             publish=true
           else
