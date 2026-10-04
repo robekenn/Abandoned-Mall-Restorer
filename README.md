@@ -106,3 +106,7 @@ The H-key guide now pauses for your character’s explanations and resumes for r
 ### First downloadable release
 
 Merging the release-preparation PR publishes **v0.1.0 — First Playable Preview** after all platform tests and packaged launch checks pass. Windows, Linux and Apple-silicon macOS downloads will appear on the [Releases page](https://github.com/robekenn/Abandoned-Mall-Restorer/releases). Python is not required. See the [release notes](docs/releases/v0.1.0.md) and [release workflow guide](docs/ci-and-releases.md).
+
+### Playtester controls and settings
+
+Open **F2 → Settings** or **Esc → Settings** for independent music/effects sliders, fullscreen, tutorial/reminder preferences, and custom keys. Upgrade rows are now inspect-only; use the Purchase button or Enter to buy. Equipment shops are marked UPGRADES, and active owner favors identify their business. See [issue-by-issue changes and playtest notes](docs/playtester-issues.md).

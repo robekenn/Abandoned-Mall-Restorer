@@ -26,6 +26,10 @@ class UpgradeShop:
         offers = game.upgrades.offers(self.categories[self.category],self.shop)
         return [(o,pygame.Rect(panel.x+16,panel.y+132+i*40,panel.width-32,36)) for i,o in enumerate(offers)]
 
+    def purchase_rect(self, game):
+        panel,_=self.geometry(game.screen)
+        return pygame.Rect(panel.right-150,panel.bottom-60,130,30)
+
     def buy(self, game, key):
         self.notice = game.buy_upgrade(key)
 
@@ -50,10 +54,11 @@ class UpgradeShop:
                 if rect.collidepoint(event.pos):
                     self.category,self.selection = i,0
                     return
+            if self.purchase_rect(game).collidepoint(event.pos):
+                self.buy(game,self.rows(game)[self.selection][0].key);return
             for i,(offer,rect) in enumerate(self.rows(game)):
                 if rect.collidepoint(event.pos):
                     self.selection = i
-                    self.buy(game,offer.key)
                     return
 
     def draw(self, game):
@@ -82,6 +87,9 @@ class UpgradeShop:
             detail = selected.title.split(' / ',1)[1]+' · '+detail
         for i,line in enumerate(theme.wrap(game.hud.small,detail,panel.width-40)[:2]):
             surface.blit(game.hud.small.render(line,True,theme.ACCENT),(panel.x+20,panel.bottom-91+i*18))
-        for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-40)[:2]):
+        for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-190)[:2]):
             surface.blit(game.hud.small.render(line,True,theme.GOLD),(panel.x+20,panel.bottom-55+i*18))
-        surface.blit(game.hud.small.render('Click / Enter: buy     Arrows: choose     1–3: tabs     Esc: close',True,theme.MUTED),(panel.x+20,panel.bottom-23))
+        button=self.purchase_rect(game);theme.frame(surface,button,theme.CARD)
+        label=game.hud.small.render('Purchase · Enter',True,theme.GOLD)
+        surface.blit(label,label.get_rect(center=button.center))
+        surface.blit(game.hud.small.render('Click: inspect · Purchase / Enter: buy     Arrows: choose     1–3: tabs     Esc: close',True,theme.MUTED),(panel.x+20,panel.bottom-23))

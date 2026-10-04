@@ -21,13 +21,18 @@ class Speech:
         head=game.camera.point(position)+pygame.Vector2(0,-62)
         rect.midbottom=(round(head.x),round(head.y-10))
         top=194 if game.tutorial.active else 170
-        rect.clamp_ip(pygame.Rect(12,top,game.screen.get_width()-24,game.screen.get_height()-top-70))
+        # Horizontal-only placement avoids the objective; the bubble leaves with its speaker.
+        if game.speech.position==pygame.Vector2(position) and game.life.owner and game.life.owner.facing=='up':
+            rect.midright=(round(head.x-45),round(head.y+45))
+
         return rect,lines,head
 
     def draw_bubble(self, game, name, text, position):
-        if not game.screen.get_rect().collidepoint(game.camera.point(position)):return
+        if not pygame.Rect(12,170,game.screen.get_width()-24,game.screen.get_height()-228).collidepoint(game.camera.point(position)):return
         rect,lines,head=self.geometry(game,text,position)
         theme.frame(game.screen,rect,theme.PANEL)
+        if game.owner_requests.store and any(rect.colliderect(pygame.Rect(game.camera.point(s.position).x-24,game.camera.point(s.position).y-48,96,80)) for s in game.owner_requests.visible_spots):
+            rect.x=round(head.x-rect.width-55)
         # Short pointer stays attached to the box even when it is clamped near a screen edge.
         x=max(rect.left+18,min(rect.right-18,head.x))
         pygame.draw.polygon(game.screen,theme.PANEL,[(x-7,rect.bottom-1),(x+7,rect.bottom-1),(x,rect.bottom+8)])

@@ -11,14 +11,14 @@ class PauseMenu:
         self.open=True;self.confirm=confirm;self.selection=0;self.notice='';self.save_failed=False
 
     def geometry(self, surface):
-        panel=pygame.Rect(0,0,min(surface.get_width()-64,560),400);panel.center=surface.get_rect().center
-        rows=[pygame.Rect(panel.x+28,panel.y+151+i*54,panel.width-56,44) for i in range(3)]
+        panel=pygame.Rect(0,0,min(surface.get_width()-64,560),450);panel.center=surface.get_rect().center
+        rows=[pygame.Rect(panel.x+28,panel.y+151+i*54,panel.width-56,44) for i in range(4)]
         return panel,rows
 
     def labels(self, game):
-        if not self.confirm:return ('Resume restoring','Save progress','Exit game')
+        if not self.confirm:return ('Resume restoring','Save progress','Exit game','Settings')
         return ('Stay in Northgate','Save and exit' if game.save_started else 'Exit game',
-                'Exit without saving' if self.save_failed else '')
+                'Exit without saving' if self.save_failed else '', '')
 
     def activate(self, game, index):
         if not self.confirm:
@@ -26,6 +26,7 @@ class PauseMenu:
             elif index==1:
                 game.save_checkpoint();self.notice=game.save_store.status if game.save_started else 'This playtest session has no save file.'
             elif index==2:self.show(True)
+            elif index==3:game.settings_menu.open=True
         elif index==0:
             self.confirm=False;self.selection=0;self.save_failed=False;self.notice=''
         elif index==1:
@@ -41,7 +42,7 @@ class PauseMenu:
                 if self.confirm:self.activate(game,0)
                 else:self.open=False
             elif event.key in (pygame.K_UP,pygame.K_DOWN):
-                count=3 if not self.confirm or self.save_failed else 2
+                count=4 if not self.confirm else 3 if self.save_failed else 2
                 self.selection=(self.selection+(-1 if event.key==pygame.K_UP else 1))%count
             elif event.key in (pygame.K_RETURN,pygame.K_SPACE):self.activate(game,self.selection)
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:

@@ -181,7 +181,9 @@ def main():
         finally:
             pygame.quit()
         return
-    Game(fullscreen=not args.windowed,start_screen=True,developer=args.dev,persistence=True).run()
+    game=Game(fullscreen=not args.windowed,start_screen=True,developer=args.dev,persistence=True)
+    if args.windowed and game.fullscreen:game.toggle_fullscreen()
+    game.run()
 
 
 if __name__ == "__main__":

@@ -47,6 +47,10 @@ class Audio:
             samples.extend([value] * channels)
         return pygame.mixer.Sound(buffer=samples.tobytes())
 
+    def set_volumes(self, music, effects):
+        if self.music_channel:self.music_channel.set_volume(music)
+        for sound in self.sounds.values():sound.set_volume(effects)
+
     def play(self, name):
         if not self.muted and name in self.sounds:
             self.sounds[name].play()

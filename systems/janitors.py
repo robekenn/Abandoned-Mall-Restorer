@@ -82,6 +82,18 @@ class Janitor:
         if self.target in protected:self.target=None;self.path=[];self.progress=0
         if self.target and (self.target.cleaned or getattr(self.target,'revision',0)!=self.target_revision):
             self.target=None;self.path=[];self.progress=0
+        if self.target and self.path and not self.progress:
+            closer=[t for t in pool if not t.cleaned and t not in protected and
+                    self.position.distance_squared_to(t.position)<self.position.distance_squared_to(self.target.position)]
+            def length(path):
+                return sum(pygame.Vector2(a).distance_to(b) for a,b in zip([self.position]+path,path))
+            remaining_distance=length(self.path)
+            for trash in sorted(closer,key=lambda t:self.position.distance_squared_to(t.position)):
+                route=self.route_to(trash.position,game.mall)
+                # A shortcut must shorten the walk, avoiding oscillation around obstacles.
+                if route is not None and length(route)+64<remaining_distance:
+                    self.target=trash;self.target_revision=getattr(trash,'revision',0)
+                    self.path=route;self.progress=0;break
         if not self.target and self.choose_work(pool,game.mall,protected):self.idle_wait=0
         if not self.target:
             if not self.path:

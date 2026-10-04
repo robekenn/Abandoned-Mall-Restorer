@@ -99,7 +99,7 @@ class Welcome:
         text=game.hud.small.render('Quit',True,theme.MUTED)
         overlay.blit(text,text.get_rect(center=quit.center))
         sound='Sound off' if game.audio.muted else 'Sound on'
-        caption=f'Enter: {"continue" if self.has_save else "start"}     N: new game     F11: window     M: {sound}'
+        caption=f'Enter: {"continue" if self.has_save else "start"}     N: new game     F2: settings     M: {sound}'
         overlay.blit(game.hud.small.render(caption,True,theme.MUTED),(panel.x+30,panel.bottom-37))
         # Smoothstep keeps the opening and the handoff from snapping between screens.
         alpha=1-min(1,self.fade)

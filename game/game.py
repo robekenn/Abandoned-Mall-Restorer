@@ -26,7 +26,9 @@ from ui.tutorial import Tutorial
 from ui.developer import Developer
 from ui.story_menu import StoryMenu
 from systems.story import Story, StoryPoint
-from systems.saves import SaveStore
+from systems.saves import SaveStore, save_directory
+from game.preferences import Preferences, HintFont
+from ui.settings_menu import SettingsMenu
 from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.pause import PauseMenu
 from ui.community_menu import CommunityMenu
@@ -34,6 +36,9 @@ from ui.community_menu import CommunityMenu
 
 class Game:
     def __init__(self, *, fullscreen=False, start_screen=False, developer=False, persistence=False, save_dir=None):
+        self.preferences=Preferences(save_dir or save_directory(),persistence,fullscreen)
+        self.settings_menu=SettingsMenu()
+        fullscreen=self.preferences.fullscreen
         pygame.display.init()
         pygame.font.init()
         self.fullscreen=fullscreen
@@ -46,8 +51,11 @@ class Game:
         self.player = Player((240, 430))
         self.camera = Camera(self.mall.size)
         self.hud = HUD()
+        self.hud.font=HintFont(self.hud.font,self.preferences)
+        self.hud.small=HintFont(self.hud.small,self.preferences)
         self.art = Art()
         self.audio = Audio()
+        self.audio.set_volumes(self.preferences.music,self.preferences.effects)
         self.feedback = Feedback()
         self.litter_spawner = LitterSpawner()
         self.upgrades = Upgrades()
@@ -56,6 +64,7 @@ class Game:
         self.journal = Journal()
         self.display_menu = DisplayMenu()
         self.welcome = Welcome(start_screen)
+        self.welcome.tutorial_enabled=self.preferences.guide
         self.speech=Speech()
         self.tutorial=Tutorial()
         self.developer=Developer(developer)
@@ -72,6 +81,7 @@ class Game:
         self.cash = 0
         self.rent_timer = 0.0
         self.message = ''
+        self.request_notice='';self.request_notice_timer=0
         self.message_timer = 0.0
         self.running = True
 
@@ -90,13 +100,14 @@ class Game:
         candidates += [s for s in self.mall.stores if origin.distance_to(s.position) <= INTERACTION_RADIUS]
         candidates += [r for r in self.mall.regions if not r.unlocked and r.ready(self.mall)
                        and origin.distance_to(r.position)<=INTERACTION_RADIUS]
-        candidates += [p for p in self.shoppers.people if p.visible and origin.distance_to(p.position)<=64]
+        shoppers=[p for p in self.shoppers.people if p.visible and origin.distance_to(p.position)<=64]
         candidates += [spot for spot in self.owner_requests.visible_spots if origin.distance_to(spot.position)<=72]
         candidates += [p for p in self.story.visible_neighbors(self.mall) if origin.distance_to(p.position)<=64]
         candidates += [p for p in self.story.visible_points(self.mall) if origin.distance_to(p.position)<=72]
         if self.life.spot and origin.distance_to(self.life.spot.position)<=72:candidates.append(self.life.spot)
         candidates += [t for t in self.life.visible_tasks if origin.distance_to(t.position)<=64]
         candidates += trash_bins
+        if not candidates:candidates=shoppers
         return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
 
     def notify(self, message):
@@ -161,7 +172,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
+        if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         target = self.target()
         if isinstance(target,Trash):
@@ -258,6 +269,7 @@ class Game:
 
     def toggle_fullscreen(self):
         self.fullscreen=not self.fullscreen
+        self.preferences.fullscreen=self.fullscreen;self.preferences.save()
         self.screen=pygame.display.set_mode((0,0) if self.fullscreen else self.window_size,
                                             pygame.FULLSCREEN if self.fullscreen else pygame.RESIZABLE)
 
@@ -280,7 +292,7 @@ class Game:
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         self.frame_camera(viewport)
-        if self.pause.open:return
+        if self.settings_menu.open or self.pause.open:return
         if self.welcome.open:
             self.welcome.update(dt)
             if not self.welcome.open:
@@ -294,6 +306,7 @@ class Game:
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         self.frame_camera(viewport)
         self.message_timer = max(0,self.message_timer-dt)
+        self.request_notice_timer=max(0,self.request_notice_timer-dt)
         self.speech.update(dt)
         self.tutorial.update(self)
         if self.tutorial.paused:return
@@ -304,7 +317,8 @@ class Game:
         self.janitors.update(dt,self)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
-            self.notify(f'{OWNERS[ready[0].name]} has a new request. Visit {ready[0].name}.')
+            self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
+            self.request_notice_timer=8
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
         self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
@@ -342,6 +356,11 @@ class Game:
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
         self.story.draw(self)
         self.life.draw(self)
+        if self.owner_requests.store:
+            p=self.camera.point(self.owner_requests.store.position)
+            pygame.draw.circle(self.screen,(111,211,233),p,26,3)
+            label=self.hud.small.render('YOUR REQUEST',True,(111,211,233))
+            self.screen.blit(label,label.get_rect(midtop=(p.x,p.y+29)))
         for spot in self.owner_requests.scene_spots:
             spot.draw(self.screen,self.camera,self.art,self.hud.small,target is spot)
         for task in self.life.tasks:task.draw(self.screen,self.camera,self.art,self.hud.small,target is task)
@@ -400,10 +419,17 @@ class Game:
                 self.journal.draw(self)
             elif self.display_menu.open:
                 self.display_menu.draw(self)
-        if self.pause.open:self.pause.draw(self)
+        if self.settings_menu.open:self.settings_menu.draw(self)
+        elif self.pause.open:self.pause.draw(self)
         pygame.display.flip()
 
     def handle_event(self, event):
+        if event.type==pygame.QUIT:self.settings_menu.open=False
+        if self.settings_menu.open and event.type!=pygame.QUIT:
+            self.settings_menu.handle(event,self);return
+        if event.type==pygame.KEYDOWN and event.key==pygame.K_F2:
+            self.settings_menu.open=True;return
+        event=self.preferences.normalize(event)
         if event.type==pygame.QUIT:
             if not self.pause.open or not self.pause.confirm:self.pause.show(True)
         elif event.type==pygame.VIDEORESIZE and not self.fullscreen:
@@ -414,7 +440,10 @@ class Game:
             muted=self.audio.toggle();self.notify('Music and effects muted.' if muted else 'Music and effects on.')
             if self.shop_menu.open:self.shop_menu.notice=self.message
         elif self.pause.open:self.pause.handle(event,self)
-        elif self.welcome.open:self.welcome.handle(event,self)
+        elif self.welcome.open:
+            self.welcome.handle(event,self)
+            if self.preferences.guide!=self.welcome.tutorial_enabled:
+                self.preferences.guide=self.welcome.tutorial_enabled;self.preferences.save()
         elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:self.save_checkpoint()
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
@@ -440,10 +469,9 @@ class Game:
                 for event in pygame.event.get():self.handle_event(event)
                 if not self.running:break
                 keys=pygame.key.get_pressed()
-                direction=(int(keys[pygame.K_d] or keys[pygame.K_RIGHT])-int(keys[pygame.K_a] or keys[pygame.K_LEFT]),
-                           int(keys[pygame.K_s] or keys[pygame.K_DOWN])-int(keys[pygame.K_w] or keys[pygame.K_UP]))
+                direction=self.preferences.direction(keys)
                 if not pygame.key.get_focused():direction=(0,0)
-                self.update(dt,direction,keys[pygame.K_e] and pygame.key.get_focused())
+                self.update(dt,direction,keys[self.preferences.keys['interact']] and pygame.key.get_focused())
                 self.draw()
         finally:
             if not self.skip_exit_save:self.save_checkpoint()

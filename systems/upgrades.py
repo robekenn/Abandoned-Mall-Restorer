@@ -98,7 +98,7 @@ class Upgrades:
                     if maxed:detail='Fully upgraded'
                     elif getattr(self,prerequisite)<required:detail='Finish the previous section’s '+title.lower()+' upgrades first'
                     elif 'tool' in key:
-                        name,reach,batch=levels[level+1];detail=f'{name}: {reach}px reach, up to {batch} items'
+                        name,reach,batch=levels[level+1];detail=f'{name}: {reach/64:.2g} tiles reach, up to {batch} items'
                     else:detail=f'{levels[level]} to {levels[level+1]} {unit}'
                     result.append(Offer(key,title,detail,0 if maxed else prices[level],maxed))
                 return result
@@ -157,7 +157,7 @@ class Upgrades:
                     detail = f'{current} to ${next_value} per item at sale'
                 else:
                     name, reach, batch = next_value
-                    detail = f'{current} to {name}: {reach}px reach, up to {batch} items'
+                    detail = f'{current} to {name}: {reach/64:.2g} tiles reach, up to {batch} items'
                 result.append(Offer(key,title,'Fully upgraded' if maximum else detail,
                                     0 if maximum else prices[level],maximum))
             return result
