@@ -12,7 +12,7 @@ Finish an owner's three initial projects to start their recurring favors. Each o
 | --- | --- | --- | --- |
 | The missing sketchbook | Recover a misplaced sketchbook | $90 | — |
 | Names worth remembering | Polish two neighborhood plaques | $120 | $0.50 |
-| Neighborhood recycling drive | Collect five pieces in the owner's section | $100 | — |
+| Neighborhood recycling drive | Collect a random 3–10 pieces anywhere in the mall | $100 | — |
 | News for the neighborhood | Collect notices at deliveries and post three | $130 | — |
 | A local maker's window | Match the owner's product display plan | $160 | $0.50 |
 | Opening stories | Greet three distinct visible shoppers | $130 | — |
@@ -23,7 +23,7 @@ Finish an owner's three initial projects to start their recurring favors. Each o
 | A path back home | Refresh three chalk directions | $100 | — |
 | Room for one more | Prepare a welcome board and greet two shoppers | $150 | — |
 
-Recurring cash scales by area: north 1×, east 2×, Garden 4×, Commons 6×. Half-dollar rent rewards stay $0.50 in every area and use the existing cleanliness multiplier. Return to the owner to claim; rewards cannot be claimed twice. The three gold storefront badges remain the initial improvement milestones. Favor props do not use trash capacity or grant free fixture purchases. Collection and sale favors count only actions in their owner's section.
+Recurring cash scales by area: north 1×, east 2×, Garden 4×, Commons 6×. Half-dollar rent rewards stay $0.50 in every area and use the existing cleanliness multiplier. Return to the owner to claim; rewards cannot be claimed twice. The three gold storefront badges remain the initial improvement milestones. Favor props do not use trash capacity or grant free fixture purchases. Collection favors count player pickups from any open section. Their target is chosen once on acceptance and saved with progress; older active checkpoints keep the original five-piece target. Sale favors still count sales at the owner's section's bins.
 
 ## Four neighborhoods
 
@@ -51,6 +51,6 @@ Each track requires the preceding shop's maximum in that track; Garden tools req
 
 Short dialogue mentions the neighbors who built Northgate, lost photographs, a winter lantern walk and returning local makers. These are story seeds for a later storyline pass. Shopper dialogue lives in `game/lore.py`; favor descriptions live in `systems/favors.py`.
 
-For review, try the guide's On/Off, Skip and H controls; greet a moving shopper; complete each original project then wait for a favor; verify local collection/sale counts and one-time rewards; fill all four neighborhoods in order; inspect the six overview journal pages and the Janitors tab and every shop at 800×600. Automated tests exercise all twelve favors for all thirty-six owners, full-floor coverage, safe routes, gated purchases, all equipment caps, tutorial actions, and forty-business progression. The smoke test renders all four regional shops, requests, speech, the guide and journal pages. Progress persists through autosave and Continue; see [saving and story](saving-and-lantern-story.md).
+For review, try the guide's On/Off, Skip and H controls; greet a moving shopper; complete each original project then wait for a favor; verify cross-zone collection and local sale counts and one-time rewards; fill all four neighborhoods in order; inspect the six overview journal pages and the Janitors tab and every shop at 800×600. Automated tests exercise all twelve favors for all thirty-six owners, full-floor coverage, safe routes, gated purchases, all equipment caps, tutorial actions, and forty-business progression. The smoke test renders all four regional shops, requests, speech, the guide and journal pages. Progress persists through autosave and Continue; see [saving and story](saving-and-lantern-story.md).
 
 Each listed original business row is now followed by five opposing stores. The next section waits for both rows. See [courts and janitors](courts-and-janitors.md) for their prices, rents and automation.

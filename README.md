@@ -34,7 +34,7 @@ Open **J → Mall life** (journal key **4**) to host an optional community gathe
 
 Press E at any reopened rent-paying business to meet its owner. **C / Just chat** shares a personal memory or a reaction to the mall; these conversations develop as the owner earns improvements. Owners appear by their doors while speaking. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
-These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A fresh three-minute wait follows every claim. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
+These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A fresh three-minute wait follows every claim. Litter pickup favors ask for a random 3–10 pieces from anywhere in the mall, with the target preserved through Continue. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
 
 ## The winter lantern walk
 
@@ -103,6 +103,10 @@ See [mall life and community gatherings](docs/mall-life.md) for events, evolving
 
 The H-key guide now pauses for your character’s explanations and resumes for real practice; T skips it. Recurring owner favors wait a random 3–10 minutes after the first three projects. Gatherings offer book matching, cafe preparation, scattered planting and makers-material hunts, with court-specific completed story boards. See [playtest notes](docs/calm-guide-and-event-variety.md).
 
-### First downloadable release
+### Downloadable releases
 
-Merging the release-preparation PR publishes **v0.1.0 — First Playable Preview** after all platform tests and packaged launch checks pass. Windows, Linux and Apple-silicon macOS downloads will appear on the [Releases page](https://github.com/robekenn/Abandoned-Mall-Restorer/releases). Python is not required. See the [release notes](docs/releases/v0.1.0.md) and [release workflow guide](docs/ci-and-releases.md).
+Merging PR #27 publishes **v0.1.1 — Playable Preview** after all platform tests and packaged launch checks pass. Windows, Linux and Apple-silicon macOS downloads appear on the [Releases page](https://github.com/robekenn/Abandoned-Mall-Restorer/releases). Python is not required. See the [v0.1.1 release notes](docs/releases/v0.1.1.md) and [release workflow guide](docs/ci-and-releases.md).
+
+### Playtester controls and settings
+
+Open **F2 → Settings** or **Esc → Settings** for independent music/effects sliders, fullscreen, tutorial/reminder preferences, and custom keys. Upgrade rows are now inspect-only; use the Purchase button or Enter to buy. Equipment shops are marked UPGRADES, and active owner favors identify their business. See [issue-by-issue changes and playtest notes](docs/playtester-issues.md).

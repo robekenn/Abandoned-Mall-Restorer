@@ -77,6 +77,11 @@ class Store:
                     x = r.centerx+(i-(self.request_level-1)/2)*18
                     pygame.draw.rect(surface,(223,180,94),(x-5,r.y+65,10,10))
                     pygame.draw.rect(surface,(228,216,164),(x-2,r.y+68,4,4))
+        if self.upgrade_shop:
+            badge=font.render('UPGRADES',True,(130,196,180))
+            badge_rect=badge.get_rect(midtop=(background.centerx,background.bottom+5)).inflate(10,4)
+            pygame.draw.rect(surface,(35,49,47),badge_rect,border_radius=4)
+            surface.blit(badge,badge.get_rect(center=badge_rect.center))
         if self.available:
             point = camera.point(self.position)
             pygame.draw.circle(surface, (105,181,147) if self.restored else (216,177,104), point, 12)

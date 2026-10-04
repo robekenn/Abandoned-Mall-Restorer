@@ -48,7 +48,7 @@ def snapshot(game):
     requests=game.owner_requests;tutorial=game.tutorial
     active=None
     if requests.store:
-        active={'store':requests.store.name,'parcel':requests.parcel,'progress':requests.progress,
+        active={'store':requests.store.name,'parcel':requests.parcel,'progress':requests.progress,'collection_goal':requests.collection_goal,
                 'greetings':sorted(requests.greetings),'spots':[[s.progress,s.completed] for s in requests.spots]}
     workers={}
     for key,j in game.janitors.people.items():
@@ -133,9 +133,13 @@ def restore_state(data, game):
     if set(data['janitors'])-{'north','east','garden','commons'}:raise ValueError('Unknown janitor')
     if data['request']:
         row=data['request'];store=next(s for s in mall.stores if s.name==row['store'])
-        if not requests.accept(store,mall):raise ValueError('Invalid active request')
+        favor=requests.next_favor(store) if store.request_level>=3 else None
+        is_collection=bool(favor and favor.mode=='collect')
+        goal=number(row.get('collection_goal',favor.amount if is_collection else 0),
+                    requests.COLLECTION_MIN if is_collection else 0,requests.COLLECTION_MAX if is_collection else 0,True)
+        if not requests.accept(store,mall,collection_goal=goal):raise ValueError('Invalid active request')
         if len(row['spots'])!=len(requests.spots):raise ValueError('Request layout mismatch')
-        requests.parcel=flag(row['parcel']);requests.progress=number(row['progress'],0,requests.favor.amount if requests.favor else 0,True)
+        requests.parcel=flag(row['parcel']);requests.progress=number(row['progress'],0,requests.amount,True)
         limit=requests.favor.amount if requests.favor and requests.needs_greetings else 3
         requests.greetings={number(n,0,10**12,True) for n in row['greetings']}
         if len(requests.greetings)>limit:raise ValueError('Too many greetings')

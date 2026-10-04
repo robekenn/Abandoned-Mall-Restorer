@@ -134,6 +134,8 @@ class InventoryTests(unittest.TestCase):
         # First gear row is the capacity upgrade.
         rect = g.shop_menu.rows(g)[0][1]
         g.shop_menu.handle(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=rect.center),g)
+        self.assertEqual(g.upgrades.capacity,1)
+        g.shop_menu.handle(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=g.shop_menu.purchase_rect(g).center),g)
         self.assertEqual(g.upgrades.capacity,2)
         g.shop_menu.handle(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_2),g)
         g.shop_menu.handle(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN),g)

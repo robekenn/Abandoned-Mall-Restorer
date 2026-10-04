@@ -24,11 +24,15 @@ Checksum files are written with LF on every platform; release verification also 
 
 The tag created by GitHub's workflow token does not start a second workflow run. Nothing publishes from the PR branch. A failed check or missing platform archive prevents publication. The workflow refuses to modify a published release or reuse a tag pointing at another commit. If a failed upload leaves a draft, rerun the failed workflow on the same commit to finish it.
 
-For future preview releases, update VERSION and add matching `docs/releases/vX.Y.Z.md` notes in a PR. The current preview title is intended for the first release and should be revised when planning the second. Published tags must never be moved. A manually pushed version tag still produces a draft for human review, following the existing procedure.
+For future preview releases, update VERSION and add matching `docs/releases/vX.Y.Z.md` notes in a PR. Preview releases use the version followed by “Playable Preview”. Published tags must never be moved. A manually pushed version tag still produces a draft for human review, following the existing procedure.
 
 No personal access token is required; the release job uses GitHub's short-lived token with contents-write permission.
 
 Packages: Windows x64 ZIP, Linux x64 tar.gz (Ubuntu 22.04 or compatible desktop), and macOS arm64 tar.gz. macOS and Windows executables are unsigned; signing/notarization and an Intel Mac build are separate future work. The Windows build uses a console so startup errors remain visible during this prototype phase.
+
+## v0.1.1 playtester update
+
+PR #27 sets VERSION to `0.1.1` and adds `docs/releases/v0.1.1.md`. Approve and merge the PR into main to trigger **Prepare release**. Approval without merging does not publish. After the test matrix, native package builds, frozen launch checks and checksums pass, the workflow creates `v0.1.1` at the tested merge commit and publishes its downloads as a pre-release. The published v0.1.0 release stays intact. If a check fails, fix it and retry the same release commit; the workflow does not publish partial downloads.
 
 ## Run locally
 

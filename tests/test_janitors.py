@@ -128,9 +128,9 @@ class JanitorTests(unittest.TestCase):
             for key,j in g.janitors.people.items():
                 area=next(c[2] for c in g.janitors.courts(g.mall) if c[0]==key)
                 self.assertTrue(area.collidepoint(j.position))
-            if g.mall.active_litter_count<=5:break
-        self.assertEqual(g.mall.active_litter_count,5)
-        self.assertEqual(sum(not t.cleaned for t in g.mall.north_trash),5)
+            if g.mall.active_litter_count<=g.owner_requests.amount:break
+        self.assertEqual(g.mall.active_litter_count,g.owner_requests.amount)
+        self.assertEqual(sum(not t.cleaned for t in g.mall.north_trash),g.owner_requests.amount)
         for t in g.mall.north_trash:g.mall.clean_trash(t)
         self.assertEqual(g.mall.cleanliness,1)
         self.assertEqual(g.owner_requests.progress,0)

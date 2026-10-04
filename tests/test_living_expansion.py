@@ -8,6 +8,7 @@ import pygame
 from game.game import Game
 from systems.favors import FAVORS
 from systems.requests import OWNERS
+from systems.saves import snapshot, restore_state
 from systems.upgrades import Upgrades
 from systems.shoppers import Shopper
 
@@ -38,7 +39,7 @@ class ExpansionTests(unittest.TestCase):
 
     def finish(self):
         requests=self.game.owner_requests
-        if requests.favor.mode=='collect':requests.record_collection(requests.favor.amount,requests.store.position)
+        if requests.favor.mode=='collect':requests.record_collection(requests.amount,requests.store.position)
         if requests.favor.mode=='sell':requests.record_sale(requests.favor.amount,requests.store.position)
         for identity in range(3):requests.greet(SimpleNamespace(identity=identity,visible=True))
         while requests.visible_spots:
@@ -198,12 +199,12 @@ class ExpansionTests(unittest.TestCase):
                     self.assertTrue(g.claim_request(store))
                     self.assertEqual(g.upgrades.held,held)
 
-    def test_collection_and_sales_favors_only_count_the_owners_section(self):
+    def test_collection_counts_across_zones_and_sales_stay_local(self):
         self.open_all();g=self.game
-        self.accept_favor(2)
+        with patch('systems.requests.random.randint',return_value=5):self.accept_favor(2)
         foreign=g.mall.east.trash[0];g.mall.respawn_trash(foreign)
         g.player.rect.center=foreign.position;g.collect(foreign)
-        self.assertEqual(g.owner_requests.progress,0)
+        self.assertEqual(g.owner_requests.progress,1)
         g.upgrades.capacity_level=5;g.upgrades.held=0
         for t in g.mall.north_trash[:5]:
             g.mall.respawn_trash(t);g.player.rect.center=t.position;g.collect(t)
@@ -213,6 +214,65 @@ class ExpansionTests(unittest.TestCase):
         g.upgrades.held=8;g.sell_trash(g.mall.trash_bins[0]);self.assertEqual(g.owner_requests.progress,8)
         self.assertTrue(g.owner_requests.ready)
         g.sell_trash(g.mall.trash_bins[0]);self.assertEqual(g.owner_requests.progress,8)
+
+    def test_collection_goal_varies_once_per_acceptance_and_caps_progress(self):
+        self.restore_current();g=self.game;r=g.owner_requests
+        for goal in (3,10):
+            with patch('systems.requests.random.randint',return_value=goal) as roll:
+                store=self.accept_favor(2)
+                self.assertEqual(r.amount,goal)
+                for _ in range(3):
+                    self.assertIn(f'Collect {goal} pieces anywhere',r.details(store)[1])
+                    self.assertIn(f'0/{goal}',r.objective)
+                self.assertEqual(roll.call_count,1)
+                r.record_collection(goal-1,store.position)
+                self.assertFalse(r.ready)
+                r.record_collection(100,store.position)
+                self.assertEqual(r.progress,goal);self.assertTrue(r.ready)
+                self.assertTrue(g.claim_request(store))
+                self.assertEqual(r.collection_goal,0)
+
+    def test_collection_counts_in_every_open_court(self):
+        self.open_all();g=self.game
+        with patch('systems.requests.random.randint',return_value=10):self.accept_favor(2)
+        for i,pool in enumerate([g.mall.north_trash]+[region.trash for region in g.mall.active_regions],1):
+            trash=pool[0];g.mall.respawn_trash(trash)
+            g.upgrades.held=0;g.player.rect.center=trash.position;g.collect(trash)
+            self.assertEqual(g.owner_requests.progress,i)
+
+    def test_collection_save_preserves_goal_and_supports_legacy_checkpoints(self):
+        self.restore_current();g=self.game
+        with patch('systems.requests.random.randint',return_value=10):self.accept_favor(2)
+        g.owner_requests.record_collection(7,g.player.rect.center)
+        data=snapshot(g)
+        with patch('systems.requests.random.randint',side_effect=AssertionError('Save must not reroll')):
+            restore_state(data,g);r=g.owner_requests
+            self.assertEqual((r.amount,r.progress,r.ready),(10,7,False))
+        for bad in (0,2,11,True,5.5):
+            data['request']['collection_goal']=bad
+            with self.assertRaises(ValueError):restore_state(data,g)
+        del data['request']['collection_goal'];data['request']['progress']=5
+        restore_state(data,g);r=g.owner_requests
+        self.assertEqual((r.amount,r.progress,r.ready),(5,5,True))
+
+    def test_janitors_reserve_remaining_collection_litter_across_courts(self):
+        self.open_all();g=self.game
+        with patch('systems.requests.random.randint',return_value=3):self.accept_favor(2)
+        g.owner_requests.record_collection(2,g.player.rect.center)
+        for trash in g.mall.east.trash[:2]:g.mall.respawn_trash(trash)
+        closest=g.mall.east.trash[0];g.player.rect.center=closest.position
+        g.cash=1000000;self.assertTrue(g.janitors.purchase('east','hire',g)[0])
+        j=g.janitors.people['east']
+        with patch.object(j,'choose_work',wraps=j.choose_work) as choose:
+            j.update(0,g.mall.east.trash,g)
+            self.assertEqual(choose.call_args.args[2],[closest])
+        self.assertIsNot(j.target,closest)
+        self.assertEqual(g.owner_requests.progress,2)
+        g.owner_requests.record_collection(1,closest.position)
+        j.target=None;j.path=[]
+        with patch.object(j,'choose_work',wraps=j.choose_work) as choose:
+            j.update(0,g.mall.east.trash,g)
+            self.assertEqual(choose.call_args.args[2],[])
 
     def test_favors_pause_in_menus_and_do_not_expire(self):
         self.restore_current();g=self.game;store=self.accept_favor(8)
@@ -235,8 +295,8 @@ class ExpansionTests(unittest.TestCase):
         self.assertEqual(g.message_timer,0);self.assertTrue(p.speech)
         position=p.position.copy();g.shoppers.update(1,g.mall,g.upgrades)
         self.assertEqual(p.position,position)
-        rect,lines,_=g.speech.geometry(g,p.speech,p.position)
-        self.assertTrue(g.screen.get_rect().contains(rect));self.assertGreater(rect.top,75)
+        rect,lines,head=g.speech.geometry(g,p.speech,p.position)
+        self.assertEqual(rect.midbottom,(round(head.x),round(head.y-10)))
         g.owner_menu.visit(g.mall.stores[1]);time=p.speech_time;g.update(100,(0,0))
         self.assertEqual(p.speech_time,time)
         g.owner_menu.open=False;g.shoppers.update(10,g.mall,g.upgrades);g.shoppers.update(.2,g.mall,g.upgrades)
