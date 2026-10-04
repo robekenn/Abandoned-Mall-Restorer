@@ -11,6 +11,7 @@ from systems.courtyard_visitors import FoodCourtVisitors
 from systems.janitors import Janitors
 from systems.litter import LitterSpawner
 from systems.economy import money, rent_multiplier
+from systems.cooking import KitchenRequests
 from game.camera import Camera
 from ui import theme
 
@@ -78,7 +79,7 @@ class Courtyard:
 
     def __init__(self):
         self.unlocked=False;self.world=None;self.shoppers=FoodCourtVisitors();self.janitors=Janitors();self.spawner=LitterSpawner(cap=12)
-        self.cooking={}
+        self.cooking={};self.kitchen_requests=KitchenRequests()
         self.camera=Camera((2000,1440));self.return_door=SceneDoor(pygame.Vector2(135,775),'Return to Community Commons',pygame.Vector2(56,775))
 
     def ensure_world(self):
@@ -285,6 +286,11 @@ class Courtyard:
                 badge=game.hud.small.render('SERVICE & PATIO UPGRADES',True,theme.GOLD)
                 plaque=badge.get_rect(center=camera.point((store.rect.centerx,store.rect.top+140))).inflate(20,12)
                 theme.frame(surface,plaque,theme.PANEL,False);surface.blit(badge,badge.get_rect(center=plaque.center))
+            if store.name==self.kitchen_requests.pending:
+                badge=game.hud.small.render('COOKING HELP WANTED',True,theme.GOLD)
+                point=camera.point(store.position+pygame.Vector2(0,40 if store.facing=='down' else -40))
+                plaque=badge.get_rect(center=point).inflate(16,10);theme.frame(surface,plaque)
+                surface.blit(badge,badge.get_rect(center=plaque.center))
             if store.available:
                 point=camera.point(store.position);pygame.draw.circle(surface,theme.ACCENT if store.restored else theme.GOLD,point,12,2)
                 if target is store:pygame.draw.circle(surface,theme.TEXT,point,21,2)
@@ -324,6 +330,7 @@ class Courtyard:
         janitor=self.janitors.people.get('courtyard')
         return {'unlocked':True,'scene':game.scene=='courtyard',
                 'cooking':{name:dict(stats) for name,stats in self.cooking.items()},
+                'kitchen_requests':{'wait':self.kitchen_requests.wait,'pending':self.kitchen_requests.pending,'last':self.kitchen_requests.last},
                 'janitor':snapshot_worker(janitor,self.world) if janitor else None,
                 'position':list(game.player.rect.center) if game.scene=='courtyard' else None,
                 'stores':[s.restored for s in self.world.stores],

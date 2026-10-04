@@ -1,4 +1,4 @@
-"""Small, forgiving kitchen activities; each completed order pays exactly once."""
+"""Kitchen challenges with limited mistakes, deposits and saved requests."""
 from dataclasses import dataclass
 import random
 
@@ -27,8 +27,9 @@ ARROWS=('Left','Right','Up','Down')
 
 
 class CookingRound:
-    def __init__(self,name,rng=None):
+    def __init__(self,name,rng=None,served=0):
         self.name=name;self.recipe=RECIPES[name];rng=rng or random
+        self.level=min(5,served//3);self.failed=False;self.total_elapsed=0;self.time_penalty=0;self.deposit=0
         r=self.recipe
         if r.mode=='ingredients':self.order=rng.sample(range(len(r.choices)),r.steps)
         elif r.mode=='stir':
@@ -42,36 +43,86 @@ class CookingRound:
     def complete(self):return self.step==self.recipe.steps
 
     @property
-    def score(self):return max(40,100-10*self.mistakes)
+    def score(self):return max(0,100-20*self.mistakes)
+
+    @property
+    def done(self):return self.complete or self.failed
+
+    @property
+    def band(self):return .10-.01*self.level
+
+    @property
+    def sweep_seconds(self):return 2.1-.18*self.level
+
+    @property
+    def time_limit(self):
+        if self.recipe.mode=='ingredients':return 12-1.5*self.level
+        if self.recipe.mode in ('pour','grill'):return 20-2*self.level
+        return None
+
+    @property
+    def remaining(self):
+        return max(0,self.time_limit-self.total_elapsed-self.time_penalty) if self.time_limit is not None else None
 
     @property
     def marker(self):
-        phase=(self.elapsed/2.4)%2
+        phase=(self.elapsed/self.sweep_seconds)%2
         return phase if phase<=1 else 2-phase
 
     @property
     def target(self):return self.targets[min(self.step,self.recipe.steps-1)]
 
     def update(self,dt):
-        if not self.complete:self.elapsed+=dt
+        if not self.done:
+            self.elapsed+=dt;self.total_elapsed+=dt
+            if self.remaining is not None and self.remaining<=0:
+                self.failed=True;self.notice='Time ran out. The order could not be served.'
 
     def action(self,index=0):
-        if self.complete:return False
+        if self.done:return False
         if self.recipe.mode in ('pour','grill'):
-            correct=abs(self.marker-self.target)<=.13+1e-9
+            correct=abs(self.marker-self.target)<=self.band+1e-9
         else:correct=index==self.order[self.step]
         if not correct:
             self.mistakes+=1
+            if self.recipe.mode=='ingredients':self.time_penalty+=2
             self.notice='A little early or late. Try the gold band again.' if self.recipe.mode in ('pour','grill') else 'Check the highlighted step and try again.'
+            if self.mistakes>=3 or self.remaining is not None and self.remaining<=0:
+                self.failed=True;self.notice='Order spoiled. The ingredient deposit is lost.'
             return False
         self.step+=1;self.elapsed=0;self.notice='Lovely. Keep going!' if not self.complete else 'Ready to serve!'
         return True
 
     def finish(self,game,store):
-        if not self.complete or self.rewarded or self.name!=store.name or not store.restored:return 0
+        if not self.done or self.rewarded or self.name!=store.name or not store.restored:return 0
         self.rewarded=True
-        tip=round(store.base_rent*.25*self.score/100)
-        stats=game.courtyard.cooking.setdefault(self.name,{'served':0,'best':0,'tips':0})
-        stats['served']+=1;stats['best']=max(stats['best'],self.score);stats['tips']+=tip
-        game.cash+=tip;game.audio.play('pickup');game.save_checkpoint()
+        tip=round(store.base_rent*.25*self.score/100) if self.complete else 0
+        stats=game.courtyard.cooking.setdefault(self.name,{'served':0,'best':0,'tips':0,'failed':0})
+        stats.setdefault('failed',0)
+        if self.complete:
+            stats['served']+=1;stats['best']=max(stats['best'],self.score);stats['tips']+=tip
+            game.cash+=self.deposit+tip
+        else:stats['failed']=stats.get('failed',0)+1
+        game.audio.play('pickup' if self.complete else 'blocked');game.save_checkpoint()
         return tip
+
+
+class KitchenRequests:
+    """One patient request shared by all kitchens, with a live-play cooldown."""
+    def __init__(self,rng=None):
+        self.rng=rng or random;self.wait=self.rng.uniform(180,600);self.pending=None;self.last=None
+
+    def update(self,dt,game):
+        stores=[s for s in game.courtyard.world.stores if s.restored and s.name in RECIPES]
+        if self.pending or not stores:return
+        self.wait=max(0,self.wait-dt)
+        if self.wait>0:return
+        choices=[s for s in stores if s.name!=self.last] or stores
+        self.pending=self.rng.choice(choices).name
+        game.notify(self.pending+' needs a hand cooking. Visit the Courtyard counter.')
+        game.save_checkpoint()
+
+    def accept(self,name):
+        if self.pending!=name:return False
+        self.pending=None;self.last=name;self.wait=self.rng.uniform(180,600)
+        return True

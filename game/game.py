@@ -305,6 +305,7 @@ class Game:
 
     def update_courtyard_visitors(self,dt):
         if self.courtyard.unlocked:
+            self.courtyard.kitchen_requests.update(dt,self)
             self.courtyard.shoppers.update(dt,self.courtyard.world,self.upgrades)
             self.visitor_travel.update(dt,self)
 
@@ -376,7 +377,7 @@ class Game:
         if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         if self.tutorial.paused:return
-        if self.cooking_menu.open:self.cooking_menu.update(dt);return
+        if self.cooking_menu.open:self.cooking_menu.update(dt,self);return
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         if self.courtyard.crossing(self,direction):return

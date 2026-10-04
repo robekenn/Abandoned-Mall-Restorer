@@ -310,10 +310,20 @@ def restore_state(data, game):
         if not isinstance(cooking,dict) or not set(cooking)<=set(RECIPES):raise ValueError('Invalid kitchen records')
         for name,row in cooking.items():
             if not next(s for s in world.stores if s.name==name).restored:raise ValueError('Cooking in a closed kitchen')
-            if not isinstance(row,dict) or set(row)!={'served','best','tips'}:raise ValueError('Invalid cooking record')
+            if not isinstance(row,dict) or set(row) not in ({'served','best','tips'},{'served','best','tips','failed'}):raise ValueError('Invalid cooking record')
             served=number(row['served'],0,10**12,True);best=number(row['best'],0,100,True);tips=number(row['tips'],0,10**15,True)
             if (served==0 and (best or tips)) or (served>0 and best<40):raise ValueError('Invalid cooking result')
-            courtyard.cooking[name]={'served':served,'best':best,'tips':tips}
+            courtyard.cooking[name]={'served':served,'best':best,'tips':tips,'failed':number(row.get('failed',0),0,10**12,True)}
+        request=saved_courtyard.get('kitchen_requests')
+        if request is not None:
+            if not isinstance(request,dict) or set(request)!={'wait','pending','last'}:raise ValueError('Invalid kitchen request')
+            pending,last=request['pending'],request['last']
+            opened={s.name for s in world.stores if s.restored and s.name in RECIPES}
+            if pending is not None and (not isinstance(pending,str) or pending not in opened):raise ValueError('Invalid pending kitchen')
+            if last is not None and (not isinstance(last,str) or last not in opened):raise ValueError('Invalid previous kitchen')
+            wait=number(request['wait'],0,600)
+            if pending is not None and wait!=0:raise ValueError('Pending kitchen with cooldown')
+            courtyard.kitchen_requests.wait=wait;courtyard.kitchen_requests.pending=pending;courtyard.kitchen_requests.last=last
         dirty={tuple(vector(p)) for p in saved_courtyard['dirty']}
         if not dirty<=set(world.floor_tiles):raise ValueError('Invalid patio floor')
         world.dirty_tiles=dirty

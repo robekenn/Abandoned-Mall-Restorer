@@ -71,7 +71,7 @@ The courtyard’s open passage has broad, clearly marked edges and a continuous 
 
 ## Cook with the neighbors
 
-Visit any reopened restaurant counter and press **E**, or click its storefront/counter while standing close. Provisions keeps its equipment shop. Cooking is optional: restaurants keep their normal rent and visitor service without player involvement.
+Reopened restaurants share one cooking request at a time. After a random **3–10 minutes of live play**, a kitchen asks for help; its request stays available, with a HUD notice on both maps and a Help Wanted badge at its counter. Visit that counter and press **E**, or click its storefront/counter while standing close. Idle kitchens cannot start cooking. The next request avoids the previous kitchen when another is open. Provisions keeps its equipment shop. Cooking is optional: restaurants keep their normal rent and visitor service without player involvement.
 
 | Kitchen | Your activity | Controls |
 | --- | --- | --- |
@@ -83,6 +83,17 @@ Visit any reopened restaurant counter and press **E**, or click its storefront/c
 | Garden Bowls | Layer three varied salad ingredients | 1–5 or ingredient buttons |
 | Moonrise Desserts | Stack three varied scoop flavors from bottom to top | 1–5 or ingredient buttons |
 
-Read the visible ticket, then choose Start cooking. There is no overall deadline, ingredient cost or loss for leaving. Mistakes leave the current step available to retry and reduce the score by ten, down to a minimum of 40/100. A completed order pays a tip equal to 25% of that kitchen's base five-second rent, scaled by the score and rounded to whole dollars. Tips are credited once on completion; the result shows the amount and offers another varied order. **Esc** or Close leaves at any time. Mouse controls provide every action without keyboard shortcuts.
+Read the visible ticket, then choose Accept cooking request. Each attempt requires an ingredient deposit of **10% of the kitchen's base five-second rent** (rounded to whole dollars). The deposit is returned on success, plus a tip equal to 25% of that base rent scaled by the score. A wrong action loses **20 score points**; wrong ingredients also remove **two seconds** from the overall ingredient timer without advancing the recipe. **Three mistakes or a timeout fail the order**, paying no tip and forfeiting the deposit. Esc/Close after starting also forfeits it. Closing the preview before accepting costs nothing and keeps the request available. You need enough cash for the displayed deposit to accept.
 
-The world pauses during cooking, including movement, litter, customers, rent and both janitor crews. F2 settings and the exit/pause overlay also freeze cooking's timing marker. Orders served, best score and cumulative tips persist separately for each restaurant and in both save slots. Existing saves begin with empty kitchen records while retaining all progress. An unfinished order is a temporary activity; Continue returns to the courtyard without that order or a tip. Regular visitors keep using the normal food queues when play resumes.
+Difficulty is separate for each restaurant, increasing every **three successful orders** to a maximum of challenge 6. Failures do not raise it.
+
+| Challenge | Timing band width | Marker sweep (one way) | Ingredient order deadline | Pour/grill deadline |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 20% of gauge | 2.1s | 12s total | 20s total |
+| 6 (maximum) | 10% of gauge | 1.2s | 4.5s total | 10s total |
+
+The overall ingredient timer continues across successful steps, so it cannot be reset by selecting an ingredient. The marker resets between glasses or grill sides, while the overall timing-game deadline continues. Spoon turns and pastry shaping retain their arrow mechanics and three-mistake limit. Mouse controls provide every action without keyboard shortcuts. The result returns to the courtyard; it cannot immediately start another order.
+
+The world pauses during cooking, including movement, litter, customers, rent and both janitor crews. F2 settings and the exit/pause overlay also freeze cooking timers. The shared cooldown runs on either map during live play and pauses in menus or cooking. It starts when an attempt is accepted, including attempts later failed or abandoned; it does not create another request while one is pending.
+
+Orders served, failures, best score, cumulative tips, cooldown and pending kitchen persist through Continue in both save slots. Older cooking saves retain existing records, default failures to zero and begin the new request cooldown without resetting progress. Accepting saves the deposit deduction and consumed request immediately: leaving or reloading an unfinished order does not refund ingredients or restore that request. Regular visitors keep using the normal food queues when play resumes.

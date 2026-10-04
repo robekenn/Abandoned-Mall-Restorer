@@ -13,7 +13,10 @@ class CookingMenu:
     def visit(self,store,game):
         world=game.courtyard.world
         if game.scene!='courtyard' or not game.courtyard.unlocked or world is None or store not in world.stores or not store.restored or store.name not in RECIPES:return False
-        self.store=store;self.round=CookingRound(store.name);self.started=False;self.tip=0;self.open=True
+        if game.courtyard.kitchen_requests.pending!=store.name:
+            game.notify('The kitchen is settled. Watch for its next cooking request.');return False
+        served=game.courtyard.cooking.get(store.name,{}).get('served',0)
+        self.store=store;self.round=CookingRound(store.name,served=served);self.started=False;self.tip=0;self.open=True
         return True
 
     def geometry(self,surface):
@@ -36,23 +39,37 @@ class CookingMenu:
         return [pygame.Rect(panel.x+24+(i%cols)*(width+12),panel.y+350+(i//cols)*48,width,40) for i in range(count)]
 
     def act(self,index,game):
-        if not self.started or self.round.complete:return
-        if self.round.action(index) and self.round.complete:self.tip=self.round.finish(game,self.store)
+        if not self.started or self.round.done:return
+        self.round.action(index)
+        if self.round.done and not self.round.rewarded:self.tip=self.round.finish(game,self.store)
 
-    def primary(self):
-        if self.round.complete:
-            self.round=CookingRound(self.store.name);self.tip=0
-        self.started=True
+    def primary(self,game):
+        if self.round.done:self.open=False;return
+        if self.started:return
+        deposit=round(self.store.base_rent*.1)
+        if game.cash<deposit:
+            self.round.notice='You need '+money(deposit)+' for the ingredient deposit.';return
+        if not game.courtyard.kitchen_requests.accept(self.store.name):self.open=False;return
+        self.round.deposit=deposit;game.cash-=deposit;self.started=True
+        game.save_checkpoint()
 
-    def update(self,dt):
-        if self.started:self.round.update(dt)
+    def close(self,game):
+        if self.started and not self.round.done:
+            self.round.failed=True;self.round.notice='Order abandoned. The ingredient deposit is lost.'
+            self.round.finish(game,self.store)
+        self.open=False
+
+    def update(self,dt,game):
+        if self.started:
+            self.round.update(dt)
+            if self.round.done and not self.round.rewarded:self.tip=self.round.finish(game,self.store)
 
     def handle(self,event,game):
         if event.type==pygame.KEYDOWN:
             if getattr(event,'repeat',False):return
-            if event.key==pygame.K_ESCAPE:self.open=False;return
-            if not self.started or self.round.complete:
-                if event.key in (pygame.K_RETURN,pygame.K_SPACE):self.primary()
+            if event.key==pygame.K_ESCAPE:self.close(game);return
+            if not self.started or self.round.done:
+                if event.key in (pygame.K_RETURN,pygame.K_SPACE):self.primary(game)
                 return
             mode=self.round.recipe.mode
             if mode in ('pour','grill') and event.key in (pygame.K_SPACE,pygame.K_RETURN):self.act(0,game)
@@ -63,9 +80,9 @@ class CookingMenu:
                 self.act(event.key-pygame.K_1,game)
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
             _,_,button,close=self.geometry(game.screen)
-            if close.collidepoint(event.pos):self.open=False
-            elif not self.started or self.round.complete:
-                if button.collidepoint(event.pos):self.primary()
+            if close.collidepoint(event.pos):self.close(game)
+            elif not self.started or self.round.done:
+                if button.collidepoint(event.pos):self.primary(game)
             else:
                 for i,rect in enumerate(self.choice_rects(game.screen)):
                     if rect.collidepoint(event.pos):self.act(i,game);break
@@ -136,7 +153,7 @@ class CookingMenu:
         if r.mode in ('pour','grill'):
             bar=pygame.Rect(ticket.x+16,ticket.y+70,ticket.width-32,28)
             pygame.draw.rect(surface,theme.BG,bar,border_radius=6)
-            band=pygame.Rect(bar.x+round((round_.target-.13)*bar.width),bar.y,round(.26*bar.width),bar.height)
+            band=pygame.Rect(bar.x+round((round_.target-round_.band)*bar.width),bar.y,round(2*round_.band*bar.width),bar.height)
             pygame.draw.rect(surface,theme.GOLD,band,border_radius=4)
             x=bar.x+round(round_.marker*bar.width);pygame.draw.line(surface,theme.TEXT,(x,bar.y-7),(x,bar.bottom+7),4)
             self.text(surface,game.hud.small,'Stop in gold. No rush to start.',(ticket.x+14,ticket.y+122),theme.MUTED)
@@ -147,20 +164,23 @@ class CookingMenu:
             for i,label in enumerate(labels):
                 color=theme.ACCENT if i<round_.step else theme.GOLD if i==round_.step else theme.MUTED
                 self.text(surface,game.hud.small,('Done  ' if i<round_.step else str(i+1)+'.  ')+label,(ticket.x+14,ticket.y+43+i*23),color)
-        if not self.started or round_.complete:
-            message=('Served! '+str(round_.score)+'/100 · '+money(self.tip)+' tip') if round_.complete else f'Help prepare one order for up to {money(round(self.store.base_rent*.25))} tip. The mall pauses while you cook.'
+        challenge=f'Challenge {round_.level+1} · {round_.mistakes}/3 mistakes'
+        if round_.remaining is not None:challenge+=f' · {round_.remaining:.1f}s left'
+        self.text(surface,game.hud.small,challenge,(panel.x+24,panel.y+332),theme.GOLD)
+        if not self.started or round_.done:
+            message=('Served! '+str(round_.score)+'/100 · '+money(self.tip)+' tip; deposit returned.') if round_.complete else ('Order failed. '+money(round_.deposit)+' deposit lost. '+round_.notice) if round_.failed else self.round.notice or f'Ingredient deposit: {money(round(self.store.base_rent*.1))}. Returned on success; lost on failure or quitting. Three mistakes fail the order.'
             for i,line in enumerate(theme.wrap(game.hud.font,message,panel.width-48)):
                 self.text(surface,game.hud.font,line,(panel.x+24,panel.y+356+i*26),theme.ACCENT)
-            stats=game.courtyard.cooking.get(self.store.name,{'served':0,'best':0,'tips':0})
-            self.text(surface,game.hud.small,f"Orders served: {stats['served']}   Best: {stats['best']}/100   Tips: {money(stats['tips'])}",(panel.x+24,panel.y+421),theme.MUTED)
+            stats=game.courtyard.cooking.get(self.store.name,{'served':0,'best':0,'tips':0,'failed':0})
+            self.text(surface,game.hud.small,f"Served: {stats['served']}   Best: {stats['best']}/100   Failed: {stats.get('failed',0)}   Tips: {money(stats['tips'])}",(panel.x+24,panel.y+421),theme.MUTED)
             theme.frame(surface,button,theme.CARD)
-            text='Enter / click: Make another' if round_.complete else 'Enter / click: Start cooking'
+            text='Enter / click: Back to courtyard' if round_.done else 'Enter / click: Accept cooking request'
             label=game.hud.font.render(text,True,theme.ACCENT);surface.blit(label,label.get_rect(center=button.center))
         else:
             for i,rect in enumerate(self.choice_rects(surface)):
                 theme.frame(surface,rect,theme.CARD)
                 prefix=str(i+1)+'  ' if r.mode=='ingredients' else ''
                 label=game.hud.font.render(prefix+self.choices()[i],True,theme.TEXT);surface.blit(label,label.get_rect(center=rect.center))
-            self.text(surface,game.hud.small,round_.notice or 'Follow the highlighted ticket step.',(panel.x+24,panel.bottom-62),theme.ACCENT)
+            self.text(surface,game.hud.small,round_.notice or 'Mistakes: -20 score. Three mistakes spoil the order.',(panel.x+24,panel.bottom-62),theme.ACCENT)
         controls='1–5 / click: ingredient' if r.mode=='ingredients' else 'Arrow keys / click: shape or stir' if r.mode in ('fold','stir') else 'Space / click: stop in gold'
-        self.text(surface,game.hud.small,controls+'   ·   Esc: leave at any time',(panel.x+24,panel.bottom-28),theme.MUTED)
+        self.text(surface,game.hud.small,controls+'   ·   Esc: abandon order' if self.started and not round_.done else 'Esc: close   ·   Next request after 3–10 minutes of play',(panel.x+24,panel.bottom-28),theme.MUTED)
