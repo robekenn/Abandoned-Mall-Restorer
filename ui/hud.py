@@ -28,7 +28,7 @@ class HUD:
             if not world.stores[0].restored:return 'Courtyard Provisions','Reopen Provisions · '+money(world.stores[0].cost)
             if not world.initial_cleanup_complete:return 'First courtyard sweep',f'Clean the patio. {world.active_litter_count} patches left.'
             if world.next_store:return 'Next kitchen',world.next_store.name+' · '+money(world.next_store.cost)
-            return 'A table for everyone','All seven kitchens open. Visit Provisions for service and garden upgrades.'
+            return 'Cook with the neighbors','Visit a restaurant counter to make a dish, or Provisions for patio upgrades.'
         mall=game.mall;requests=game.owner_requests
         if game.tutorial.active:return game.tutorial.goal
         if requests.store:
@@ -69,6 +69,7 @@ class HUD:
         if isinstance(target,RequestSpot):return ('Hold E' if target.duration else 'E'),target.title
         if isinstance(target,Store):
             if not target.restored:return 'E',f'Reopen {target.name}' if target.available else 'This store is still closed'
+            if game.scene=='courtyard' and not target.upgrade_shop:return 'E / click','Cook at '+target.name
             return 'E',('Enter '+target.name) if target.upgrade_shop else f'Talk to {OWNERS[target.name]}' if target.name in OWNERS else 'Chat with the cooks'
         if target:return 'E',f'Open {target.name} · {money(target.cost)}'
         return 'Move','WASD or arrow keys'

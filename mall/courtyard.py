@@ -78,6 +78,7 @@ class Courtyard:
 
     def __init__(self):
         self.unlocked=False;self.world=None;self.shoppers=FoodCourtVisitors();self.janitors=Janitors();self.spawner=LitterSpawner(cap=12)
+        self.cooking={}
         self.camera=Camera((2000,1440));self.return_door=SceneDoor(pygame.Vector2(135,775),'Return to Community Commons',pygame.Vector2(56,775))
 
     def ensure_world(self):
@@ -141,14 +142,19 @@ class Courtyard:
     def pickup_at(self,game,pos):
         if not pygame.Rect(0,170,game.screen.get_width(),game.screen.get_height()-228).collidepoint(pos):return
         point=pygame.Vector2(pos)+self.camera.offset
+        stores=[s for s in self.world.stores if s.rect.collidepoint(point) or s.position.distance_to(point)<=28]
+        if stores:
+            store=stores[0]
+            if store.position.distance_to(game.player.rect.center)>72:game.deny('Move closer to the restaurant counter.');return
+            self.interact(game,store);return
         targets=[t for t in self.world.trash if not t.cleaned and t.position.distance_to(point)<=24]
         if not targets:return
         target=min(targets,key=lambda t:t.position.distance_squared_to(point))
         if target.position.distance_to(game.player.rect.center)>game.upgrades.tool[1]:game.deny('Move closer to collect this litter.');return
         self.collect(game,target)
 
-    def interact(self,game):
-        target=self.target(game)
+    def interact(self,game,target=None):
+        target=self.target(game) if target is None else target
         if isinstance(target,SceneDoor):game.leave_courtyard();return
         if isinstance(target,Trash):self.collect(game,target);return
         if isinstance(target,TrashBin):
@@ -160,7 +166,7 @@ class Courtyard:
             if not target.available:game.deny(target.label);return
             if target.restored:
                 if target.upgrade_shop:game.open_upgrade_shop(target)
-                else:game.speech.say(target.name,'The kitchen is open. Restore our seating and improve service at Provisions to welcome more neighbors.',target.position)
+                else:game.cooking_menu.visit(target,game)
                 return
             if game.cash<target.cost:game.deny(f'You need {money(target.cost-game.cash)} more to reopen {target.name}.');return
             game.cash-=target.cost;target.restored=True;self.world.refresh_businesses()
@@ -307,6 +313,7 @@ class Courtyard:
             if p.visible and p.speech_time:game.speech.draw_bubble(game,p.name,p.speech,p.display_position)
         if game.journal.open:game.journal.draw(game)
         if game.shop_menu.open:game.shop_menu.draw(game)
+        if game.cooking_menu.open:game.cooking_menu.draw(game)
         if game.settings_menu.open:game.settings_menu.draw(game)
         elif game.pause.open:game.pause.draw(game)
         pygame.display.flip()
@@ -316,6 +323,7 @@ class Courtyard:
         from systems.saves import snapshot_worker
         janitor=self.janitors.people.get('courtyard')
         return {'unlocked':True,'scene':game.scene=='courtyard',
+                'cooking':{name:dict(stats) for name,stats in self.cooking.items()},
                 'janitor':snapshot_worker(janitor,self.world) if janitor else None,
                 'position':list(game.player.rect.center) if game.scene=='courtyard' else None,
                 'stores':[s.restored for s in self.world.stores],

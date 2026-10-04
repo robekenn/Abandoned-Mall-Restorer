@@ -305,6 +305,15 @@ def restore_state(data, game):
         for i,store in enumerate(world.stores):
             if store.restored and i and (not world.initial_cleanup_complete or not world.stores[i-1].restored):raise ValueError('Invalid restaurant order')
         world.refresh_businesses()
+        from systems.cooking import RECIPES
+        cooking=saved_courtyard.get('cooking',{})
+        if not isinstance(cooking,dict) or not set(cooking)<=set(RECIPES):raise ValueError('Invalid kitchen records')
+        for name,row in cooking.items():
+            if not next(s for s in world.stores if s.name==name).restored:raise ValueError('Cooking in a closed kitchen')
+            if not isinstance(row,dict) or set(row)!={'served','best','tips'}:raise ValueError('Invalid cooking record')
+            served=number(row['served'],0,10**12,True);best=number(row['best'],0,100,True);tips=number(row['tips'],0,10**15,True)
+            if (served==0 and (best or tips)) or (served>0 and best<40):raise ValueError('Invalid cooking result')
+            courtyard.cooking[name]={'served':served,'best':best,'tips':tips}
         dirty={tuple(vector(p)) for p in saved_courtyard['dirty']}
         if not dirty<=set(world.floor_tiles):raise ValueError('Invalid patio floor')
         world.dirty_tiles=dirty
@@ -328,6 +337,7 @@ def restore_state(data, game):
     litter_timer=number(data['litter_timer'],0,4);turn=number(data['litter_turn'],0,10**12,True);muted=flag(data['muted'])
     # Commit only after every field passed; a damaged primary can safely fall back.
     for key,value in state.items():setattr(game,key,value)
+    game.cooking_menu.open=False
     game.litter_spawner.elapsed=litter_timer;game.litter_spawner.turn=turn
     if muted!=game.audio.muted:game.audio.toggle()
     from game.camera import Camera

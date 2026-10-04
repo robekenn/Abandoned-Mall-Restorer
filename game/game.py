@@ -34,6 +34,7 @@ from ui.settings_menu import SettingsMenu
 from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.pause import PauseMenu
 from ui.community_menu import CommunityMenu
+from ui.cooking_menu import CookingMenu
 
 
 class Game:
@@ -66,6 +67,7 @@ class Game:
         self.upgrades = Upgrades()
         self.shop_menu = UpgradeShop()
         self.owner_menu = OwnerMenu()
+        self.cooking_menu = CookingMenu()
         self.journal = Journal()
         self.display_menu = DisplayMenu()
         self.welcome = Welcome(start_screen)
@@ -154,7 +156,7 @@ class Game:
         self.owner_requests.record_sale(count,trash_bin.position)
 
     def pickup_at(self, screen_position):
-        if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu)):
+        if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu,self.cooking_menu)):
             return
         if self.scene=='courtyard':self.courtyard.pickup_at(self,screen_position);return
         viewport=pygame.Rect(0,190 if self.tutorial.active else 170,self.screen.get_width(),self.screen.get_height()-(248 if self.tutorial.active else 228))
@@ -199,7 +201,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
+        if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open or self.cooking_menu.open:
             return
         if self.scene=='courtyard':self.courtyard.interact(self);return
         target = self.target()
@@ -374,6 +376,7 @@ class Game:
         if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         if self.tutorial.paused:return
+        if self.cooking_menu.open:self.cooking_menu.update(dt);return
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         if self.courtyard.crossing(self,direction):return
@@ -523,6 +526,7 @@ class Game:
             if self.preferences.guide!=self.welcome.tutorial_enabled:
                 self.preferences.guide=self.welcome.tutorial_enabled;self.preferences.save()
         elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:self.save_checkpoint()
+        elif self.cooking_menu.open:self.cooking_menu.handle(event,self)
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
         elif self.tutorial.paused:self.tutorial.handle(event,self)

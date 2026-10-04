@@ -67,3 +67,22 @@ Hearth Pizza serves slices, Mint & Noodles serves noodle bowls, Orchard Juice se
 While outside, open **J → Janitors** to hire the Courtyard cleaner for $320,000, then use the usual cleaning/walking upgrades. Cleanup pays 75% of your trash value and protects litter needed for an active pickup favor. The cleaner’s position, target, partial work, upgrades and earnings persist across save/load. Courtyard rent now uses the same five-second character popup and clean-floor sound as inside. Indoor benches show obvious broken slats/supports until their existing Furniture restoration is purchased; earlier purchased benches stay restored.
 
 The courtyard’s open passage has broad, clearly marked edges and a continuous approach. Provisions has a framed gold upgrade plaque. The dining fixtures have readable tabletops and separate side benches; unpurchased ones have broken slats. Herb boxes sit in planted gaps between kitchens, outside the walking and queue lanes.
+
+
+## Cook with the neighbors
+
+Visit any reopened restaurant counter and press **E**, or click its storefront/counter while standing close. Provisions keeps its equipment shop. Cooking is optional: restaurants keep their normal rent and visitor service without player involvement.
+
+| Kitchen | Your activity | Controls |
+| --- | --- | --- |
+| Hearth Pizza | Add three varied toppings in ticket order | 1–5 or ingredient buttons |
+| Mint & Noodles | Alternate six spoon turns | Left/right arrows or buttons |
+| Orchard Juice | Fill two glasses to a varied target | Space/Enter or stop button in the gold band |
+| Sunrise Bakery | Fold and roll dough along a varied four-arrow sequence | Arrow keys or buttons |
+| Copper Grill | Time cooking on each side, flip, then plate | Space/Enter or action button in the gold band |
+| Garden Bowls | Layer three varied salad ingredients | 1–5 or ingredient buttons |
+| Moonrise Desserts | Stack three varied scoop flavors from bottom to top | 1–5 or ingredient buttons |
+
+Read the visible ticket, then choose Start cooking. There is no overall deadline, ingredient cost or loss for leaving. Mistakes leave the current step available to retry and reduce the score by ten, down to a minimum of 40/100. A completed order pays a tip equal to 25% of that kitchen's base five-second rent, scaled by the score and rounded to whole dollars. Tips are credited once on completion; the result shows the amount and offers another varied order. **Esc** or Close leaves at any time. Mouse controls provide every action without keyboard shortcuts.
+
+The world pauses during cooking, including movement, litter, customers, rent and both janitor crews. F2 settings and the exit/pause overlay also freeze cooking's timing marker. Orders served, best score and cumulative tips persist separately for each restaurant and in both save slots. Existing saves begin with empty kitchen records while retaining all progress. An unfinished order is a temporary activity; Continue returns to the courtyard without that order or a tip. Regular visitors keep using the normal food queues when play resumes.
