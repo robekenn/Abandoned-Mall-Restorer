@@ -117,7 +117,9 @@ class Game:
         candidates += [t for t in self.life.visible_tasks if origin.distance_to(t.position)<=64]
         candidates += trash_bins
         if not candidates:candidates=shoppers
-        return min(candidates,key=lambda t: origin.distance_squared_to(t.position),default=None)
+        # Old checkpoints can contain a gathering at a story board's exact node.
+        # Give the active gathering the tie so it remains possible to join it.
+        return min(candidates,key=lambda t:(origin.distance_squared_to(t.position),0 if t is self.life.spot else 1),default=None)
 
     def notify(self, message):
         self.message,self.message_timer = message,3.0

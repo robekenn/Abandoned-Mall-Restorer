@@ -161,6 +161,27 @@ class MallLifeTests(unittest.TestCase):
         g.handle_event(key(pygame.K_1));self.assertEqual(g.life.round,1)
         g.handle_event(key(pygame.K_ESCAPE));self.assertFalse(g.community_menu.open);self.assertTrue(g.running)
 
+    def test_random_gathering_placement_reserves_story_board_space(self):
+        g=self.restore_north()
+        board=next(p for p in g.story.points if p.chapter==0 and p.memory<0)
+        # This valid random offset used to choose the board's exact lattice node.
+        with patch('systems.mall_life.random.uniform',side_effect=(-80,27)):
+            self.assertTrue(g.life.start(g,'north'))
+        self.assertGreater(g.life.spot.position.distance_to(board.position),140)
+        g.player.rect.center=g.life.spot.position
+        self.assertIs(g.target(),g.life.spot);g.interact()
+        self.assertTrue(g.community_menu.open)
+
+    def test_legacy_gathering_on_board_can_still_be_joined(self):
+        g=self.restore_north()
+        from systems.mall_life import EventSpot
+        board=next(p for p in g.story.points if p.chapter==0 and p.memory<0)
+        g.life.active='north';g.life.spot=EventSpot(board.position.copy(),g.life.event.title)
+        g.life.sync_spots(g.mall)
+        g.player.rect.center=board.position
+        self.assertIs(g.target(),g.life.spot);g.interact()
+        self.assertTrue(g.community_menu.open)
+
     def test_visitors_replan_around_a_new_table_even_after_gather_refreshes_paths(self):
         g=self.restore_north();self.assertTrue(g.life.start(g,'north'));wall=g.mall.event_obstacle
         g.mall.obstacles.remove(wall);g.shoppers.walkways.refresh(g.mall)

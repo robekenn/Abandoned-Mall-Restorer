@@ -138,7 +138,10 @@ class MallLife:
                (court[2].right-280,court[2].bottom-460))
         goal=pygame.Vector2(goals[index])+pygame.Vector2(random.uniform(-80,80),random.uniform(-64,64))
         nodes=sorted(game.shoppers.walkways.nodes,key=lambda p:(pygame.Vector2(p).distance_squared_to(goal),p))
-        point=next((p for p in nodes if court[2].contains(pygame.Rect(p[0]-90,p[1]-100,180,180))
+        # Story boards and future keepsakes retain their own interaction space.
+        story_positions=[marker.position for marker in game.story.points]
+        point=next((p for p in nodes if all(pygame.Vector2(p).distance_squared_to(marker)>140**2 for marker in story_positions)
+                    and court[2].contains(pygame.Rect(p[0]-90,p[1]-100,180,180))
                     and not any(w.colliderect(pygame.Rect(p[0]-90,p[1]-82,180,162)) for w in game.mall.obstacles)
                     and not game.player.rect.colliderect(pygame.Rect(p[0]-90,p[1]-82,180,162))
                     and not any(pygame.Rect(person.position.x-10,person.position.y-12,20,24).colliderect(pygame.Rect(p[0]-90,p[1]-82,180,162))
@@ -154,6 +157,7 @@ class MallLife:
                      (court[2].centerx,court[2].bottom-380)]
             for i,goal in enumerate(desired):
                 safe=[p for p in nodes if court[2].contains(pygame.Rect(p[0]-24,p[1]-32,48,64))
+                      and all(pygame.Vector2(p).distance_squared_to(marker)>96**2 for marker in story_positions)
                       and pygame.Vector2(p).distance_squared_to(point)>140**2
                       and all(pygame.Vector2(p).distance_squared_to(t.position)>100**2 for t in self.tasks)
                       and not any(w.colliderect(pygame.Rect(p[0]-24,p[1]-32,48,64)) for w in game.mall.obstacles)
