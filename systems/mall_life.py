@@ -182,6 +182,9 @@ class MallLife:
             if previous is not None:mall.obstacles.remove(previous)
             if obstacle is not None:mall.obstacles.append(obstacle)
             mall.event_obstacle=obstacle
+        if not self.spot and getattr(mall,'suspended_tables',[]):
+            for table in mall.suspended_tables:mall.social_tables.append(table);mall.obstacles.append(table.footprint)
+            mall.suspended_tables=[]
         mall.event_spots=[tuple(self.spot.position+pygame.Vector2(dx,68)) for dx in (-64,0,64)] if self.spot else []
         mall.event_task_markers=[tuple(t.position) for t in self.visible_tasks]
 

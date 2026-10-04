@@ -9,6 +9,7 @@ from mall.store import Store
 from systems.story import StoryPoint, CHAPTERS
 from ui import theme
 from systems.mall_life import EventSpot
+from mall.courtyard import SceneDoor, Courtyard
 
 
 class HUD:
@@ -51,6 +52,7 @@ class HUD:
         return 'A place for everyone','Visit the Commons board to begin another lantern walk.'
 
     def prompt(self, game, target):
+        if isinstance(target,SceneDoor):return 'E',target.title
         if isinstance(target,EventSpot):return 'E','Join '+target.title
         if isinstance(target,StoryPoint):return 'E',target.label
         if isinstance(target,Trash):
@@ -91,6 +93,11 @@ class HUD:
             pygame.draw.circle(surface,theme.ACCENT,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),4)
         for point in getattr(mall,'story_markers',()):
             pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),3)
+        if mall.commons.unlocked:
+            door=Courtyard.door(mall).position
+            point=(round(bounds.x+door.x*sx),round(bounds.y+door.y*sy))
+            pygame.draw.rect(surface,theme.ACCENT,(point[0]-3,point[1]-4,6,8),1)
+            label=self.small.render('PATIO',True,theme.ACCENT);surface.blit(label,(point[0]+6,point[1]-7))
         if requests and requests.store:
             pygame.draw.circle(surface,(111,211,233),(round(bounds.x+requests.store.position.x*sx),round(bounds.y+requests.store.position.y*sy)),7,2)
             destinations=[requests.store.position] if requests.ready else [s.position for s in requests.visible_spots]
@@ -105,7 +112,7 @@ class HUD:
         pygame.draw.rect(surface,theme.BG,(0,0,width,76))
         surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
         region=mall.area_name(game.player.rect.center)
-        surface.blit(self.small.render(region,True,theme.MUTED),(23,47))
+        surface.blit(self.small.render(region+" · "+game.shoppers.traffic,True,theme.MUTED),(23,47))
         values=[('CLEAN',cleanliness_label(mall.cleanliness)),('CASH',money(game.cash)),('BAG',f'{game.upgrades.held} / {game.upgrades.capacity}')]
         for i,(label,value) in enumerate(values):
             r=pygame.Rect(width-450+i*145,10,133,56);theme.frame(surface,r,theme.PANEL,False)

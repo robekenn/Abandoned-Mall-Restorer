@@ -54,7 +54,7 @@ class StoryAndSaveTests(unittest.TestCase):
         self.assertTrue(g.story.confirm(g,0,'gather'));self.assertEqual(g.cash,before)
         g.shoppers.update(8,g.mall,g.upgrades)
         self.assertTrue(g.shoppers.people)
-        self.assertLessEqual(len(g.shoppers.people),20)
+        self.assertLessEqual(len(g.shoppers.people),g.shoppers.population_limit(g.mall))
         self.assertTrue(any(p.state in ('strolling','resting') for p in g.shoppers.people))
         self.assertFalse(g.developer.act('story',g))
 
