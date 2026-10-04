@@ -301,7 +301,7 @@ class Game:
     def leave_courtyard(self):
         if self.scene!='courtyard':return
         self.scene='mall';self.camera=self.main_camera
-        self.player.rect.center=self.main_position or self.courtyard.door(self.mall).position
+        self.player.rect.center=self.courtyard.door(self.mall).position
         self.main_position=None;self.feedback.popups.clear();self.feedback.particles.clear();self.speech.timer=0
         self.frame_camera(self.screen.get_size());self.save_checkpoint()
 
@@ -322,7 +322,8 @@ class Game:
 
     def frame_camera(self, viewport):
         if self.scene=='courtyard':
-            self.courtyard.camera.update((self.player.rect.centerx,self.player.rect.centery-50),viewport);return
+            bias=-50+120*max(0,min(1,(self.player.rect.centery-850)/180))
+            self.courtyard.camera.update((self.player.rect.centerx,self.player.rect.centery+bias),viewport);return
         # Blend framing within each vertical row, including the corridor between
         # them. Choosing a new court must not jump the camera by a hundred pixels.
         y=self.player.rect.centery
@@ -409,10 +410,7 @@ class Game:
         self.story.draw(self)
         self.life.draw(self)
         if self.mall.commons.unlocked:
-            door=self.courtyard.door(self.mall);point=self.camera.point(door.position)
-            self.art.draw(self.screen,'courtyard_doors',point,(96,128))
-            text=self.hud.small.render('COURTYARD · '+('E: enter' if self.courtyard.unlocked else '$50,000'),True,(230,194,124))
-            self.screen.blit(text,text.get_rect(midtop=(point.x,point.y+70)))
+            self.courtyard.draw_door(self,self.courtyard.door(self.mall),'COURTYARD >')
         if self.owner_requests.store:
             p=self.camera.point(self.owner_requests.store.position)
             pygame.draw.circle(self.screen,(111,211,233),p,26,3)
@@ -518,7 +516,9 @@ class Game:
         elif self.tutorial.active and self.tutorial.handle(event,self):pass
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:self.pickup_at(event.pos)
         elif event.type==pygame.KEYDOWN:
-            if event.key==pygame.K_h and self.scene=='mall':self.tutorial.start(self)
+            if event.key==pygame.K_h:
+                if self.scene=='mall':self.tutorial.start(self)
+                else:self.journal.tab=0;self.journal.open=True
             elif event.key==pygame.K_j:self.tutorial.journal_seen=True;self.journal.open=True
             elif event.key==pygame.K_ESCAPE:self.pause.show()
             elif event.key==pygame.K_e:self.interact()

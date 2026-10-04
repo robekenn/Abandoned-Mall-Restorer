@@ -68,9 +68,7 @@ class Mall:
         self.north_trash = list(self.trash)
         self.north_floor_tiles = list(self.floor_tiles)
         self.social_tables=place_tables(self.opening_area,self.floor_tiles,self.obstacles,self.trash,'north')
-        self.service_caps=[pygame.Rect(1760,y,32,height) for y,height in ((40,300),(1200,280),(1512,300),(2720,280))]
-        self.service_caps += [pygame.Rect(232,1480,1528,32),pygame.Rect(1984,1480,1576,32)]
-        self.obstacles += self.service_caps
+
 
 
     def _coverage_positions(self, seeds):
@@ -225,14 +223,6 @@ class Mall:
                     if (x//64+3*y//64)%9 == 0:
                         pygame.draw.lines(surface, (48,62,61), False,
                                           [(r.x+18,r.y+4),(r.x+22,r.y+14),(r.x+17,r.y+22)], 2)
-        # Narrow connections read as deliberate maintenance passages, not missing floor.
-        for corridor in (pygame.Rect(1760,340,32,860),pygame.Rect(40,1200,192,612),pygame.Rect(1760,1812,32,908)):
-            pygame.draw.rect(surface,(62,78,72),camera.rect(corridor))
-            pygame.draw.rect(surface,(128,139,112),camera.rect(corridor),2)
-        for cap in self.service_caps:pygame.draw.rect(surface,(39,53,54),camera.rect(cap))
-        for point in ((1690,1100),(120,1260),(1690,2650)):
-            label=font.render('SERVICE PASSAGE',True,(160,170,137))
-            surface.blit(label,label.get_rect(center=camera.point(point)))
         # Faded wayfinding inlays make the generous concourse read as public space.
         for rect in [(40, 400, 1720, 6), (40, 948, 1720, 6), (80, 400, 6, 554)]:
             pygame.draw.rect(surface, (118, 116, 91), camera.rect(rect))

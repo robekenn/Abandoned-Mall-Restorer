@@ -94,13 +94,15 @@ class FeatureTests(unittest.TestCase):
         self.assertFalse(g.story.action(point,g));restore_state(snapshot(g),g)
         self.assertFalse(g.story.visible_neighbors(g.mall))
 
-    def test_boards_stay_on_room_edges_and_service_seams_are_closed_behind_shops(self):
+    def test_boards_stay_on_room_edges_and_indoor_connections_remain_open(self):
         self.open_all();g=self.g;areas=g.mall.playable_areas
         for point in (p for p in g.story.points if p.memory<0):
             area=areas[point.chapter]
             self.assertLess(min(point.position.x-area.left,area.right-point.position.x),210)
             self.assertFalse(any(w.collidepoint(point.position) for w in g.mall.obstacles))
-        for cap in g.mall.service_caps:self.assertTrue(any(w.contains(cap) for w in g.mall.obstacles))
+        self.assertFalse(hasattr(g.mall,'service_caps'))
+        for point in ((1776,200),(1776,1350),(1100,1496),(1776,1650),(1776,2850)):
+            self.assertFalse(any(w.collidepoint(point) for w in g.mall.obstacles))
         paths=Walkways();paths.refresh(g.mall)
         for s in g.mall.stores:self.assertIsNotNone(paths.route(g.mall.entrance,s.position))
 
@@ -203,6 +205,35 @@ class FeatureTests(unittest.TestCase):
         bad=copy.deepcopy(before);bad['upgrades']['courtyard_service_level']=99
         with self.assertRaises(ValueError):restore_state(bad,g)
         self.assertEqual(snapshot(g),before)
+
+    def test_wall_doors_are_reachable_and_return_to_the_new_threshold(self):
+        world=self.enter();g=self.g;paths=Walkways();paths.refresh(g.mall)
+        door=g.courtyard.door(g.mall)
+        self.assertGreater(door.anchor.x,g.mall.commons.area.right)
+        self.assertLess(door.position.x,g.mall.commons.area.right)
+        self.assertIsNotNone(paths.route(g.mall.entrance,door.position))
+        paths.refresh(world)
+        self.assertLess(g.courtyard.return_door.anchor.x,world.opening_area.left)
+        self.assertIsNotNone(paths.route(world.entrance,g.courtyard.return_door.position))
+        g.main_position=pygame.Vector2(1888,2122)  # Previous preview's floating door.
+        g.player.rect.center=g.courtyard.return_door.position;g.interact()
+        self.assertEqual(g.player.rect.center,tuple(door.position));self.assertIsInstance(g.target(),SceneDoor)
+
+    def test_shared_outdoor_hud_journal_tabs_and_cook_prompt(self):
+        world=self.enter();g=self.g
+        for t in world.trash:world.clean_trash(t)
+        for store in world.stores:store.restored=True
+        g.player.rect.center=world.stores[1].position
+        self.assertEqual(g.hud.prompt(g,g.target()),('E','Chat with the cooks'))
+        with patch.object(g.hud,'draw',wraps=g.hud.draw) as hud:
+            g.draw();hud.assert_called_once()
+        g.journal.open=True
+        for key,tab in ((pygame.K_1,0),(pygame.K_2,1),(pygame.K_3,2),(pygame.K_4,3)):
+            g.handle_event(pygame.event.Event(pygame.KEYDOWN,key=key))
+            self.assertEqual(g.journal.tab,tab);g.draw()
+        with patch.object(g.life,'start') as start:
+            g.handle_event(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN));start.assert_not_called()
+        self.assertIn('Return',g.journal.notice)
 
     def test_courtyard_menus_and_art_render_at_minimum_resolution(self):
         world=self.enter();g=self.g;g.screen=pygame.display.set_mode((800,600))

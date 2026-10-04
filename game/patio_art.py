@@ -3,7 +3,7 @@ import pygame
 from game.art import canvas,box
 
 
-def food_stall(variant,opened):
+def food_stall(variant,opened,north=False):
     s=canvas((60,40));accent=('teal','rust','green','gold','wood','rust','green','teal')[variant]
     box(s,'ink',(1,3,58,35));box(s,'wood' if opened else 'shadow',(3,6,54,29))
     box(s,'cream' if opened else 'stone',(4,7,52,7))
@@ -32,6 +32,14 @@ def food_stall(variant,opened):
     else:
         for y in range(22,32,3):box(s,'stone',(9,y,41,1))
     for x in (4,54):box(s,'green',(x,30,3,6))
+    if north:
+        # Draw a north-facing counter, keeping signage, food and plants upright.
+        counter=s.subsurface((7,21,46,13)).copy()
+        roof=s.subsurface((3,7,54,13)).copy()
+        box(s,'wood' if opened else 'shadow',(3,6,54,29))
+        s.blit(counter,(7,6));s.blit(roof,(3,23))
+        box(s,'ink',(3,35,54,2));box(s,'cream' if opened else 'stone',(4,34,52,1))
+        for x in (4,54):box(s,'green',(x,17,3,6))
     return s
 
 
@@ -76,5 +84,5 @@ def install(art):
         for opened in (True,False):art.sprites[f'food_stall_{v}_'+('open' if opened else 'closed')]=food_stall(v,opened)
     for v in range(8):
         for state in ('open','closed'):
-            art.sprites[f'food_stall_{v}_{state}_up']=pygame.transform.flip(art.sprites[f'food_stall_{v}_{state}'],False,True)
+            art.sprites[f'food_stall_{v}_{state}_up']=food_stall(v,state=='open',north=True)
     art.sprites.update(courtyard_doors=doors(),courtyard_table=picnic(),herb_planter=herbs(),patio_lights=lights(),patio_tree=patio_tree())

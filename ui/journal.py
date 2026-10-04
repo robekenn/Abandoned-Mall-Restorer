@@ -1,6 +1,6 @@
 """Optional detail view: the map, income, equipment and owner readiness."""
 import pygame
-from systems.economy import money
+from systems.economy import money, rent_multiplier
 from systems.requests import OWNERS
 from systems.story import CHAPTERS
 from ui import theme
@@ -94,6 +94,8 @@ class Journal:
         return [pygame.Rect(panel.x+22,panel.y+98+i*86,panel.width-44,78) for i in range(4)]
 
     def start_event(self, game, index):
+        if game.scene=='courtyard':
+            self.notice='Return to the indoor mall to host a gathering.';return
         key=list(game.life.completed)[index]
         if game.life.start(game,key):
             self.open=False;game.notify(game.life.event.title+' · Follow the gold table on your journal map.')
@@ -186,33 +188,36 @@ class Journal:
         if self.tab==3:self.draw_life(game,panel);return
         if self.tab==1:self.draw_staff(game,panel);return
         if self.tab==2:self.draw_story(game,panel);return
-        stats=[('Rent per 5 seconds',money(game.rent_income)),('Cleanliness bonus',f'{game.rent_multiplier:g}×'),
+        outside=game.scene=='courtyard';world=game.courtyard.world if outside else game.mall
+        visitors=game.courtyard.shoppers if outside else game.shoppers
+        stats=[('Rent per 5 seconds',money(game.rent_income)),('Cleanliness bonus',f'{rent_multiplier(world.cleanliness):g}×'),
                ('Trash value',money(game.upgrades.unit_value)+' / item'),('Walking speed',f'{game.upgrades.speed_multiplier:g}×'),
-               ('Visitors',str(len(game.shoppers.people))),('Fixture income',money(game.upgrades.fixture_rent)+' base')]
+               ('Visitors',str(len(visitors.people))),('Fixture income',money(sum(k.startswith('courtyard_') for k in game.upgrades.decor) if outside else sum(not k.startswith('courtyard_') for k in game.upgrades.decor))+' base')]
         half=(panel.width-66)//2
         for i,(label,value) in enumerate(stats):
             y=panel.y+92+i*27
             surface.blit(game.hud.small.render(label,True,theme.MUTED),(panel.x+22,y))
             text=game.hud.font.render(value,True,theme.TEXT);surface.blit(text,text.get_rect(topright=(panel.x+22+half,y-2)))
         map_rect=pygame.Rect(panel.x+44+half,panel.y+86,half,176)
-        game.hud.directory(surface,game.mall,game.player.rect.center,game.owner_requests,game.shoppers.people,map_rect)
+        game.hud.directory(surface,world,game.player.rect.center,None if outside else game.owner_requests,visitors.people,map_rect)
         surface.blit(game.hud.small.render('White: you   Blue: task   Gold: story / delivery',True,theme.MUTED),(map_rect.x,map_rect.bottom+10))
         y=panel.y+304
-        owners=[s for s in game.mall.stores if not s.upgrade_shop]
+        owners=[s for s in world.stores if not s.upgrade_shop]
         pages=max(1,(len(owners)+5)//6);self.page=min(self.page,pages-1)
-        surface.blit(game.hud.font.render(f'Store owners · {self.page+1}/{pages}',True,theme.ACCENT),(panel.x+22,y))
+        surface.blit(game.hud.font.render(f'{"Restaurants" if outside else "Store owners"} · {self.page+1}/{pages}',True,theme.ACCENT),(panel.x+22,y))
         for label,rect in zip(('<','>'),self.page_buttons(surface)):
             theme.frame(surface,rect,theme.CARD);text=game.hud.font.render(label,True,theme.ACCENT);surface.blit(text,text.get_rect(center=rect.center))
         for i,store in enumerate(owners[self.page*6:self.page*6+6]):
             r=pygame.Rect(panel.x+22,y+35+i*27,panel.width-44,24)
             if i%2==0:theme.frame(surface,r,theme.CARD,False)
             if not store.restored:status='Store closed'
+            elif outside:status='Kitchen open'
             elif game.owner_requests.store is store:status='Your active request'
             elif store.request_wait>0:status='Next idea in '+theme.clock(store.request_wait)
             else:status='New favor ready' if store.request_level==3 else 'New request ready'
-            surface.blit(game.hud.small.render(f'{OWNERS[store.name]} · {store.name}',True,theme.TEXT),(r.x+8,r.y+5))
+            surface.blit(game.hud.small.render(store.name if outside else f'{OWNERS[store.name]} · {store.name}',True,theme.TEXT),(r.x+8,r.y+5))
             text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready') else theme.MUTED)
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
-        surface.blit(game.hud.small.render('F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
+        surface.blit(game.hud.small.render('Provisions: service & patio upgrades · Return doors: west wall' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
         surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))
