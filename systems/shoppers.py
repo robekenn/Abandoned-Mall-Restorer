@@ -122,7 +122,7 @@ class Shopper:
                     path=manager.walkways.route(self.position,store.position)
                     if path is not None:
                         self.store=store;self.path=path;self.state='arriving';return
-            seats=manager.table_seats(mall)
+            seats=manager.table_seats(mall,upgrades)
             local_seats=[(table,seat) for table,seat in seats if mall.area_for_store(self.store).collidepoint(seat)]
             if local_seats and self.identity%3!=0 and not (self.identity%4==2 and any(p is not self and p.state=='resting' and p.activity in ('fountain','gathering') and mall.area_for_store(self.store).collidepoint(p.position) for p in manager.people)):
                 table,seat=local_seats[0]
@@ -233,7 +233,7 @@ class Shoppers:
         self.random = random.Random(97)
         self.elapsed = 8.0
         self.next_identity = 0
-        self.traffic_elapsed=0.;self.mall=None;self.party_count=0
+        self.traffic_elapsed=0.;self.mall=None;self.party_count=0;self.upgrades=None
 
     @property
     def traffic(self):
@@ -249,9 +249,11 @@ class Shoppers:
         factor=1.7 if self.traffic=='Busy hours' else .45 if self.traffic=='Quiet hours' else 1
         return min(self.population_limit(mall),max(1,round(base*factor)))
 
-    def table_seats(self,mall):
+    def table_seats(self,mall,upgrades=None):
+        upgrades=upgrades or self.upgrades
         seats=[]
         for table in getattr(mall,'social_tables',[]):
+            if table.fixture_key and (upgrades is None or table.fixture_key not in upgrades.decor):continue
             stores=[s for s in mall.stores if s.section_key==table.section and not s.upgrade_shop and s.restored]
             if len(stores)<2:continue
             for seat in table.seats:
@@ -318,7 +320,7 @@ class Shoppers:
         return neighbors
 
     def update(self, dt, mall, upgrades, preferred_store=None, *, spawn=True):
-        self.mall=mall;self.traffic_elapsed+=dt
+        self.mall=mall;self.upgrades=upgrades;self.traffic_elapsed+=dt
         self.walkways.refresh(mall)
         if self.path_signature!=self.walkways.signature:
             self.path_signature=self.walkways.signature

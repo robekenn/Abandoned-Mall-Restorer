@@ -94,7 +94,7 @@ class Game:
         if self.scene=='courtyard':return self.courtyard.target(self)
         origin = pygame.Vector2(self.player.rect.center)
         door=self.courtyard.door(self.mall)
-        if self.mall.commons.unlocked and origin.distance_to(door.position)<=72:
+        if not self.courtyard.unlocked and self.mall.commons.unlocked and origin.distance_to(door.position)<=72:
             door.title='Enter the Courtyard food court' if self.courtyard.unlocked else 'Open Courtyard ($50,000)' if self.courtyard.ready(self.mall) else 'Courtyard needs the Commons sweep and six reopened businesses'
             return door
         # Selling takes priority at a trash bin when the player is carrying a load.
@@ -293,9 +293,9 @@ class Game:
         if not self.courtyard.ready(self.mall):
             self.deny('Finish the Commons sweep and reopen six businesses to unlock the Courtyard.');return False
         if not self.courtyard.unlocked:
-            if self.cash<self.courtyard.COST:self.deny(f'The courtyard doors need {money(self.courtyard.COST)} to restore.');return False
+            if self.cash<self.courtyard.COST:self.deny(f'The courtyard passage needs {money(self.courtyard.COST)} to restore.');return False
             self.cash-=self.courtyard.COST;self.courtyard.unlocked=True
-        self.courtyard.ensure_world();self.main_position=pygame.Vector2(self.player.rect.center)
+        self.courtyard.ensure_world();self.courtyard.open_passage(self.mall);self.main_position=pygame.Vector2(self.player.rect.center)
         self.scene='courtyard';self.camera=self.courtyard.camera;self.player.rect.center=position or self.courtyard.world.entrance
         self.feedback.popups.clear();self.feedback.particles.clear();self.speech.timer=0;self.frame_camera(self.screen.get_size())
         if save:self.save_checkpoint()
@@ -363,6 +363,7 @@ class Game:
         if self.tutorial.paused:return
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
+        if self.courtyard.crossing(self,direction):return
         self.frame_camera(viewport)
         self.message_timer = max(0,self.message_timer-dt)
         self.request_notice_timer=max(0,self.request_notice_timer-dt)

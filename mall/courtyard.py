@@ -40,6 +40,7 @@ class CourtyardWorld(Mall):
         self.stores[0].upgrade_shop='courtyard';self.north_stores=self.stores
         self.obstacles=[pygame.Rect(0,0,2000,40),pygame.Rect(0,1400,2000,40),
                         pygame.Rect(0,0,40,1440),pygame.Rect(1960,0,40,1440),pygame.Rect(40,40,1920,280),pygame.Rect(40,1120,1920,280)]+[s.rect for s in self.stores]
+        self.boundary_walls=[r.copy() for r in self.obstacles[:6]]
         self.trash_bins=[TrashBin((260,600),'Courtyard compost station'),TrashBin((1830,1000),'Courtyard recycling station')]
         self.obstacles += [b.rect for b in self.trash_bins]
         self.floor_tiles=floor_tiles(self.opening_area,self.obstacles)
@@ -82,7 +83,27 @@ class Courtyard:
     def ensure_world(self):
         if self.world is None:
             self.world=CourtyardWorld();self.world.return_door=self.return_door
+            self.open_wall(self.world,0,775)
         return self.world
+
+    @staticmethod
+    def open_wall(world,x,y):
+        wall=next((r for r in world.obstacles if r.x==x and r.width==40 and r.height==world.size[1]),None)
+        if wall:
+            world.obstacles.remove(wall)
+            world.obstacles += [pygame.Rect(x,0,40,y-88),pygame.Rect(x,y+88,40,world.size[1]-y-88)]
+
+    def open_passage(self,mall):
+        self.open_wall(mall,mall.size[0]-40,self.door(mall).position.y)
+
+    def crossing(self,game,direction):
+        if game.scene=='courtyard':
+            if direction[0]<0 and game.player.rect.centerx<=64 and abs(game.player.rect.centery-775)<=68:
+                game.leave_courtyard();return True
+        elif game.mall.commons.unlocked:
+            if direction[0]>0 and game.player.rect.centerx>=game.mall.size[0]-64 and abs(game.player.rect.centery-self.door(game.mall).position.y)<=68:
+                return game.enter_courtyard()
+        return False
 
     @staticmethod
     def door(mall):
@@ -95,7 +116,6 @@ class Courtyard:
 
     def target(self,game):
         world=self.ensure_world();origin=pygame.Vector2(game.player.rect.center)
-        if origin.distance_to(self.return_door.position)<=72:return self.return_door
         candidates=[b for b in world.trash_bins if origin.distance_to(b.position)<=72]
         if candidates and game.upgrades.held:return min(candidates,key=lambda b:origin.distance_squared_to(b.position))
         candidates += [t for t in world.trash if not t.cleaned and origin.distance_to(t.position)<=game.upgrades.tool[1]]
@@ -146,7 +166,7 @@ class Courtyard:
             if target.upgrade_shop:game.open_upgrade_shop(target)
             game.save_checkpoint();return
         if target in self.shoppers.people:self.shoppers.greet(target);game.audio.play('pickup');return
-        game.deny('Move closer to litter, a restaurant, recycling or the return doors.')
+        game.deny('Move closer to litter, a restaurant or recycling. Walk through the wall opening to return inside.')
 
     def income(self,upgrades):
         if not self.unlocked:return 0
@@ -157,6 +177,7 @@ class Courtyard:
     def update(self,game,dt,direction):
         world=self.ensure_world();world.comfort=game.upgrades.courtyard_comfort_level
         game.player.move(direction,dt,world.obstacles,game.upgrades.speed_multiplier)
+        if self.crossing(game,direction):return
         game.frame_camera(game.screen.get_size())
         game.feedback.update(dt);game.speech.update(dt);game.message_timer=max(0,game.message_timer-dt)
         self.spawner.update(dt,world,game.player.rect.center)
@@ -177,16 +198,21 @@ class Courtyard:
     @staticmethod
     def draw_door(game,door,caption):
         surface=game.screen;camera=game.camera
-        point=camera.point(door.anchor)
-        # The glass door sits in the boundary wall; its landing sits in the room.
-        left=min(door.position.x-32,door.anchor.x-44);right=max(door.position.x+32,door.anchor.x+44)
-        landing=camera.rect((left,door.position.y-72,right-left,144))
-        pygame.draw.rect(surface,(165,157,125),landing)
-        for y in range(landing.top,landing.bottom,16):pygame.draw.line(surface,(120,128,106),(landing.left,y),(landing.right,y))
-        game.art.draw(surface,'courtyard_doors',point,(112,160))
+        # Expose the continuous floor through a generous 176px wall opening.
+        wall_x=game.mall.size[0]-40 if game.scene=='mall' else 0
+        y=round(door.position.y)
+        gap=camera.rect((wall_x,y-88,40,176))
+        pygame.draw.rect(surface,(165,157,125),gap)
+        for row in range(y-88,y+88,16):
+            pygame.draw.line(surface,(120,128,106),camera.point((wall_x,row)),camera.point((wall_x+40,row)))
+        for edge in (y-96,y+88):
+            pygame.draw.rect(surface,(116,128,111),camera.rect((wall_x-8,edge,56,8)))
+        # An unobtrusive inlay leads into the opening, with no glass or door frame.
+        left=wall_x-96 if game.scene=='mall' else wall_x+40
+        pygame.draw.rect(surface,(165,157,125),camera.rect((left,y-3,96,6)))
         label=game.hud.small.render(caption,True,theme.TEXT)
-        x=door.position.x-95 if door.anchor.x>1000 else door.position.x+70
-        sign=label.get_rect(center=camera.point((x,door.position.y-106))).inflate(16,10)
+        x=door.position.x-50 if game.scene=='mall' else door.position.x+70
+        sign=label.get_rect(center=camera.point((x,y-112))).inflate(16,10)
         theme.frame(surface,sign,theme.PANEL,False);surface.blit(label,label.get_rect(center=sign.center))
 
     def draw(self,game):
@@ -211,7 +237,7 @@ class Courtyard:
                     brick=pygame.Rect(pad.x+col*32-(16 if row%2 else 0)+2,pad.y+row*24+2,29,21).clip(pad)
                     pygame.draw.rect(surface,(154,128,96) if (row+col)%3 else (167,140,104),brick)
             pygame.draw.rect(surface,(197,170,122),pad,3)
-        for wall in world.obstacles[:6]:
+        for wall in world.boundary_walls:
             pygame.draw.rect(surface,(47,67,59),camera.rect(wall))
             pygame.draw.rect(surface,(99,117,85),camera.rect(wall),3)
         # A consistent sill ties the kitchens together without covering any route.

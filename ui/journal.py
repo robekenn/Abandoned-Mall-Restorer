@@ -230,5 +230,5 @@ class Journal:
             text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready') else theme.MUTED)
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
-        surface.blit(game.hud.small.render('Provisions: service & patio upgrades · Return doors: west wall' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
+        surface.blit(game.hud.small.render('Provisions: service & patio upgrades · Walk through west wall opening' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
         surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))

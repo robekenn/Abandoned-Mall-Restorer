@@ -85,7 +85,7 @@ def snapshot(game):
     community={'completed':life.completed,'cooldowns':life.cooldowns,'owner_chats':life.owner_chats,
                'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants,'activity':life.activity,
                'tasks':[[list(t.position),t.title,t.kind,t.duration,t.progress,t.completed] for t in life.tasks]}
-    return {'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
+    return {'seating_layout':2,'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
             'life':community,'cash':game.cash,'player':list(game.main_position if game.scene=='courtyard' else game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
@@ -104,6 +104,7 @@ def snapshot(game):
 
 def restore_state(data, game):
     """Build and validate a replacement world before changing the live game."""
+    layout=number(data.get('seating_layout',1),1,2,True)
     mall=Mall();u=Upgrades();requests=OwnerRequests();workers=Janitors();story=Story();tutorial=Tutorial()
     if data['unlocked']!=[r.key for r in mall.regions[:len(data['unlocked'])]]:raise ValueError('Invalid section order')
     if len(data['unlocked'])>3:raise ValueError('Too many sections')
@@ -148,7 +149,8 @@ def restore_state(data, game):
         row=data['janitors'][key];j=Janitor(key,area,origin,mall);j.position=vector(row['position'])
         footprint=pygame.FRect(j.position.x-10,j.position.y-12,20,24)
         moved=False
-        if area.collidepoint(j.position) and any(t.footprint.colliderect(footprint) for t in mall.social_tables):
+        if area.collidepoint(j.position) and (any(t.footprint.colliderect(footprint) for t in mall.social_tables) or
+                layout==1 and key=='north' and any(w.colliderect(footprint) for w in mall.furniture_obstacles+[b.rect for b in mall.trash_bins[:2]])):
             # New seating can occupy a node used by an older checkpoint.
             j.position=pygame.Vector2(min(j.paths.nodes,key=lambda p:pygame.Vector2(p).distance_squared_to(j.position)));moved=True
             footprint=pygame.FRect(j.position.x-10,j.position.y-12,20,24)
@@ -216,6 +218,16 @@ def restore_state(data, game):
             court=next(c for c in workers.courts(mall) if c[0]==life.active)
             point=vector(row['position']);footprint=pygame.Rect(point.x-90,point.y-82,180,162)
             table_obstacles=[t.footprint for t in mall.social_tables]
+            moved_props=mall.furniture_obstacles+[b.rect for b in mall.trash_bins[:2]]
+            if layout==1 and life.active=='north' and any(w.colliderect(footprint) for w in moved_props):
+                paths=Shoppers().walkways;paths.refresh(mall)
+                candidates=sorted(paths.nodes,key=lambda p:(pygame.Vector2(p).distance_squared_to(point),p))
+                safe=next((p for p in candidates if court[2].contains(pygame.Rect(p[0]-90,p[1]-82,180,162))
+                           and not any(w.colliderect(pygame.Rect(p[0]-90,p[1]-82,180,162)) for w in mall.obstacles)
+                           and all(pygame.Vector2(p).distance_to(marker.position)>140 for marker in story.points)
+                           and paths.route(mall.entrance,p) is not None),None)
+                if safe is None:raise ValueError('No safe gathering position')
+                point=pygame.Vector2(safe);footprint=pygame.Rect(point.x-90,point.y-82,180,162)
             if not court[5] or not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles if w not in table_obstacles):raise ValueError('Unsafe community table')
             # Existing events retain their place; nearby new seating waits until they end.
             mall.suspended_tables=[t for t in mall.social_tables if t.footprint.colliderect(footprint)]
@@ -230,6 +242,16 @@ def restore_state(data, game):
                 pos,title,kind,duration,progress,completed=saved_task
                 pos=vector(pos);duration=number(duration,0,2);progress=number(progress,0,duration);completed=flag(completed)
                 footprint=pygame.Rect(pos.x-24,pos.y-32,48,64)
+                if layout==1 and life.active=='north' and any(w.colliderect(footprint) for w in moved_props):
+                    paths=Shoppers().walkways;paths.refresh(mall)
+                    candidates=sorted(paths.nodes,key=lambda p:(pygame.Vector2(p).distance_squared_to(pos),p))
+                    safe=next((p for p in candidates if court[2].contains(pygame.Rect(p[0]-24,p[1]-32,48,64))
+                               and not any(w.colliderect(pygame.Rect(p[0]-24,p[1]-32,48,64)) for w in mall.obstacles)
+                               and all(pygame.Vector2(p).distance_to(marker.position)>96 for marker in story.points)
+                               and all(pygame.Vector2(p).distance_to(t.position)>96 for t in life.tasks)
+                               and paths.route(mall.entrance,p) is not None),None)
+                    if safe is None:raise ValueError('No safe event task position')
+                    pos=pygame.Vector2(safe);footprint=pygame.Rect(pos.x-24,pos.y-32,48,64)
                 if not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles):raise ValueError('Unsafe event task')
                 if not isinstance(title,str) or len(title)>80 or kind not in ('plant','toolkit'):raise ValueError('Invalid event prop')
                 if duration!=(2 if life.activity=='plant' else 0):raise ValueError('Invalid event duration')
@@ -296,6 +318,7 @@ def restore_state(data, game):
     if muted!=game.audio.muted:game.audio.toggle()
     from game.camera import Camera
     game.camera=Camera(mall.size);game.main_camera=game.camera
+    if courtyard.unlocked:courtyard.open_passage(mall)
     if courtyard_position is not None:game.enter_courtyard(save=False,position=courtyard_position)
     game.frame_camera(game.screen.get_size())
 

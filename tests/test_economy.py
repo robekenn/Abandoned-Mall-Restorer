@@ -77,8 +77,7 @@ class EconomyTests(unittest.TestCase):
             self.assertEqual(lamp[0],(left.rect.right+right.rect.left)//2)
             self.assertTrue(all(pygame.Vector2(lamp).distance_to(s.position)>90 for s in mall.stores))
         for trash_bin,bench in zip(mall.trash_bins,mall.benches):
-            self.assertEqual(trash_bin.rect.centery,bench.centery)
-            self.assertGreater(trash_bin.rect.left,bench.right)
-            self.assertLess(trash_bin.rect.left-bench.right,40)
+            self.assertGreater(pygame.Vector2(bench.center).distance_to(trash_bin.position),100)
+            self.assertLess(pygame.Vector2(bench.center).distance_to(trash_bin.position),220)
             self.assertFalse(any(o.colliderect(trash_bin.rect) for o in mall.obstacles if o is not trash_bin.rect))
         self.assertEqual(self.game.art.sprites['trash_bin'].get_size(),(24,24))

@@ -78,12 +78,15 @@ def prop(name):
         for x in (4,18):
             box(s,'ink',(x,17,2,5));box(s,'stone',(x,17,1,4))
         if not clean:
-            # Missing back slats, a split seat and one fallen support are obvious.
-            box(s,'shadow',(8,7,10,2));box(s,'shadow',(5,10,7,2))
-            box(s,'ink',(12,14,5,2));box(s,'green',(4,15,5,2))
-            box(s,'shadow',(18,17,2,5))
-            pygame.draw.line(s,'#856448',(12,19),(20,22),2)
-            box(s,'stone',(5,20,5,2))
+            # A collapsed back and seat, missing leg, and loose boards read as broken.
+            s.fill((0,0,0,0))
+            box(s,'ink',(2,10,3,9));box(s,'stone',(3,11,1,6))
+            box(s,'wood',(4,12,7,2));box(s,'wood',(15,14,7,2))
+            box(s,'shadow',(5,16,12,3));box(s,'ink',(5,18,2,4))
+            pygame.draw.line(s,'#856448',(6,5),(11,12),2)
+            pygame.draw.line(s,'#856448',(13,9),(21,6),2)
+            pygame.draw.line(s,'#856448',(10,20),(21,22),2)
+            box(s,'green',(5,15,5,2));box(s,'stone',(3,21,4,2))
     elif name.startswith('fountain'):
         clean = name.endswith('clean')
         box(s, 'ink', (3, 12, 18, 10))
@@ -447,13 +450,22 @@ def young_shopper(age,variant,facing,frame):
     return s
 
 
-def social_table():
+def social_table(broken=False):
     s=canvas((32,24))
     box(s,'ink',(6,10,20,4));box(s,'wood',(7,8,18,5));box(s,'cream',(9,9,14,1))
     box(s,'shadow',(9,14,3,7));box(s,'shadow',(21,14,3,7))
     for x in (0,27):
         box(s,'teal',(x,9,5,8));box(s,'wood',(x,16,5,4));box(s,'ink',(x+1,20,2,3))
-    box(s,'cream',(12,6,3,3));box(s,'rust',(19,6,3,3));box(s,'leaf',(16,4,2,5))
+    if broken:
+        s.fill((0,0,0,0))
+        box(s,'shadow',(8,12,17,4));box(s,'wood',(7,9,7,3));box(s,'wood',(19,11,7,3))
+        box(s,'ink',(9,15,3,6));box(s,'stone',(2,14,4,4))
+        pygame.draw.line(s,'#856448',(1,8),(6,14),2)
+        pygame.draw.line(s,'#856448',(27,12),(30,19),2)
+        pygame.draw.line(s,'#856448',(15,19),(24,22),2)
+        box(s,'green',(11,13,4,2));box(s,'wood',(0,19,5,2))
+    else:
+        box(s,'cream',(12,6,3,3));box(s,'rust',(19,6,3,3));box(s,'leaf',(16,4,2,5))
     return s
 
 
@@ -489,6 +501,7 @@ class Art:
                 self.sprites[f'janitor_{facing}_clean_{frame}']=janitor_uniform(cleaning_worker(facing,frame))
 
         self.sprites['social_table']=social_table()
+        self.sprites['social_table_broken']=social_table(True)
         for variant in range(4):
             self.sprites[f'community_table_{variant}']=community_table(variant)
             for facing in ('down','up','left','right'):

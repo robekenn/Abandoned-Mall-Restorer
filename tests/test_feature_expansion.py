@@ -74,6 +74,7 @@ class FeatureTests(unittest.TestCase):
 
     def test_tables_have_reachable_unique_seats_and_visitors_chat(self):
         self.open_all();g=self.g;m=g.shoppers;m.walkways.refresh(g.mall);m.mall=g.mall
+        g.upgrades.decor.update(f'bench_{i}' for i in range(8));m.upgrades=g.upgrades
         self.assertEqual(len(g.mall.social_tables),8)
         for table in g.mall.social_tables:
             for seat in table.seats:self.assertIsNotNone(m.walkways.route(g.mall.entrance,seat))
@@ -111,7 +112,9 @@ class FeatureTests(unittest.TestCase):
         self.open_all();g.player.rect.center=g.courtyard.door(g.mall).position
         g.cash=49999;self.assertIsInstance(g.target(),SceneDoor);g.interact();self.assertEqual(g.scene,'mall')
         g.cash=50000;g.interact();self.assertEqual((g.scene,g.cash),('courtyard',0))
-        self.assertFalse(g.enter_courtyard());g.leave_courtyard();g.interact();self.assertEqual((g.scene,g.cash),('courtyard',0))
+        self.assertFalse(g.enter_courtyard());g.leave_courtyard()
+        g.welcome.open=False;g.player.rect.center=(3530,g.courtyard.door(g.mall).position.y)
+        g.update(.05,(1,0));self.assertEqual((g.scene,g.cash),('courtyard',0))
         self.assertEqual(g.mall.size,(3600,3040));self.assertEqual(g.courtyard.world.size,(2000,1440))
 
     def test_restaurant_progression_and_every_patio_route_are_reachable(self):
@@ -216,8 +219,8 @@ class FeatureTests(unittest.TestCase):
         self.assertLess(g.courtyard.return_door.anchor.x-56,world.opening_area.left)
         self.assertIsNotNone(paths.route(world.entrance,g.courtyard.return_door.position))
         g.main_position=pygame.Vector2(1888,2122)  # Previous preview's floating door.
-        g.player.rect.center=g.courtyard.return_door.position;g.interact()
-        self.assertEqual(g.player.rect.center,tuple(door.position));self.assertIsInstance(g.target(),SceneDoor)
+        g.welcome.open=False;g.player.rect.center=(70,775);g.update(.05,(-1,0))
+        self.assertEqual(g.player.rect.center,tuple(door.position));self.assertNotIsInstance(g.target(),SceneDoor)
 
     def test_shared_outdoor_hud_journal_tabs_and_cook_prompt(self):
         world=self.enter();g=self.g

@@ -162,10 +162,11 @@ class EastGalleryTests(unittest.TestCase):
         g.buy_upgrade('speed')
         self.assertEqual(g.cash,before)
         g.shop_menu.open = False
-        g.player.rect.center = (800,800)
+        g.player.rect.center = (800,970)
         g.update(1,(1,0))
         self.assertAlmostEqual(g.player.rect.centerx,1160,places=3)
-        g.player.rect.center = (670,650)
+        footprint=fountain_footprint(g.mall.fountain)
+        g.player.rect.center = (footprint.left-30,footprint.centery)
         g.update(1,(1,0))
         self.assertLessEqual(g.player.rect.right,fountain_footprint(g.mall.fountain).left)
         self.assertTrue(g.player.walking)

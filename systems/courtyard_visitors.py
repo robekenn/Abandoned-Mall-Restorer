@@ -88,14 +88,15 @@ class CourtyardTravel:
         if not courtyard.unlocked:return
         indoor=game.shoppers;outdoor=courtyard.shoppers;world=courtyard.world
         indoor.walkways.refresh(game.mall);outdoor.walkways.refresh(world)
-        door=courtyard.door(game.mall).position
+        door=pygame.Vector2(game.mall.size[0]-50,courtyard.door(game.mall).position.y)
+        outside=pygame.Vector2(50,775)
         for person in list(indoor.people):
             if not isinstance(person,FoodCustomer) or person.state!='to_courtyard' or person.path:continue
             if person.position.distance_to(door)>1:continue
-            path=outdoor.walkways.route(courtyard.return_door.position,person.store.position)
+            path=outdoor.walkways.route(outside,person.store.position)
             if path is None:continue
             indoor.people.remove(person);outdoor.people.append(person)
-            person.position=courtyard.return_door.position.copy();person.entrance=person.position.copy()
+            person.position=outside.copy();person.entrance=person.position.copy()
             person.path=path;person.state='arriving';person.goal=None
         for person in list(outdoor.people):
             if person.state!='returning_inside':continue

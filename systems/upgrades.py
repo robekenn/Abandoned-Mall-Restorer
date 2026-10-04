@@ -116,12 +116,12 @@ class Upgrades:
                 return result
             ordinal=('north','east','garden','commons').index(shop)
             if category=='Furniture':
-                specs=[(f'bench_{2*ordinal+i}',f'Restore {shop.title()} bench {i+1}',300*ordinal) for i in range(2)]
+                specs=[(f'bench_{2*ordinal+i}',f'Restore {shop.title()} seating {i+1}',300*ordinal) for i in range(2)]
                 specs += [(f'fountain_{shop}',f'{shop.title()} fountain',900*ordinal),(f'mosaic_{shop}',f'{shop.title()} mosaic',750*ordinal)]
             else:
                 specs=[(f'lamp_{4*ordinal+i}',f'{shop.title()} lamp {i+1}',180*ordinal) for i in range(4)]
                 specs += [(f'plant_{4*ordinal+i}',f'{shop.title()} planter {i+1}',150*ordinal) for i in range(4)]
-            return [Offer(key,title,'Install fixture / +$1 base rent per 5s',price,key in self.decor) for key,title,price in specs]
+            return [Offer(key,title,'Repair bench, table & seats / +$1 rent per 5s' if key.startswith('bench_') else 'Install fixture / +$1 base rent per 5s',price,key in self.decor) for key,title,price in specs]
         if shop == 'east':
             if category == 'Gear':
                 level = self.advanced_capacity_level
@@ -145,12 +145,12 @@ class Upgrades:
                         Offer('speed','Walking speed',speed_detail,
                               0 if speed_maxed else self.SPEED_PRICES[self.speed_level],speed_maxed)]
             if category == 'Furniture':
-                specs = [('bench_2','Restore west bench',140),('bench_3','Restore east bench',140),
+                specs = [('bench_2','Restore west seating',140),('bench_3','Restore east seating',140),
                          ('fountain_east','East gallery fountain',350),('mosaic_east','East gallery mosaic',300)]
             else:
                 specs = [(f'lamp_{i+4}',f'East gallery lamp {i+1}',80) for i in range(4)]
                 specs += [(f'plant_{i+4}',f'East gallery planter {i+1}',70) for i in range(4)]
-            return [Offer(key,title,'Install fixture / +$1 base rent per 5s',price,key in self.decor)
+            return [Offer(key,title,'Repair bench, table & seats / +$1 rent per 5s' if key.startswith('bench_') else 'Install fixture / +$1 base rent per 5s',price,key in self.decor)
                     for key,title,price in specs]
 
         if category == 'Gear':
@@ -174,14 +174,14 @@ class Upgrades:
                                     0 if maximum else prices[level],maximum))
             return result
         if category == 'Furniture':
-            specs = [('bench_0','Restore west bench',70),('bench_1','Restore east bench',70),
+            specs = [('bench_0','Restore west seating',70),('bench_1','Restore east seating',70),
                      ('fountain','Courtyard fountain',180),('mosaic','Courtyard mosaic',150)]
         else:
             specs = [(f'lamp_{i}',f'Lamp {i+1} / '+name,40)
                      for i,name in enumerate(('Supplies / Pages','Pages / Retro','Retro / Bean','Bean / Tailor'))]
             specs += [(f'plant_{i}',f'Planter {i+1} / '+name,35)
                       for i,name in enumerate(('west wall','east wall','west courtyard','east courtyard'))]
-        return [Offer(key,title,'Install fixture / +$1 base rent per 5s',price,key in self.decor)
+        return [Offer(key,title,'Repair bench, table & seats / +$1 rent per 5s' if key.startswith('bench_') else 'Install fixture / +$1 base rent per 5s',price,key in self.decor)
                 for key,title,price in specs]
 
     def purchase(self, key, cash, shop='north'):
