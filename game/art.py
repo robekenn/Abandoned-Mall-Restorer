@@ -78,8 +78,12 @@ def prop(name):
         for x in (4,18):
             box(s,'ink',(x,17,2,5));box(s,'stone',(x,17,1,4))
         if not clean:
-            box(s,'shadow',(10,7,4,2));box(s,'ink',(14,10,3,2))
-            box(s,'green',(4,15,3,1));box(s,'wood',(18,17,2,2))
+            # Missing back slats, a split seat and one fallen support are obvious.
+            box(s,'shadow',(8,7,10,2));box(s,'shadow',(5,10,7,2))
+            box(s,'ink',(12,14,5,2));box(s,'green',(4,15,5,2))
+            box(s,'shadow',(18,17,2,5))
+            pygame.draw.line(s,'#856448',(12,19),(20,22),2)
+            box(s,'stone',(5,20,5,2))
     elif name.startswith('fountain'):
         clean = name.endswith('clean')
         box(s, 'ink', (3, 12, 18, 10))

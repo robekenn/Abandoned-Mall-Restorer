@@ -44,6 +44,31 @@ def vector(value):
     return pygame.Vector2(*(number(n,0,10000) for n in value))
 
 
+def snapshot_worker(worker,world):
+    target=worker.target if worker.target and not worker.target.cleaned and worker.target_revision==getattr(worker.target,'revision',0) else None
+    return {'position':list(worker.position),'walk':worker.walk_level,'clean':worker.clean_level,
+            'cleaned':worker.cleaned,'earnings':worker.earnings,'target':world.trash.index(target) if target else None,
+            'progress':worker.progress if target else 0}
+
+
+def restore_courtyard_worker(row,world):
+    worker=Janitor('courtyard',world.opening_area,world.entrance,world)
+    worker.position=vector(row['position']);footprint=pygame.FRect(worker.position.x-10,worker.position.y-12,20,24)
+    if not world.opening_area.collidepoint(worker.position) or any(w.colliderect(footprint) for w in world.obstacles):raise ValueError('Unsafe courtyard janitor')
+    worker.walk_level=number(row['walk'],0,3,True);worker.clean_level=number(row['clean'],0,3,True)
+    worker.cleaned=number(row['cleaned'],0,10**12,True);worker.earnings=number(row['earnings'])
+    worker.progress=number(row['progress'],0,worker.clean_seconds)
+    if row['target'] is not None:
+        worker.target=world.trash[number(row['target'],0,len(world.trash)-1,True)]
+        if worker.target.cleaned:raise ValueError('Invalid courtyard janitor target')
+        worker.target_revision=worker.target.revision
+        path=worker.route_to(worker.target.position,world)
+        if path is None:raise ValueError('Unreachable courtyard janitor target')
+        worker.path=[] if worker.progress and worker.position.distance_to(worker.target.position)<.01 else path
+    elif worker.progress:raise ValueError('Courtyard work without a target')
+    return worker
+
+
 def snapshot(game):
     requests=game.owner_requests;tutorial=game.tutorial
     active=None
@@ -251,6 +276,8 @@ def restore_state(data, game):
         courtyard.spawner.turn=number(saved_courtyard['litter_turn'],0,10**12,True)
         courtyard.shoppers.traffic_elapsed=number(saved_courtyard['traffic_clock'],0,10**12)
         courtyard.shoppers.next_identity=number(saved_courtyard['identity'],integer=True)
+        if saved_courtyard.get('janitor') is not None:
+            courtyard.janitors.people['courtyard']=restore_courtyard_worker(saved_courtyard['janitor'],world)
         if flag(saved_courtyard['scene']):
             courtyard_position=vector(saved_courtyard['position'])
             if not world.opening_area.collidepoint(courtyard_position) or any(w.colliderect(pygame.Rect(courtyard_position.x-13,courtyard_position.y-15,26,30)) for w in world.obstacles):
@@ -258,7 +285,8 @@ def restore_state(data, game):
                 courtyard_position=pygame.Vector2(min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(courtyard_position)))
     if any(getattr(u,key)>0 for key in ('courtyard_service_level','courtyard_comfort_level','courtyard_compost_level')) or any(k.startswith('courtyard_') for k in u.decor):
         if not courtyard.unlocked or not courtyard.world.stores[0].restored:raise ValueError('Patio equipment without Provisions')
-    state={'mall':mall,'upgrades':u,'owner_requests':requests,'janitors':workers,'story':story,'tutorial':tutorial,
+    from systems.courtyard_visitors import CourtyardTravel
+    state={'visitor_travel':CourtyardTravel(),'mall':mall,'upgrades':u,'owner_requests':requests,'janitors':workers,'story':story,'tutorial':tutorial,
            'life':life,'courtyard':courtyard,'scene':'mall','main_position':None,'player':player,'shoppers':shoppers,'cash':number(data['cash']),'rent_timer':number(data['rent_timer'],0,5),
            'total_collected':number(data['collected'],integer=True),'total_sold':number(data['sold'],integer=True)}
     litter_timer=number(data['litter_timer'],0,4);turn=number(data['litter_turn'],0,10**12,True);muted=flag(data['muted'])

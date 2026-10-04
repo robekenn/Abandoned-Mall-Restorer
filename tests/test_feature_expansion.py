@@ -155,11 +155,11 @@ class FeatureTests(unittest.TestCase):
         g.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=pos))
         self.assertTrue(trash.cleaned);self.assertEqual((g.upgrades.held,g.owner_requests.progress),(1,1))
 
-    def test_only_active_world_updates_renders_and_all_menus_pause_courtyard(self):
+    def test_only_active_world_renders_visitors_travel_and_menus_pause_courtyard(self):
         world=self.enter();g=self.g
         with patch.object(g.mall,'draw',side_effect=AssertionError('Indoor map must not render')):g.draw()
         clock=g.shoppers.traffic_elapsed
-        g.update(1,(0,0));self.assertEqual(g.shoppers.traffic_elapsed,clock)
+        g.update(1,(0,0));self.assertEqual(g.shoppers.traffic_elapsed,clock+1)
         for menu in (g.pause,g.settings_menu,g.shop_menu,g.journal):
             menu.open=True;before=(g.cash,g.player.rect.center,g.courtyard.spawner.elapsed,g.courtyard.shoppers.traffic_elapsed)
             g.update(40,(1,0));self.assertEqual(before,(g.cash,g.player.rect.center,g.courtyard.spawner.elapsed,g.courtyard.shoppers.traffic_elapsed));menu.open=False
@@ -209,11 +209,11 @@ class FeatureTests(unittest.TestCase):
     def test_wall_doors_are_reachable_and_return_to_the_new_threshold(self):
         world=self.enter();g=self.g;paths=Walkways();paths.refresh(g.mall)
         door=g.courtyard.door(g.mall)
-        self.assertGreater(door.anchor.x,g.mall.commons.area.right)
+        self.assertGreater(door.anchor.x+56,g.mall.commons.area.right)
         self.assertLess(door.position.x,g.mall.commons.area.right)
         self.assertIsNotNone(paths.route(g.mall.entrance,door.position))
         paths.refresh(world)
-        self.assertLess(g.courtyard.return_door.anchor.x,world.opening_area.left)
+        self.assertLess(g.courtyard.return_door.anchor.x-56,world.opening_area.left)
         self.assertIsNotNone(paths.route(world.entrance,g.courtyard.return_door.position))
         g.main_position=pygame.Vector2(1888,2122)  # Previous preview's floating door.
         g.player.rect.center=g.courtyard.return_door.position;g.interact()

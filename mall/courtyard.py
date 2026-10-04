@@ -7,7 +7,8 @@ from mall.store import Store
 from mall.social import SocialTable
 from entities.trash import Trash
 from entities.trash_bin import TrashBin
-from systems.shoppers import Shoppers
+from systems.courtyard_visitors import FoodCourtVisitors
+from systems.janitors import Janitors
 from systems.litter import LitterSpawner
 from systems.economy import money, rent_multiplier
 from game.camera import Camera
@@ -27,8 +28,8 @@ class SceneDoor:
 class CourtyardWorld(Mall):
     def __init__(self):
         self.size=(2000,1440);self.opening_area=pygame.Rect(40,40,1920,1360)
-        self.regions=[];self.entrance=pygame.Vector2(135,775)
-        self.distant_stores=[]
+        self.regions=[];self.entrance=pygame.Vector2(199,775)
+        self.distant_stores=[];self.is_courtyard=True
         self.stores=[]
         specs=[('Courtyard Provisions',30000,0),('Hearth Pizza',45000,250),('Mint & Noodles',60000,330),
                ('Orchard Juice',75000,420),('Sunrise Bakery',90000,510),('Copper Grill',110000,620),
@@ -75,8 +76,8 @@ class Courtyard:
     COST=50000
 
     def __init__(self):
-        self.unlocked=False;self.world=None;self.shoppers=Shoppers();self.spawner=LitterSpawner(cap=12)
-        self.camera=Camera((2000,1440));self.return_door=SceneDoor(pygame.Vector2(71,775),'Return to Community Commons',pygame.Vector2(24,775))
+        self.unlocked=False;self.world=None;self.shoppers=FoodCourtVisitors();self.janitors=Janitors();self.spawner=LitterSpawner(cap=12)
+        self.camera=Camera((2000,1440));self.return_door=SceneDoor(pygame.Vector2(135,775),'Return to Community Commons',pygame.Vector2(56,775))
 
     def ensure_world(self):
         if self.world is None:
@@ -86,7 +87,7 @@ class Courtyard:
     @staticmethod
     def door(mall):
         y=mall.commons.area.top+700
-        return SceneDoor(pygame.Vector2(mall.commons.area.right-33,y),'Enter the Courtyard food court',pygame.Vector2(mall.commons.area.right+16,y))
+        return SceneDoor(pygame.Vector2(mall.commons.area.right-100,y),'Enter the Courtyard food court',pygame.Vector2(mall.commons.area.right-16,y))
 
     @staticmethod
     def ready(mall):
@@ -159,9 +160,14 @@ class Courtyard:
         game.frame_camera(game.screen.get_size())
         game.feedback.update(dt);game.speech.update(dt);game.message_timer=max(0,game.message_timer-dt)
         self.spawner.update(dt,world,game.player.rect.center)
-        self.shoppers.update(dt,world,game.upgrades)
+        game.shoppers.update(dt,game.mall,game.upgrades,game.owner_requests.store)
+        game.update_courtyard_visitors(dt)
+        self.janitors.update(dt,game,world)
         game.rent_timer+=dt
-        while game.rent_timer>=5:game.cash+=game.rent_income;game.rent_timer-=5
+        while game.rent_timer>=5:
+            income=game.rent_income;game.cash+=income;game.rent_timer-=5
+            if income:game.feedback.burst(game.player.rect.center,f'+{money(income)} rent',restored=True)
+            if rent_multiplier(world.cleanliness)==1.5:game.audio.play('bonus_rent')
         game.save_store.elapsed+=dt
         if game.save_started and game.save_store.elapsed>=30:game.save_checkpoint()
 
@@ -173,13 +179,14 @@ class Courtyard:
         surface=game.screen;camera=game.camera
         point=camera.point(door.anchor)
         # The glass door sits in the boundary wall; its landing sits in the room.
-        landing=camera.rect((door.position.x-32,door.position.y-56,64,112))
+        left=min(door.position.x-32,door.anchor.x-44);right=max(door.position.x+32,door.anchor.x+44)
+        landing=camera.rect((left,door.position.y-72,right-left,144))
         pygame.draw.rect(surface,(165,157,125),landing)
         for y in range(landing.top,landing.bottom,16):pygame.draw.line(surface,(120,128,106),(landing.left,y),(landing.right,y))
-        game.art.draw(surface,'courtyard_doors',point,(48,112))
+        game.art.draw(surface,'courtyard_doors',point,(112,160))
         label=game.hud.small.render(caption,True,theme.TEXT)
         x=door.position.x-95 if door.anchor.x>1000 else door.position.x+70
-        sign=label.get_rect(center=camera.point((x,door.position.y-82))).inflate(16,10)
+        sign=label.get_rect(center=camera.point((x,door.position.y-106))).inflate(16,10)
         theme.frame(surface,sign,theme.PANEL,False);surface.blit(label,label.get_rect(center=sign.center))
 
     def draw(self,game):
@@ -221,8 +228,9 @@ class Courtyard:
             rect=label.get_rect(center=camera.point((store.rect.centerx,store.rect.top+100 if store.facing=='down' else store.rect.bottom-100))).inflate(16,10)
             pygame.draw.rect(surface,(39,53,48),rect,border_radius=3);surface.blit(label,label.get_rect(center=rect.center))
             if store.upgrade_shop:
-                badge=game.hud.small.render('PROVISIONS · SERVICE UPGRADES',True,theme.ACCENT)
-                surface.blit(badge,badge.get_rect(center=camera.point((store.rect.centerx,store.rect.top+130))))
+                badge=game.hud.small.render('SERVICE & PATIO UPGRADES',True,theme.GOLD)
+                plaque=badge.get_rect(center=camera.point((store.rect.centerx,store.rect.top+140))).inflate(20,12)
+                theme.frame(surface,plaque,theme.PANEL,False);surface.blit(badge,badge.get_rect(center=plaque.center))
             if store.available:
                 point=camera.point(store.position);pygame.draw.circle(surface,theme.ACCENT if store.restored else theme.GOLD,point,12,2)
                 if target is store:pygame.draw.circle(surface,theme.TEXT,point,21,2)
@@ -232,14 +240,16 @@ class Courtyard:
         self.draw_door(game,self.return_door,'< COMMONS')
         layers=[(t.position.y,'table',t) for t in world.social_tables]
         layers += [(p.display_position.y,'person',p) for p in self.shoppers.people if p.visible]
+        layers += [(j.position.y,'janitor',j) for j in self.janitors.people.values()]
         layers.append((game.player.rect.centery,'player',game.player))
         for _,kind,item in sorted(layers,key=lambda v:v[0]):
             if kind=='table':
-                i=world.social_tables.index(item);art.draw(surface,'courtyard_table' if f'courtyard_table_{i}' in game.upgrades.decor else 'social_table',camera.point(item.position),(112,96))
+                i=world.social_tables.index(item);art.draw(surface,'courtyard_table' if f'courtyard_table_{i}' in game.upgrades.decor else 'courtyard_table_broken',camera.point(item.position),(160,112))
+            elif kind=='janitor':item.draw(game)
             elif kind=='person':item.draw(surface,camera,art,game.hud.small,target is item)
             else:item.draw(surface,camera,art)
-        for i,p in enumerate(((100,470),(1870,470),(100,1080),(1870,1080))):
-            if f'courtyard_herb_{i}' in game.upgrades.decor:art.draw(surface,'herb_planter',camera.point(p),(72,96))
+        for i,p in enumerate(((700,280),(1100,280),(1100,1160),(1500,1160))):
+            if f'courtyard_herb_{i}' in game.upgrades.decor:art.draw(surface,'herb_planter',camera.point(p),(48,64))
         for i,p in enumerate(((583,480),(1031,480),(1415,480),(1750,850))):
             if f'courtyard_light_{i}' in game.upgrades.decor:art.draw(surface,'patio_lights',camera.point(p),(128,72))
         game.feedback.draw(surface,camera,game.hud.font)
@@ -255,7 +265,10 @@ class Courtyard:
 
     def snapshot(self,game):
         if not self.unlocked:return {'unlocked':False}
+        from systems.saves import snapshot_worker
+        janitor=self.janitors.people.get('courtyard')
         return {'unlocked':True,'scene':game.scene=='courtyard',
+                'janitor':snapshot_worker(janitor,self.world) if janitor else None,
                 'position':list(game.player.rect.center) if game.scene=='courtyard' else None,
                 'stores':[s.restored for s in self.world.stores],
                 'trash':[[t.cleaned,t.ever_cleaned,getattr(t,'revision',0)] for t in self.world.trash],

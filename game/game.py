@@ -9,6 +9,7 @@ from game.feedback import Feedback
 from systems.litter import LitterSpawner
 from systems.janitors import Janitors
 from systems.shoppers import Shoppers, Shopper
+from systems.courtyard_visitors import CourtyardTravel
 from systems.requests import OwnerRequests, RequestSpot, OWNERS
 from systems.upgrades import Upgrades
 from systems.economy import money, rent_multiplier
@@ -57,7 +58,7 @@ class Game:
         self.art = Art()
         from game.patio_art import install
         install(self.art)
-        self.courtyard=Courtyard();self.scene='mall';self.main_position=None;self.main_camera=self.camera
+        self.courtyard=Courtyard();self.visitor_travel=CourtyardTravel();self.scene='mall';self.main_position=None;self.main_camera=self.camera
         self.audio = Audio()
         self.audio.set_volumes(self.preferences.music,self.preferences.effects)
         self.feedback = Feedback()
@@ -300,6 +301,11 @@ class Game:
         if save:self.save_checkpoint()
         return True
 
+    def update_courtyard_visitors(self,dt):
+        if self.courtyard.unlocked:
+            self.courtyard.shoppers.update(dt,self.courtyard.world,self.upgrades)
+            self.visitor_travel.update(dt,self)
+
     def leave_courtyard(self):
         if self.scene!='courtyard':return
         self.scene='mall';self.camera=self.main_camera
@@ -373,6 +379,7 @@ class Game:
             self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
             self.request_notice_timer=8
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
+        self.update_courtyard_visitors(dt)
         self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:

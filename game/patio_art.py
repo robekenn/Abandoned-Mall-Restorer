@@ -44,18 +44,70 @@ def food_stall(variant,opened,north=False):
 
 
 def doors():
-    s=canvas((24,32));box(s,'ink',(1,1,22,30));box(s,'wood',(2,2,20,28))
-    for x in (4,13):
-        box(s,'teal',(x,4,7,23));box(s,'water',(x+1,5,5,12));box(s,'cream',(x+4,20,1,2))
-    box(s,'gold',(2,1,20,3));box(s,'stone',(1,29,22,2));return s
+    s=canvas((32,44))
+    # Broad stone piers, a shared lintel and two full-height glazed leaves.
+    box(s,'ink',(0,1,32,42));box(s,'stone',(1,2,30,40))
+    box(s,'cream',(2,3,28,3));box(s,'wood',(4,8,24,31))
+    box(s,'ink',(6,10,20,27))
+    for x in (7,17):
+        box(s,'teal',(x,11,8,25));box(s,'water',(x+1,12,6,15))
+        box(s,'light',(x+2,13,1,12));box(s,'wood',(x,28,8,1))
+        box(s,'gold',(x+5 if x==7 else x+1,30,1,3))
+    box(s,'wood',(15,10,2,27));box(s,'gold',(5,7,22,2))
+    for x in (1,28):
+        box(s,'light',(x,9,3,29))
+        for y in (15,23,31):box(s,'stone',(x,y,3,1))
+    box(s,'cream',(2,39,28,2));box(s,'shadow',(1,42,30,1))
+    return s
 
 
-def picnic():
-    s=canvas((32,28));box(s,'ink',(4,12,24,3));box(s,'wood',(5,10,22,5))
-    box(s,'cream',(7,11,18,1));box(s,'wood',(7,17,3,8));box(s,'wood',(22,17,3,8))
-    box(s,'teal',(0,16,5,6));box(s,'teal',(27,16,5,6))
-    box(s,'wood',(16,3,1,9));pygame.draw.polygon(s,'#dfb45e',[(6,7),(16,0),(26,7)])
-    box(s,'cream',(6,7,20,2));box(s,'rust',(13,10,3,3));return s
+def picnic(broken=False):
+    s=canvas((40,36));wood='stone' if broken else 'wood'
+    box(s,'ink',(9,9,22,17));box(s,'shadow',(10,10,20,15))
+    for y in (9,13,17,21):
+        box(s,wood,(10,y,20,3));box(s,'cream' if not broken else 'shadow',(11,y,18,1))
+    for x in (11,27):box(s,'ink',(x,25,2,7))
+    for x in (1,33):
+        box(s,'ink',(x,19,6,16));box(s,wood,(x+1,20,4,14))
+        box(s,'gold' if not broken else 'shadow',(x+1,20,1,13))
+    if broken:
+        box(s,'shadow',(16,9,8,3));box(s,'shadow',(11,17,7,3))
+        box(s,'green',(25,22,4,2));box(s,'ink',(2,26,4,4))
+        pygame.draw.line(s,'#856448',(16,26),(25,30),2)
+    else:
+        box(s,'cream',(16,14,8,6));box(s,'rust',(18,15,4,4))
+        box(s,'leaf',(21,14,2,2))
+    return s
+
+
+def food(kind):
+    s=canvas((24,24))
+    if kind=='pizza':
+        pygame.draw.polygon(s,'#dfb45e',[(4,5),(21,5),(12,21)])
+        box(s,'wood',(4,4,17,3))
+        for x,y in ((8,9),(15,9),(11,14)):box(s,'rust',(x,y,3,3))
+    elif kind in ('noodles','salad'):
+        box(s,'ink',(3,12,18,7));box(s,'cream',(4,13,16,5));box(s,'stone',(6,18,12,2))
+        for x in (5,9,13,17):
+            box(s,'gold' if kind=='noodles' else 'leaf',(x,9,3,4))
+            box(s,'cream' if kind=='noodles' else 'green',(x,8,2,2))
+        if kind=='noodles':pygame.draw.line(s,'#856448',(15,3),(12,14),1)
+    elif kind=='juice':
+        box(s,'ink',(7,7,11,15));box(s,'cream',(8,8,9,13));box(s,'gold',(9,11,7,9))
+        box(s,'leaf',(16,2,2,9));box(s,'cream',(9,10,2,7));box(s,'rust',(5,8,5,5))
+    elif kind=='pastry':
+        for x,y,w,h in ((3,12,5,5),(6,9,6,8),(11,8,6,9),(16,12,5,5)):
+            box(s,'wood',(x,y,w,h));box(s,'gold',(x+1,y,w-2,h-2))
+        box(s,'cream',(9,10,1,5));box(s,'cream',(14,10,1,5))
+    elif kind=='grill':
+        pygame.draw.line(s,'#856448',(4,21),(20,3),2)
+        for x,y,c in ((5,15,'rust'),(9,11,'leaf'),(13,7,'rust')):
+            box(s,c,(x,y,6,5));box(s,'gold',(x+1,y+1,3,1))
+    else:
+        box(s,'ink',(6,13,12,9));box(s,'cream',(7,14,10,6))
+        box(s,'gold',(8,19,8,1));box(s,'rust',(6,10,12,4));box(s,'cream',(8,7,8,4))
+        box(s,'rust',(11,5,3,3));box(s,'leaf',(14,5,2,1))
+    return s
 
 
 def herbs():
@@ -85,4 +137,7 @@ def install(art):
     for v in range(8):
         for state in ('open','closed'):
             art.sprites[f'food_stall_{v}_{state}_up']=food_stall(v,state=='open',north=True)
-    art.sprites.update(courtyard_doors=doors(),courtyard_table=picnic(),herb_planter=herbs(),patio_lights=lights(),patio_tree=patio_tree())
+    art.sprites.update(courtyard_doors=doors(),courtyard_table=picnic(),courtyard_table_broken=picnic(True),herb_planter=herbs(),patio_lights=lights(),patio_tree=patio_tree())
+
+    for kind in ('pizza','noodles','juice','pastry','grill','salad','dessert'):
+        art.sprites['food_'+kind]=food(kind)

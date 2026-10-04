@@ -32,8 +32,17 @@ class Journal:
                 'clean':pygame.Rect(row.right-354,row.y+45,164,28),
                 'walk':pygame.Rect(row.right-178,row.y+45,164,28)}
 
+    @staticmethod
+    def staff_context(game):
+        return (game.courtyard.janitors,game.courtyard.world) if game.scene=='courtyard' else (game.janitors,game.mall)
+
+    def staff_courts(self,game):
+        manager,world=self.staff_context(game)
+        return manager.courts(world)
+
     def buy_staff(self, game, key, action):
-        success,self.notice=game.janitors.purchase(key,action,game)
+        manager,world=self.staff_context(game)
+        success,self.notice=manager.purchase(key,action,game,world)
         game.audio.play('milestone' if success else 'blocked')
         if success:game.save_checkpoint()
 
@@ -53,14 +62,14 @@ class Journal:
                 if event.key in (pygame.K_LEFT,pygame.K_RIGHT):self.chapter=max(0,min(3,self.chapter+(-1 if event.key==pygame.K_LEFT else 1)))
                 return
             if self.tab==1:
-                if event.key in (pygame.K_UP,pygame.K_DOWN):self.court=(self.court+(-1 if event.key==pygame.K_UP else 1))%4
+                if event.key in (pygame.K_UP,pygame.K_DOWN):self.court=(self.court+(-1 if event.key==pygame.K_UP else 1))%len(self.staff_courts(game))
                 action={pygame.K_RETURN:'hire',pygame.K_SPACE:'hire',pygame.K_c:'clean',pygame.K_w:'walk'}.get(event.key)
-                if action:self.buy_staff(game,game.janitors.courts(game.mall)[self.court][0],action)
+                if action:self.buy_staff(game,self.staff_courts(game)[self.court%len(self.staff_courts(game))][0],action)
                 return
             if event.key in (pygame.K_LEFT,pygame.K_RIGHT):self.page=max(0,self.page+(-1 if event.key==pygame.K_LEFT else 1))
         elif event.type==pygame.MOUSEWHEEL:
             if self.tab==0:self.page=max(0,self.page-event.y)
-            elif self.tab==1:self.court=(self.court-event.y)%4
+            elif self.tab==1:self.court=(self.court-event.y)%len(self.staff_courts(game))
             elif self.tab==2:self.chapter=max(0,min(3,self.chapter-event.y))
             else:self.court=(self.court-event.y)%4
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
@@ -79,10 +88,10 @@ class Journal:
                     if rect.collidepoint(event.pos):self.chapter=max(0,min(3,self.chapter+(-1 if i==0 else 1)))
                 return
             if self.tab==1:
-                for i,row in enumerate(self.staff_rows(game.screen)):
+                for i,row in enumerate(self.staff_rows(game.screen)[:len(self.staff_courts(game))]):
                     if row.collidepoint(event.pos):
-                        self.court=i;key=game.janitors.courts(game.mall)[i][0]
-                        actions=('clean','walk') if key in game.janitors.people else ('hire',)
+                        self.court=i;key=self.staff_courts(game)[i][0]
+                        actions=('clean','walk') if key in self.staff_context(game)[0].people else ('hire',)
                         for action in actions:
                             if self.staff_buttons(row)[action].collidepoint(event.pos):self.buy_staff(game,key,action)
                 return
@@ -121,11 +130,13 @@ class Journal:
         game.screen.blit(game.hud.small.render('1–4: tabs   Up/Down: court   Enter: host   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
 
     def draw_staff(self, game, panel):
-        for i,((key,name,_,_,_,unlocked,_),row) in enumerate(zip(game.janitors.courts(game.mall),self.staff_rows(game.screen))):
+        manager,world=self.staff_context(game)
+        self.court%=len(manager.courts(world))
+        for i,((key,name,_,_,_,unlocked,_),row) in enumerate(zip(manager.courts(world),self.staff_rows(game.screen))):
             theme.frame(game.screen,row,theme.CARD)
             if i==self.court:pygame.draw.rect(game.screen,theme.ACCENT,row,1,border_radius=8)
             game.screen.blit(game.hud.font.render(name,True,theme.TEXT),(row.x+12,row.y+9))
-            person=game.janitors.people.get(key)
+            person=manager.people.get(key)
             if person:
                 detail=f'{person.clean_seconds}s pickup · {person.speed}px/s · {person.cleaned} cleaned · earned {money(person.earnings)}'
                 actions=('clean','walk')
@@ -135,9 +146,9 @@ class Journal:
             game.screen.blit(game.hud.small.render(detail,True,theme.MUTED),(row.x+12,row.y+32))
             for action in actions:
                 button=self.staff_buttons(row)[action]
-                if action=='hire':label='Hire '+money(game.janitors.hire_cost(key,game.mall)) if unlocked else 'Court locked'
+                if action=='hire':label='Hire '+money(manager.hire_cost(key,world)) if unlocked else 'Court locked'
                 else:
-                    price=game.janitors.upgrade_price(key,action,game.mall)
+                    price=manager.upgrade_price(key,action,world)
                     values=person.CLEAN_SECONDS if action=='clean' else person.WALK_SPEEDS
                     level=getattr(person,action+'_level');value=values[min(3,level+1)]
                     label=('Clean '+str(value)+'s' if action=='clean' else 'Walk '+str(value))+' · '+(money(price) if price is not None else 'Max')

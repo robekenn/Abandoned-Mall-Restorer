@@ -116,7 +116,7 @@ class Upgrades:
                 return result
             ordinal=('north','east','garden','commons').index(shop)
             if category=='Furniture':
-                specs=[(f'bench_{2*ordinal+i}',f'{shop.title()} bench {i+1}',300*ordinal) for i in range(2)]
+                specs=[(f'bench_{2*ordinal+i}',f'Restore {shop.title()} bench {i+1}',300*ordinal) for i in range(2)]
                 specs += [(f'fountain_{shop}',f'{shop.title()} fountain',900*ordinal),(f'mosaic_{shop}',f'{shop.title()} mosaic',750*ordinal)]
             else:
                 specs=[(f'lamp_{4*ordinal+i}',f'{shop.title()} lamp {i+1}',180*ordinal) for i in range(4)]
@@ -145,7 +145,7 @@ class Upgrades:
                         Offer('speed','Walking speed',speed_detail,
                               0 if speed_maxed else self.SPEED_PRICES[self.speed_level],speed_maxed)]
             if category == 'Furniture':
-                specs = [('bench_2','East gallery west bench',140),('bench_3','East gallery east bench',140),
+                specs = [('bench_2','Restore west bench',140),('bench_3','Restore east bench',140),
                          ('fountain_east','East gallery fountain',350),('mosaic_east','East gallery mosaic',300)]
             else:
                 specs = [(f'lamp_{i+4}',f'East gallery lamp {i+1}',80) for i in range(4)]
@@ -174,7 +174,7 @@ class Upgrades:
                                     0 if maximum else prices[level],maximum))
             return result
         if category == 'Furniture':
-            specs = [('bench_0','West bench',70),('bench_1','East bench',70),
+            specs = [('bench_0','Restore west bench',70),('bench_1','Restore east bench',70),
                      ('fountain','Courtyard fountain',180),('mosaic','Courtyard mosaic',150)]
         else:
             specs = [(f'lamp_{i}',f'Lamp {i+1} / '+name,40)

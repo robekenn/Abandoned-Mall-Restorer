@@ -317,7 +317,7 @@ class Shoppers:
             if path is not None:person.path=path;person.goal=pygame.Vector2(goal);person.state='strolling';person.wait=0;person.activity='gathering';person.rest_seconds=20
         return neighbors
 
-    def update(self, dt, mall, upgrades, preferred_store=None):
+    def update(self, dt, mall, upgrades, preferred_store=None, *, spawn=True):
         self.mall=mall;self.traffic_elapsed+=dt
         self.walkways.refresh(mall)
         if self.path_signature!=self.walkways.signature:
@@ -334,7 +334,7 @@ class Shoppers:
         desired=self.desired_population(mall,upgrades)
         interval=3.5 if self.traffic=='Busy hours' else 12 if self.traffic=='Quiet hours' else 8
         self.elapsed+=dt
-        if self.elapsed>=interval and len(self.people)<desired:
+        if spawn and self.elapsed>=interval and len(self.people)<desired:
             self.elapsed=0
             store=preferred_store if preferred_store in opened else self.random.choice(opened)
             if self.walkways.route(mall.entrance,store.position) is None:return
