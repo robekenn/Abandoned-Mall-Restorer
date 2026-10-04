@@ -69,6 +69,13 @@ def restore_courtyard_worker(row,world):
     return worker
 
 
+def moved_seating_props(mall,layout,key):
+    if key=='north':
+        return mall.furniture_obstacles+[b.rect for b in mall.trash_bins[:2]] if layout==1 else []
+    region=next((r for r in mall.regions if r.key==key),None)
+    return region.furniture_obstacles+[b.rect for b in region.bins]+[t.footprint for t in region.social_tables] if region and layout<4 else []
+
+
 def snapshot(game):
     requests=game.owner_requests;tutorial=game.tutorial
     active=None
@@ -85,7 +92,7 @@ def snapshot(game):
     community={'completed':life.completed,'cooldowns':life.cooldowns,'owner_chats':life.owner_chats,
                'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants,'activity':life.activity,
                'tasks':[[list(t.position),t.title,t.kind,t.duration,t.progress,t.completed] for t in life.tasks]}
-    return {'seating_layout':3,'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
+    return {'seating_layout':4,'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
             'life':community,'cash':game.cash,'player':list(game.main_position if game.scene=='courtyard' else game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
@@ -104,7 +111,7 @@ def snapshot(game):
 
 def restore_state(data, game):
     """Build and validate a replacement world before changing the live game."""
-    layout=number(data.get('seating_layout',1),1,3,True)
+    layout=number(data.get('seating_layout',1),1,4,True)
     mall=Mall();u=Upgrades();requests=OwnerRequests();workers=Janitors();story=Story();tutorial=Tutorial()
     if data['unlocked']!=[r.key for r in mall.regions[:len(data['unlocked'])]]:raise ValueError('Invalid section order')
     if len(data['unlocked'])>3:raise ValueError('Too many sections')
@@ -157,7 +164,7 @@ def restore_state(data, game):
         footprint=pygame.FRect(j.position.x-10,j.position.y-12,20,24)
         moved=False
         if area.collidepoint(j.position) and (any(t.footprint.colliderect(footprint) for t in mall.social_tables) or
-                layout==1 and key=='north' and any(w.colliderect(footprint) for w in mall.furniture_obstacles+[b.rect for b in mall.trash_bins[:2]])):
+                any(w.colliderect(footprint) for w in moved_seating_props(mall,layout,key))):
             # New seating can occupy a node used by an older checkpoint.
             j.position=pygame.Vector2(min(j.paths.nodes,key=lambda p:pygame.Vector2(p).distance_squared_to(j.position)));moved=True
             footprint=pygame.FRect(j.position.x-10,j.position.y-12,20,24)
@@ -225,8 +232,8 @@ def restore_state(data, game):
             court=next(c for c in workers.courts(mall) if c[0]==life.active)
             point=vector(row['position']);footprint=pygame.Rect(point.x-90,point.y-82,180,162)
             table_obstacles=[t.footprint for t in mall.social_tables]
-            moved_props=mall.furniture_obstacles+[b.rect for b in mall.trash_bins[:2]]
-            if layout==1 and life.active=='north' and any(w.colliderect(footprint) for w in moved_props):
+            moved_props=moved_seating_props(mall,layout,life.active)
+            if any(w.colliderect(footprint) for w in moved_props):
                 paths=Shoppers().walkways;paths.refresh(mall)
                 candidates=sorted(paths.nodes,key=lambda p:(pygame.Vector2(p).distance_squared_to(point),p))
                 safe=next((p for p in candidates if court[2].contains(pygame.Rect(p[0]-90,p[1]-82,180,162))
@@ -249,7 +256,7 @@ def restore_state(data, game):
                 pos,title,kind,duration,progress,completed=saved_task
                 pos=vector(pos);duration=number(duration,0,2);progress=number(progress,0,duration);completed=flag(completed)
                 footprint=pygame.Rect(pos.x-24,pos.y-32,48,64)
-                if layout==1 and life.active=='north' and any(w.colliderect(footprint) for w in moved_props):
+                if any(w.colliderect(footprint) for w in moved_props):
                     paths=Shoppers().walkways;paths.refresh(mall)
                     candidates=sorted(paths.nodes,key=lambda p:(pygame.Vector2(p).distance_squared_to(pos),p))
                     safe=next((p for p in candidates if court[2].contains(pygame.Rect(p[0]-24,p[1]-32,48,64))

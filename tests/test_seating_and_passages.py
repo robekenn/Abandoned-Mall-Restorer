@@ -118,7 +118,7 @@ class SeatingAndPassageTests(unittest.TestCase):
         self.assertNotEqual(g.life.spot.position,pygame.Vector2(860,830))
         self.assertNotEqual(g.player.rect.center,(860,750))
         self.assertNotEqual(g.janitors.people['north'].position,pygame.Vector2(860,750))
-        self.assertEqual(snapshot(g)['seating_layout'],3)
+        self.assertEqual(snapshot(g)['seating_layout'],4)
 
     def test_table_purchase_leaves_bench_and_other_chairs_broken(self):
         g=self.g;table=g.mall.social_tables[0]

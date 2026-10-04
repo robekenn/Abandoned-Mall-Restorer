@@ -212,32 +212,30 @@ class Courtyard:
         # An unobtrusive inlay leads into the opening, with no glass or door frame.
         left=wall_x-96 if game.scene=='mall' else wall_x+40
         pygame.draw.rect(surface,(165,157,125),camera.rect((left,y-3,96,6)))
-        # A wooden plaque hangs from a bracket fixed to the actual boundary wall.
-        left=wall_x-194 if game.scene=='mall' else wall_x+40
-        plaque=pygame.Rect(left,y-188,194,72)
-        beam=pygame.Rect(left-4,y-210,202,6)
+        # Destination-only plaques fit beside the opening and clear community boards.
+        sign=game.courtyard.sign_rect(game)
+        label=game.hud.small.render('Courtyard' if game.scene=='mall' else 'Community Commons',True,(248,230,184))
+        beam=pygame.Rect(sign.left-4,sign.top-14,sign.width+8,4)
         pygame.draw.rect(surface,(113,82,50),camera.rect(beam))
         pygame.draw.rect(surface,(194,159,99),camera.rect(beam),1)
-        for x in (plaque.left+20,plaque.right-20):
-            pygame.draw.line(surface,(177,166,130),camera.point((x,y-204)),camera.point((x,plaque.top)),2)
-        pygame.draw.rect(surface,(67,59,43),camera.rect(plaque.move(3,3)))
-        pygame.draw.rect(surface,(119,84,48),camera.rect(plaque))
-        pygame.draw.rect(surface,(207,171,103),camera.rect(plaque),3)
-        pygame.draw.rect(surface,(151,111,62),camera.rect(plaque.inflate(-10,-10)),1)
-        title='COURTYARD' if game.scene=='mall' else 'COMMUNITY COMMONS'
-        lines=[title]
+        for x in (sign.left+12,sign.right-12):
+            pygame.draw.line(surface,(177,166,130),camera.point((x,beam.bottom)),camera.point((x,sign.top)),2)
+        pygame.draw.rect(surface,(67,59,43),camera.rect(sign.move(2,2)))
+        pygame.draw.rect(surface,(119,84,48),camera.rect(sign))
+        pygame.draw.rect(surface,(207,171,103),camera.rect(sign),2)
+        surface.blit(label,label.get_rect(center=camera.point(sign.center)))
         if game.scene=='mall' and not game.courtyard.unlocked:
-            lines += ['OPEN · '+money(game.courtyard.COST),'E to open' if game.courtyard.ready(game.mall) else 'Commons sweep + 6 shops']
-            # Rubble blocks the unrestored passage; it is cleared by the paid unlock.
             for dx,dy,w,h in ((2,42,22,13),(15,25,23,17),(1,9,25,15)):
                 block=camera.rect((wall_x+dx,y+dy,w,h))
                 pygame.draw.rect(surface,(102,106,91),block);pygame.draw.rect(surface,(150,145,118),block,2)
-        else:lines += ['Walk through to enter' if game.scene=='mall' else 'Walk through to return']
-        for i,line in enumerate(lines):
-            label=game.hud.small.render(line,True,(248,230,184))
-            if label.get_width()>plaque.width-16:
-                label=pygame.transform.smoothscale(label,(plaque.width-16,label.get_height()))
-            surface.blit(label,label.get_rect(center=camera.point((plaque.centerx,plaque.top+16+i*20))))
+
+    @staticmethod
+    def sign_rect(game):
+        title='Courtyard' if game.scene=='mall' else 'Community Commons'
+        width=game.hud.small.size(title)[0]+20
+        wall_x=game.mall.size[0]-40 if game.scene=='mall' else 0
+        y=game.courtyard.door(game.mall).position.y if game.scene=='mall' else 775
+        return pygame.Rect(wall_x-width if game.scene=='mall' else wall_x+40,y-140,width,30)
 
     def draw(self,game):
         world=self.ensure_world();surface=game.screen;camera=self.camera;art=game.art;target=self.target(game)

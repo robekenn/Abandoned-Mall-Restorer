@@ -7,7 +7,7 @@ from mall.furniture import bench_footprint, fountain_footprint
 from mall.delivery import DeliveryPoint
 from mall.section import EastGallery, later_galleries, covered_positions, floor_tiles
 from game.settings import WORLD_SIZE
-from mall.social import SocialTable, place_tables
+from mall.social import SocialTable
 
 
 class Mall:
@@ -149,7 +149,7 @@ class Mall:
         self.trash_bins += region.bins
         self.lamps += region.lamps
         self.plants += region.plants
-        self.social_tables += place_tables(region.area,region.floor_tiles,self.obstacles,region.trash,region.key)
+        self.social_tables += region.social_tables
         self.refresh_businesses()
         return True
 
@@ -246,7 +246,7 @@ class Mall:
         # Faded wayfinding inlays make the generous concourse read as public space.
         for rect in [(40, 400, 1720, 6), (40, 948, 1720, 6), (80, 400, 6, 554)]:
             pygame.draw.rect(surface, (118, 116, 91), camera.rect(rect))
-        for area in self.seating_areas:
+        for area in self.seating_areas+[pad for region in self.active_regions for pad in region.seating_areas]:
             # Bordered floor inlays group furniture without obstructing the concourse.
             pygame.draw.rect(surface,(118,116,91),camera.rect(area),3)
             pygame.draw.rect(surface,(160,155,125),camera.rect(area.inflate(-12,-12)),1)
