@@ -74,7 +74,7 @@ class FeatureTests(unittest.TestCase):
 
     def test_tables_have_reachable_unique_seats_and_visitors_chat(self):
         self.open_all();g=self.g;m=g.shoppers;m.walkways.refresh(g.mall);m.mall=g.mall
-        g.upgrades.decor.update(f'bench_{i}' for i in range(8));m.upgrades=g.upgrades
+        g.upgrades.decor.update(key for t in g.mall.social_tables for key in (t.fixture_key,*t.seat_keys));m.upgrades=g.upgrades
         self.assertEqual(len(g.mall.social_tables),8)
         for table in g.mall.social_tables:
             for seat in table.seats:self.assertIsNotNone(m.walkways.route(g.mall.entrance,seat))

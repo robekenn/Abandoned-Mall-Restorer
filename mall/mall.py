@@ -74,7 +74,7 @@ class Mall:
         for i,x in enumerate((455,1287)):
             table=SocialTable(pygame.Vector2(x,681),
                               (pygame.Vector2(x-64,711),pygame.Vector2(x+64,711)),
-                              'north',f'bench_{i}')
+                              'north',f'table_{i}')
             self.social_tables.append(table);self.obstacles.append(table.footprint)
 
 
@@ -278,7 +278,7 @@ class Mall:
             if region.unlocked and f'mosaic_{region.key}' in upgrades.decor:
                 art.draw(surface,'mosaic',camera.point((region.fountain.centerx,region.fountain.bottom+90)),(210,125))
         if 'mosaic' in upgrades.decor:
-            art.draw(surface,'mosaic',camera.point((810,790)),(210,125))
+            art.draw(surface,'mosaic',camera.point((self.fountain.centerx,self.fountain.bottom+90)),(210,125))
         for store in self.stores:
             if store.restored:
                 glow = camera.rect(store.rect.inflate(24,40).move(0,20))
@@ -308,6 +308,6 @@ class Mall:
         result.extend((bench_footprint(b).centery,
                        'bench_clean' if f'bench_{i}' in upgrades.decor else 'bench_dirty',
                        b.center,(145,85)) for i,b in enumerate(self.benches))
-        result.extend((t.position.y,'social_table' if t.fixture_key in upgrades.decor else 'social_table_broken',
+        result.extend((t.position.y,t.sprite(upgrades.decor),
                        t.position,(96,72)) for t in self.social_tables)
         return result

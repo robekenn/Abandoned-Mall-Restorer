@@ -256,7 +256,8 @@ class Shoppers:
             if table.fixture_key and (upgrades is None or table.fixture_key not in upgrades.decor):continue
             stores=[s for s in mall.stores if s.section_key==table.section and not s.upgrade_shop and s.restored]
             if len(stores)<2:continue
-            for seat in table.seats:
+            for key,seat in zip(table.seat_keys,table.seats):
+                if key and key not in upgrades.decor:continue
                 if not any(p.table is table and p.table_seat==seat and not p.done for p in self.people):seats.append((table,seat))
         return seats
 

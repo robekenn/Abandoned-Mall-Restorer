@@ -146,9 +146,9 @@ class ExpansionTests(unittest.TestCase):
                     keys.append(offer.key);g.buy_upgrade(offer.key)
                     before=(g.cash,g.upgrades.fixture_rent);g.buy_upgrade(offer.key)
                     self.assertEqual((g.cash,g.upgrades.fixture_rent),before)
-        self.assertEqual(len(keys),48);self.assertEqual(len(set(keys)),48)
+        self.assertEqual(len(keys),72);self.assertEqual(len(set(keys)),72)
         self.assertEqual((len(g.mall.benches),len(g.mall.lamps),len(g.mall.plants)),(8,16,16))
-        self.assertEqual(g.upgrades.fixture_rent,48)
+        self.assertEqual(g.upgrades.fixture_rent,72)
         self.assertEqual(len(g.mall.furniture(g.upgrades)),12+len(g.mall.social_tables))
         g.shop_menu.open=False
         with patch.object(g.litter_spawner,'update'):

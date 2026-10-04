@@ -450,22 +450,22 @@ def young_shopper(age,variant,facing,frame):
     return s
 
 
-def social_table(broken=False):
+def social_table(broken=False,seats=(True,True)):
     s=canvas((32,24))
-    box(s,'ink',(6,10,20,4));box(s,'wood',(7,8,18,5));box(s,'cream',(9,9,14,1))
-    box(s,'shadow',(9,14,3,7));box(s,'shadow',(21,14,3,7))
-    for x in (0,27):
-        box(s,'teal',(x,9,5,8));box(s,'wood',(x,16,5,4));box(s,'ink',(x+1,20,2,3))
     if broken:
-        s.fill((0,0,0,0))
         box(s,'shadow',(8,12,17,4));box(s,'wood',(7,9,7,3));box(s,'wood',(19,11,7,3))
-        box(s,'ink',(9,15,3,6));box(s,'stone',(2,14,4,4))
-        pygame.draw.line(s,'#856448',(1,8),(6,14),2)
-        pygame.draw.line(s,'#856448',(27,12),(30,19),2)
+        box(s,'ink',(9,15,3,6));box(s,'green',(11,13,4,2))
         pygame.draw.line(s,'#856448',(15,19),(24,22),2)
-        box(s,'green',(11,13,4,2));box(s,'wood',(0,19,5,2))
     else:
+        box(s,'ink',(6,10,20,4));box(s,'wood',(7,8,18,5));box(s,'cream',(9,9,14,1))
+        box(s,'shadow',(9,14,3,7));box(s,'shadow',(21,14,3,7))
         box(s,'cream',(12,6,3,3));box(s,'rust',(19,6,3,3));box(s,'leaf',(16,4,2,5))
+    for x,restored in zip((0,27),seats):
+        if restored:
+            box(s,'teal',(x,9,5,8));box(s,'wood',(x,16,5,4));box(s,'ink',(x+1,20,2,3))
+        else:
+            box(s,'stone',(x+1,14,4,4));box(s,'wood',(x,19,5,2))
+            pygame.draw.line(s,'#856448',(x,8),(x+4,14),2)
     return s
 
 
@@ -501,7 +501,11 @@ class Art:
                 self.sprites[f'janitor_{facing}_clean_{frame}']=janitor_uniform(cleaning_worker(facing,frame))
 
         self.sprites['social_table']=social_table()
-        self.sprites['social_table_broken']=social_table(True)
+        self.sprites['social_table_broken']=social_table(True,(False,False))
+        for table in (0,1):
+            for left in (0,1):
+                for right in (0,1):
+                    self.sprites[f'social_table_{table}_{left}{right}']=social_table(not table,(left,right))
         for variant in range(4):
             self.sprites[f'community_table_{variant}']=community_table(variant)
             for facing in ('down','up','left','right'):

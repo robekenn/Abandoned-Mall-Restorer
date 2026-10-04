@@ -94,8 +94,8 @@ class Game:
         if self.scene=='courtyard':return self.courtyard.target(self)
         origin = pygame.Vector2(self.player.rect.center)
         door=self.courtyard.door(self.mall)
-        if not self.courtyard.unlocked and self.mall.commons.unlocked and origin.distance_to(door.position)<=72:
-            door.title='Enter the Courtyard food court' if self.courtyard.unlocked else 'Open Courtyard ($50,000)' if self.courtyard.ready(self.mall) else 'Courtyard needs the Commons sweep and six reopened businesses'
+        if not self.courtyard.unlocked and self.mall.commons.unlocked and origin.distance_to(door.position)<=110:
+            door.title='Open Courtyard passage ($50,000)' if self.courtyard.ready(self.mall) else 'Courtyard needs the Commons sweep and six reopened businesses'
             return door
         # Selling takes priority at a trash bin when the player is carrying a load.
         trash_bins = [d for d in self.mall.trash_bins if origin.distance_to(d.position) <= INTERACTION_RADIUS]
@@ -420,7 +420,7 @@ class Game:
         self.story.draw(self)
         self.life.draw(self)
         if self.mall.commons.unlocked:
-            self.courtyard.draw_door(self,self.courtyard.door(self.mall),'COURTYARD >')
+            self.courtyard.draw_passage(self,self.courtyard.door(self.mall))
         if self.owner_requests.store:
             p=self.camera.point(self.owner_requests.store.position)
             pygame.draw.circle(self.screen,(111,211,233),p,26,3)

@@ -102,7 +102,9 @@ class Courtyard:
                 game.leave_courtyard();return True
         elif game.mall.commons.unlocked:
             if direction[0]>0 and game.player.rect.centerx>=game.mall.size[0]-64 and abs(game.player.rect.centery-self.door(game.mall).position.y)<=68:
-                return game.enter_courtyard()
+                if self.unlocked:return game.enter_courtyard()
+                message='Press E at the Courtyard sign to open the passage for '+money(self.COST)+'.' if self.ready(game.mall) else 'Finish the Commons sweep and reopen six businesses to open the Courtyard.'
+                if game.message!=message or game.message_timer<=0:game.deny(message)
         return False
 
     @staticmethod
@@ -196,7 +198,7 @@ class Courtyard:
         game.journal.handle(event,game)
 
     @staticmethod
-    def draw_door(game,door,caption):
+    def draw_passage(game,door):
         surface=game.screen;camera=game.camera
         # Expose the continuous floor through a generous 176px wall opening.
         wall_x=game.mall.size[0]-40 if game.scene=='mall' else 0
@@ -210,10 +212,32 @@ class Courtyard:
         # An unobtrusive inlay leads into the opening, with no glass or door frame.
         left=wall_x-96 if game.scene=='mall' else wall_x+40
         pygame.draw.rect(surface,(165,157,125),camera.rect((left,y-3,96,6)))
-        label=game.hud.small.render(caption,True,theme.TEXT)
-        x=door.position.x-50 if game.scene=='mall' else door.position.x+70
-        sign=label.get_rect(center=camera.point((x,y-112))).inflate(16,10)
-        theme.frame(surface,sign,theme.PANEL,False);surface.blit(label,label.get_rect(center=sign.center))
+        # A wooden plaque hangs from a bracket fixed to the actual boundary wall.
+        left=wall_x-194 if game.scene=='mall' else wall_x+40
+        plaque=pygame.Rect(left,y-188,194,72)
+        beam=pygame.Rect(left-4,y-210,202,6)
+        pygame.draw.rect(surface,(113,82,50),camera.rect(beam))
+        pygame.draw.rect(surface,(194,159,99),camera.rect(beam),1)
+        for x in (plaque.left+20,plaque.right-20):
+            pygame.draw.line(surface,(177,166,130),camera.point((x,y-204)),camera.point((x,plaque.top)),2)
+        pygame.draw.rect(surface,(67,59,43),camera.rect(plaque.move(3,3)))
+        pygame.draw.rect(surface,(119,84,48),camera.rect(plaque))
+        pygame.draw.rect(surface,(207,171,103),camera.rect(plaque),3)
+        pygame.draw.rect(surface,(151,111,62),camera.rect(plaque.inflate(-10,-10)),1)
+        title='COURTYARD' if game.scene=='mall' else 'COMMUNITY COMMONS'
+        lines=[title]
+        if game.scene=='mall' and not game.courtyard.unlocked:
+            lines += ['OPEN · '+money(game.courtyard.COST),'E to open' if game.courtyard.ready(game.mall) else 'Commons sweep + 6 shops']
+            # Rubble blocks the unrestored passage; it is cleared by the paid unlock.
+            for dx,dy,w,h in ((2,42,22,13),(15,25,23,17),(1,9,25,15)):
+                block=camera.rect((wall_x+dx,y+dy,w,h))
+                pygame.draw.rect(surface,(102,106,91),block);pygame.draw.rect(surface,(150,145,118),block,2)
+        else:lines += ['Walk through to enter' if game.scene=='mall' else 'Walk through to return']
+        for i,line in enumerate(lines):
+            label=game.hud.small.render(line,True,(248,230,184))
+            if label.get_width()>plaque.width-16:
+                label=pygame.transform.smoothscale(label,(plaque.width-16,label.get_height()))
+            surface.blit(label,label.get_rect(center=camera.point((plaque.centerx,plaque.top+16+i*20))))
 
     def draw(self,game):
         world=self.ensure_world();surface=game.screen;camera=self.camera;art=game.art;target=self.target(game)
@@ -263,7 +287,7 @@ class Courtyard:
         for b in world.trash_bins:b.draw(surface,camera,art,game.hud.small,target is b)
         for trash in world.trash:
             if view.inflate(64,64).collidepoint(trash.position):trash.draw(surface,camera,art,target is trash)
-        self.draw_door(game,self.return_door,'< COMMONS')
+        self.draw_passage(game,self.return_door)
         layers=[(t.position.y,'table',t) for t in world.social_tables]
         layers += [(p.display_position.y,'person',p) for p in self.shoppers.people if p.visible]
         layers += [(j.position.y,'janitor',j) for j in self.janitors.people.values()]

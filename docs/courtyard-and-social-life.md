@@ -5,7 +5,7 @@ This feature PR addresses #29–#35. VERSION stays at 0.1.1; CI creates review b
 | Issue | New behavior |
 | --- | --- |
 | #29 | Visitor arrivals rotate between individuals, families with two adults and a child, and teen pairs. Followers use safe routes to stay near their leader, accompany store visits and leave together. Children have smaller sprites and caps; teens have hoodies/headphones/backpacks and alternate walking with running. |
-| #30 | Two permanent social tables per indoor court. After two regular businesses reopen and the matching seating upgrade is purchased in that court, visitors can reserve separate reachable seats and chat. Tables participate in collision and depth sorting; reservations end when the visitor leaves. |
+| #30 | Two permanent social tables per indoor court. After two regular businesses reopen and the table and that individual chair are repaired in that court, visitors can reserve separate reachable seats and chat. Tables participate in collision and depth sorting; reservations end when the visitor leaves. |
 | #31 | Story community boards sit along alternate west/east room edges. Keepsakes and gatherings retain their separate roles; the map marks boards. |
 | #32 | Keepsake-givers hand over their item once, then depart as ordinary walking visitors. Collected-memory flags prevent stationary givers from reappearing after Continue. |
 | #33 | The Courtyard food court is a separate 2000×1440 map loaded on first entry, with eight distinct kiosk sprites, patio dining, brick pads, trees, herb pots and evening lights. Visitor routes run on both maps; litter, cleaning work and rendering remain local to the active map. |
@@ -14,9 +14,16 @@ This feature PR addresses #29–#35. VERSION stays at 0.1.1; CI creates review b
 
 ## Enter the Courtyard
 
-In Community Commons, finish the first sweep and reopen six businesses. A 176px opening connects the Commons east exterior wall to the patio west wall. Walk right through it to enter and left through the matching opening to return; E is unnecessary. The existing one-time $50,000 passage restoration still applies on first entry (E at the restoration marker can also pay it). Return visits are free, and arrival positions keep held movement from bouncing you straight back.
+In Community Commons, finish the first sweep and reopen six businesses. A 176px opening connects the Commons east exterior wall to the patio west wall. A wooden plaque hangs from a bracket on the wall and displays the $50,000 opening cost. Press E at the passage to pay that cost once after meeting the prerequisites; walking into the locked opening does not spend money. Rubble blocks the passage until it is restored. Once open, walk right through it to enter and left through the matching opening to return, without pressing E. Return visits are free, and arrival positions keep held movement from bouncing you straight back.
 
-The North arcade now has two aligned seating areas flanking the central fountain, with tables toward the shops, benches below, bins along the central approach and planters on the outer edges. Shop doors, delivery access and connecting paths stay clear. All four indoor sections start with collapsed benches, tables and seats. Each section’s two Furniture seating purchases restore their matching bench and table seats together, using the existing prices and fixture IDs. Previously purchased furniture remains restored.
+The North arcade now has two aligned seating areas flanking the central fountain, with tables toward the shops, benches below, bins along the central approach and planters on the outer edges. Shop doors, delivery access and connecting paths stay clear. All four indoor sections start with collapsed benches, tables and seats. Furniture now lists two individual benches, two individual tables, and each table’s left and right chair separately in every section. Repair the matching table before buying its chairs; visitors reserve only repaired chairs. Use arrows or the mouse wheel to browse the expanded list, or click a visible row to inspect and then Purchase. Earlier bundle purchases from this PR retain their repaired bench, table and both chairs after Continue; new bench purchases repair only that bench. Every mosaic is positioned from its own fountain, including the moved North arcade fountain.
+
+| Indoor section | Each bench | Each table | Each chair |
+| --- | ---: | ---: | ---: |
+| North arcade | $70 | $70 | $35 |
+| East gallery | $140 | $140 | $70 |
+| Garden court | $600 | $600 | $300 |
+| Community Commons | $900 | $900 | $450 |
 
 Cash, carried items and existing equipment travel with you. Visitors continue their journeys on both maps; inactive litter, cleaning work, story and owner-task timers pause. Both maps earn their rent during active play, and gameplay menus pause both. A collection favor accepted indoors also counts player pickups outside; return indoors to claim it. J outside opens the Courtyard map and progression guide, and F2/Pause keeps the usual settings and save/exit controls.
 

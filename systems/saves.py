@@ -85,7 +85,7 @@ def snapshot(game):
     community={'completed':life.completed,'cooldowns':life.cooldowns,'owner_chats':life.owner_chats,
                'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants,'activity':life.activity,
                'tasks':[[list(t.position),t.title,t.kind,t.duration,t.progress,t.completed] for t in life.tasks]}
-    return {'seating_layout':2,'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
+    return {'seating_layout':3,'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
             'life':community,'cash':game.cash,'player':list(game.main_position if game.scene=='courtyard' else game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
@@ -104,7 +104,7 @@ def snapshot(game):
 
 def restore_state(data, game):
     """Build and validate a replacement world before changing the live game."""
-    layout=number(data.get('seating_layout',1),1,2,True)
+    layout=number(data.get('seating_layout',1),1,3,True)
     mall=Mall();u=Upgrades();requests=OwnerRequests();workers=Janitors();story=Story();tutorial=Tutorial()
     if data['unlocked']!=[r.key for r in mall.regions[:len(data['unlocked'])]]:raise ValueError('Invalid section order')
     if len(data['unlocked'])>3:raise ValueError('Too many sections')
@@ -143,6 +143,13 @@ def restore_state(data, game):
     allowed.update(o.key for category in ('Furniture','Garden') for o in u.offers(category,'courtyard'))
     u.decor=set(data['fixtures'])
     if not u.decor<=allowed:raise ValueError('Unknown fixture')
+    # Preserve seating already purchased as a bench/table bundle in the prior PR.
+    if layout==2:
+        for i in range(8):
+            if f'bench_{i}' in u.decor:
+                u.decor.update((f'table_{i}',f'table_{i}_seat_0',f'table_{i}_seat_1'))
+    if not u.decor<=allowed:raise ValueError('Seating in a closed court')
+    if any('_seat_' in key and key.split('_seat_')[0] not in u.decor for key in u.decor):raise ValueError('Chair without a restored table')
     for key,name,area,stores,pool,unlocked,origin in workers.courts(mall):
         if key not in data['janitors']:continue
         if not unlocked:raise ValueError('Janitor in a closed court')
