@@ -110,3 +110,7 @@ Merging PR #27 publishes **v0.1.1 — Playable Preview** after all platform test
 ### Playtester controls and settings
 
 Open **F2 → Settings** or **Esc → Settings** for independent music/effects sliders, fullscreen, tutorial/reminder preferences, and custom keys. Upgrade rows are now inspect-only; use the Purchase button or Enter to buy. Equipment shops are marked UPGRADES, and active owner favors identify their business. See [issue-by-issue changes and playtest notes](docs/playtester-issues.md).
+
+### Courtyard and social visitors (development branch)
+
+Families and teen groups join shoppers, busy/quiet hours vary foot traffic, and social tables provide places to sit and chat. Story boards move to room edges and keepsake-givers leave after handing over their finds. From Community Commons, complete its sweep and reopen six businesses to unlock the Courtyard doors for $50,000. Outside is a separate food-court map with seven restaurants, picnic seating, and service, comfort and compost upgrades. Both maps and your current location save through Continue. See [Courtyard and social life](docs/courtyard-and-social-life.md) for progression and review steps.

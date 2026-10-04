@@ -66,12 +66,12 @@ class UpgradeShop:
         theme.dim(surface)
         panel,tabs = self.geometry(surface)
         theme.frame(surface,panel)
-        title={'north':'Northgate Supplies','east':'Eastgate Workshop','garden':'Garden Supply','commons':'Commons Exchange'}[self.shop]
+        title={'north':'Northgate Supplies','east':'Eastgate Workshop','garden':'Garden Supply','commons':'Commons Exchange','courtyard':'Courtyard Provisions'}[self.shop]
         surface.blit(game.hud.title.render(title,True,theme.TEXT),(panel.x+20,panel.y+18))
         surface.blit(game.hud.small.render(f'{money(game.cash)} available',True,theme.GOLD),(panel.x+20,panel.y+56))
         for i,rect in enumerate(tabs):
             theme.frame(surface,rect,theme.CARD if i==self.category else theme.PANEL)
-            surface.blit(game.hud.font.render(f'{i+1}  {self.categories[i]}',True,theme.ACCENT if i==self.category else theme.MUTED),(rect.x+10,rect.y+8))
+            surface.blit(game.hud.font.render(f'{i+1}  '+('Service' if self.shop=='courtyard' and i==0 else self.categories[i]),True,theme.ACCENT if i==self.category else theme.MUTED),(rect.x+10,rect.y+8))
         rows = self.rows(game)
         for i,(offer,rect) in enumerate(rows):
             theme.frame(surface,rect,theme.CARD if i==self.selection else theme.PANEL, i==self.selection)

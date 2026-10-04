@@ -120,7 +120,7 @@ class ShopVisitsAndPacingTests(unittest.TestCase):
                 person=Shopper(identity,store.position,store,g.shoppers.walkways)
                 g.shoppers.people=[person];g.shoppers.elapsed=-1000
                 seen=set()
-                for _ in range(250):
+                for _ in range(1500):
                     g.shoppers.update(.1,g.mall,g.upgrades)
                     seen.add(person.state)
                     footprint=pygame.Rect(person.position.x-9,person.position.y-11,18,22)

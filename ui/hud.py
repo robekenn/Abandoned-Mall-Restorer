@@ -9,6 +9,7 @@ from mall.store import Store
 from systems.story import StoryPoint, CHAPTERS
 from ui import theme
 from systems.mall_life import EventSpot
+from mall.courtyard import SceneDoor, Courtyard
 
 
 class HUD:
@@ -21,6 +22,13 @@ class HUD:
         return theme.wrap(self.font,text,width)
 
     def goal(self, game):
+        if game.scene=='courtyard':
+            world=game.courtyard.world
+            if game.upgrades.held==game.upgrades.capacity:return 'Bag full','Sell your trash at a courtyard station.'
+            if not world.stores[0].restored:return 'Courtyard Provisions','Reopen Provisions · '+money(world.stores[0].cost)
+            if not world.initial_cleanup_complete:return 'First courtyard sweep',f'Clean the patio. {world.active_litter_count} patches left.'
+            if world.next_store:return 'Next kitchen',world.next_store.name+' · '+money(world.next_store.cost)
+            return 'A table for everyone','All seven kitchens open. Visit Provisions for service and garden upgrades.'
         mall=game.mall;requests=game.owner_requests
         if game.tutorial.active:return game.tutorial.goal
         if requests.store:
@@ -51,6 +59,7 @@ class HUD:
         return 'A place for everyone','Visit the Commons board to begin another lantern walk.'
 
     def prompt(self, game, target):
+        if isinstance(target,SceneDoor):return 'E',target.title
         if isinstance(target,EventSpot):return 'E','Join '+target.title
         if isinstance(target,StoryPoint):return 'E',target.label
         if isinstance(target,Trash):
@@ -60,7 +69,7 @@ class HUD:
         if isinstance(target,RequestSpot):return ('Hold E' if target.duration else 'E'),target.title
         if isinstance(target,Store):
             if not target.restored:return 'E',f'Reopen {target.name}' if target.available else 'This store is still closed'
-            return 'E',('Enter '+target.name) if target.upgrade_shop else f'Talk to {OWNERS[target.name]}'
+            return 'E',('Enter '+target.name) if target.upgrade_shop else f'Talk to {OWNERS[target.name]}' if target.name in OWNERS else 'Chat with the cooks'
         if target:return 'E',f'Open {target.name} · {money(target.cost)}'
         return 'Move','WASD or arrow keys'
 
@@ -91,6 +100,16 @@ class HUD:
             pygame.draw.circle(surface,theme.ACCENT,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),4)
         for point in getattr(mall,'story_markers',()):
             pygame.draw.circle(surface,theme.GOLD,(round(bounds.x+point[0]*sx),round(bounds.y+point[1]*sy)),3)
+        if getattr(mall,'commons',None) and mall.commons.unlocked:
+            door=Courtyard.door(mall).position
+            point=(round(bounds.x+door.x*sx),round(bounds.y+door.y*sy))
+            pygame.draw.rect(surface,theme.ACCENT,(point[0]-3,point[1]-4,6,8),1)
+            label=self.small.render('PATIO',True,theme.ACCENT)
+            x=point[0]+6 if point[0]+6+label.get_width()<bounds.right else point[0]-label.get_width()-6
+            surface.blit(label,(x,point[1]-7))
+        if hasattr(mall,'return_door'):
+            point=(round(bounds.x+mall.return_door.position.x*sx),round(bounds.y+mall.return_door.position.y*sy))
+            pygame.draw.rect(surface,theme.ACCENT,(point[0]-3,point[1]-4,6,8),1)
         if requests and requests.store:
             pygame.draw.circle(surface,(111,211,233),(round(bounds.x+requests.store.position.x*sx),round(bounds.y+requests.store.position.y*sy)),7,2)
             destinations=[requests.store.position] if requests.ready else [s.position for s in requests.visible_spots]
@@ -101,11 +120,11 @@ class HUD:
         pygame.draw.circle(surface,theme.TEXT,(round(bounds.x+player[0]*sx),round(bounds.y+player[1]*sy)),3)
 
     def draw(self, game, target, surface=None):
-        surface=game.screen if surface is None else surface;width,height=surface.get_size();mall=game.mall
+        surface=game.screen if surface is None else surface;width,height=surface.get_size();outside=game.scene=='courtyard';mall=game.courtyard.world if outside else game.mall
         pygame.draw.rect(surface,theme.BG,(0,0,width,76))
         surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
         region=mall.area_name(game.player.rect.center)
-        surface.blit(self.small.render(region,True,theme.MUTED),(23,47))
+        surface.blit(self.small.render(region+" · "+(game.courtyard.shoppers if outside else game.shoppers).traffic,True,theme.MUTED),(23,47))
         values=[('CLEAN',cleanliness_label(mall.cleanliness)),('CASH',money(game.cash)),('BAG',f'{game.upgrades.held} / {game.upgrades.capacity}')]
         for i,(label,value) in enumerate(values):
             r=pygame.Rect(width-450+i*145,10,133,56);theme.frame(surface,r,theme.PANEL,False)
@@ -113,7 +132,7 @@ class HUD:
             color=theme.GOLD if label=='BAG' and game.upgrades.held==game.upgrades.capacity else theme.TEXT
             text=self.font.render(value,True,color);surface.blit(text,(r.x+12,r.y+27))
         title,objective=self.goal(game)
-        reminder=game.preferences.notifications and not game.owner_requests.store and any(game.owner_requests.eligible(s) for s in mall.stores)
+        reminder=not outside and game.preferences.notifications and not game.owner_requests.store and any(game.owner_requests.eligible(s) for s in mall.stores)
         card=pygame.Rect(20,88,min(width-350 if reminder else width-40,480),94 if game.tutorial.active else 72);theme.frame(surface,card)
         surface.blit(self.small.render(title,True,theme.ACCENT),(card.x+14,card.y+12))
         for i,line in enumerate(theme.wrap(self.font,objective,card.width-28)[:3 if game.tutorial.active else 2]):
@@ -131,7 +150,7 @@ class HUD:
         for i,line in enumerate(theme.wrap(self.small,action,available)[:2]):
             surface.blit(self.small.render(line,True,theme.TEXT),(r.right+12,height-41+i*17))
         surface.blit(controls,controls.get_rect(midright=(width-20,height-29)))
-        available_requests=sum(game.owner_requests.eligible(s) for s in mall.stores)
+        available_requests=0 if outside else sum(game.owner_requests.eligible(s) for s in mall.stores)
         if available_requests and game.preferences.notifications and not game.owner_requests.store:
             text=(game.request_notice if game.request_notice_timer else f'{available_requests} owner favors available')+' · J: owners'
             box=pygame.Rect(width-310,88,290,52);theme.frame(surface,box)

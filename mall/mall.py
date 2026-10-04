@@ -7,6 +7,7 @@ from mall.furniture import bench_footprint, fountain_footprint
 from mall.delivery import DeliveryPoint
 from mall.section import EastGallery, later_galleries, covered_positions, floor_tiles
 from game.settings import WORLD_SIZE
+from mall.social import place_tables
 
 
 class Mall:
@@ -66,6 +67,9 @@ class Mall:
         self.initial_litter_count = len(self.trash)
         self.north_trash = list(self.trash)
         self.north_floor_tiles = list(self.floor_tiles)
+        self.social_tables=place_tables(self.opening_area,self.floor_tiles,self.obstacles,self.trash,'north')
+
+
 
     def _coverage_positions(self, seeds):
         """Cover every walkable floor tile with a reachable cleanup task."""
@@ -125,6 +129,7 @@ class Mall:
         self.trash_bins += region.bins
         self.lamps += region.lamps
         self.plants += region.plants
+        self.social_tables += place_tables(region.area,region.floor_tiles,self.obstacles,region.trash,region.key)
         self.refresh_businesses()
         return True
 
@@ -279,4 +284,5 @@ class Mall:
         result.extend((bench_footprint(b).centery,
                        'bench_clean' if f'bench_{i}' in upgrades.decor else 'bench_dirty',
                        b.center,(145,85)) for i,b in enumerate(self.benches))
+        result.extend((t.position.y,'social_table',t.position,(96,72)) for t in self.social_tables)
         return result

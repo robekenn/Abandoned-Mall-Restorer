@@ -178,6 +178,25 @@ def main():
                 if not game.save_store.load(game) or game.cash!=cash or not game.story.festival or game.life.round!=1 or game.life.active!='north':
                     raise RuntimeError('Checkpoint roundtrip failed')
             game.draw()
+            # A distinct scene shares equipment and cash, but never indoor rendering.
+            game.player.rect.center=game.courtyard.door(game.mall).position
+            if not game.enter_courtyard(save=False):raise RuntimeError('Courtyard entry failed')
+            world=game.courtyard.world
+            for trash in world.trash:world.clean_trash(trash)
+            for store in world.stores:store.restored=True
+            world.refresh_businesses()
+            game.open_upgrade_shop(world.stores[0])
+            for category in range(3):game.shop_menu.category=category;game.shop_menu.selection=0;game.draw()
+            for key in ('courtyard_service','courtyard_comfort','courtyard_compost'):game.buy_upgrade(key)
+            game.upgrades.decor.update(o.key for category in ('Furniture','Garden') for o in game.upgrades.offers(category,'courtyard'))
+            game.shop_menu.open=False;game.update(.2,(0,0));game.draw()
+            game.journal.open=True;game.draw();game.journal.open=False
+            with TemporaryDirectory() as directory:
+                game.save_store=SaveStore(directory,developer=args.dev,enabled=True)
+                cash=game.cash
+                if not game.save_store.save(game) or not game.save_store.load(game):raise RuntimeError('Courtyard checkpoint failed')
+                if game.scene!='courtyard' or game.cash!=cash or not all(s.restored for s in game.courtyard.world.stores):raise RuntimeError('Courtyard state lost')
+            game.leave_courtyard();game.draw()
         finally:
             pygame.quit()
         return

@@ -44,6 +44,7 @@ class Upgrades:
 
     def __init__(self):
         self.held = 0
+        self.courtyard_service_level=0;self.courtyard_comfort_level=0;self.courtyard_compost_level=0
         self.capacity_level = 0
         self.advanced_capacity_level = 0
         self.speed_level = 0
@@ -90,6 +91,17 @@ class Upgrades:
         return len(self.decor)
 
     def offers(self, category, shop='north'):
+        if shop=='courtyard':
+            if category=='Gear':
+                titles=('Kitchen service training','Patio comfort','Compost partnerships')
+                details=('Restaurant income +15% per tier','Longer table visits and +2 visitor capacity per tier','Courtyard recycling payout +25% per tier')
+                tracks=('courtyard_service','courtyard_comfort','courtyard_compost')
+                return [Offer(key,title,'Fully upgraded' if getattr(self,key+'_level')==3 else detail,
+                              0 if getattr(self,key+'_level')==3 else (15000,30000,55000)[getattr(self,key+'_level')],getattr(self,key+'_level')==3)
+                        for key,title,detail in zip(tracks,titles,details)]
+            specs=[(f'courtyard_table_{i}',f'Picnic table {i+1}',4000) for i in range(6)] if category=='Furniture' else [
+                (f'courtyard_herb_{i}',f'Herb planter {i+1}',2500) for i in range(4)]+[(f'courtyard_light_{i}',f'Evening lights {i+1}',3500) for i in range(4)]
+            return [Offer(key,title,'Restore patio fixture / +$1 base rent per 5s',price,key in self.decor) for key,title,price in specs]
         if shop in self.REGIONAL_TRACKS:
             if category=='Gear':
                 result=[]
@@ -185,7 +197,7 @@ class Upgrades:
             return cash,'Finish the previous section’s '+regional[5].lower()+' upgrades first.',False
         if cash < offer.price:
             return cash, f'You need {money(offer.price-cash)} more for {offer.title.lower()}.', False
-        if regional or key in ('capacity','value','tool','advanced_capacity','advanced_value','speed'):
+        if regional or key in ('courtyard_service','courtyard_comfort','courtyard_compost','capacity','value','tool','advanced_capacity','advanced_value','speed'):
             field = key+'_level'
             setattr(self,field,getattr(self,field)+1)
         else:

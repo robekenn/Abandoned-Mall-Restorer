@@ -60,7 +60,8 @@ def snapshot(game):
     community={'completed':life.completed,'cooldowns':life.cooldowns,'owner_chats':life.owner_chats,
                'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants,'activity':life.activity,
                'tasks':[[list(t.position),t.title,t.kind,t.duration,t.progress,t.completed] for t in life.tasks]}
-    return {'life':community,'cash':game.cash,'player':list(game.player.rect.center),'facing':game.player.facing,
+    return {'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
+            'life':community,'cash':game.cash,'player':list(game.main_position if game.scene=='courtyard' else game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
             'trash':[[t.cleaned,t.ever_cleaned,getattr(t,'revision',0)] for t in game.mall.trash],
@@ -106,10 +107,14 @@ def restore_state(data, game):
     limits={'capacity_level':5,'value_level':5,'tool_level':3,'advanced_capacity_level':4,'advanced_value_level':3,'speed_level':3}
     for tracks in u.REGIONAL_TRACKS.values():
         for key,_,prices,*_ in tracks:limits[key+'_level']=len(prices)
-    if set(data['upgrades'])!=set(limits):raise ValueError('Unknown equipment')
-    for key,limit in limits.items():setattr(u,key,number(data['upgrades'][key],0,limit,True))
+    for key in ('courtyard_service_level','courtyard_comfort_level','courtyard_compost_level'):limits[key]=3
+    saved_equipment=dict(data['upgrades'])
+    for key in ('courtyard_service_level','courtyard_comfort_level','courtyard_compost_level'):saved_equipment.setdefault(key,0)
+    if set(saved_equipment)!=set(limits):raise ValueError('Unknown equipment')
+    for key,limit in limits.items():setattr(u,key,number(saved_equipment[key],0,limit,True))
     u.held=number(data['held'],0,u.capacity,True)
     allowed={o.key for key,*_ in workers.courts(mall) for category in ('Furniture','Garden') for o in u.offers(category,key)}
+    allowed.update(o.key for category in ('Furniture','Garden') for o in u.offers(category,'courtyard'))
     u.decor=set(data['fixtures'])
     if not u.decor<=allowed:raise ValueError('Unknown fixture')
     for key,name,area,stores,pool,unlocked,origin in workers.courts(mall):
@@ -117,10 +122,16 @@ def restore_state(data, game):
         if not unlocked:raise ValueError('Janitor in a closed court')
         row=data['janitors'][key];j=Janitor(key,area,origin,mall);j.position=vector(row['position'])
         footprint=pygame.FRect(j.position.x-10,j.position.y-12,20,24)
+        moved=False
+        if area.collidepoint(j.position) and any(t.footprint.colliderect(footprint) for t in mall.social_tables):
+            # New seating can occupy a node used by an older checkpoint.
+            j.position=pygame.Vector2(min(j.paths.nodes,key=lambda p:pygame.Vector2(p).distance_squared_to(j.position)));moved=True
+            footprint=pygame.FRect(j.position.x-10,j.position.y-12,20,24)
         if not area.collidepoint(j.position) or any(w.colliderect(footprint) for w in mall.obstacles):raise ValueError('Unsafe janitor position')
         j.walk_level=number(row['walk'],0,3,True);j.clean_level=number(row['clean'],0,3,True)
         j.cleaned=number(row['cleaned'],0,10**12,True);j.earnings=number(row['earnings'])
         j.progress=number(row['progress'],0,j.clean_seconds)
+        if moved:j.progress=0
         if row['target'] is not None:
             j.target=mall.trash[number(row['target'],0,len(mall.trash)-1,True)]
             if j.target not in pool or j.target.cleaned:raise ValueError('Invalid janitor target')
@@ -160,7 +171,7 @@ def restore_state(data, game):
     if any((story.started[i] or story.completed[i]) and i>len(mall.active_regions) for i in range(4)):raise ValueError('Story in a closed court')
     if any(story.completed[i] and (not story.started[i] or not all(story.memories[i])) for i in range(4)):raise ValueError('Incomplete chapter memory state')
     story.seed=number(saved_story.get('seed',0),0,2**31-1,True)
-    story.layout=number(saved_story.get('layout',1),1,2,True)
+    story.layout=number(saved_story.get('layout',1),1,3,True)
     story.setup(mall);story.update(0,mall)
     life=MallLife()
     if data.get('life') is not None:
@@ -179,7 +190,12 @@ def restore_state(data, game):
             if life.active not in life.completed:raise ValueError('Unknown gathering')
             court=next(c for c in workers.courts(mall) if c[0]==life.active)
             point=vector(row['position']);footprint=pygame.Rect(point.x-90,point.y-82,180,162)
-            if not court[5] or not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles):raise ValueError('Unsafe community table')
+            table_obstacles=[t.footprint for t in mall.social_tables]
+            if not court[5] or not court[2].contains(footprint) or any(w.colliderect(footprint) for w in mall.obstacles if w not in table_obstacles):raise ValueError('Unsafe community table')
+            # Existing events retain their place; nearby new seating waits until they end.
+            mall.suspended_tables=[t for t in mall.social_tables if t.footprint.colliderect(footprint)]
+            for table in mall.suspended_tables:
+                mall.social_tables.remove(table);mall.obstacles.remove(table.footprint)
             life.spot=EventSpot(point,life.event.title)
             life.activity=row.get('activity','match')
             if life.activity not in ('match','recipe','plant','hunt'):raise ValueError('Unknown event activity')
@@ -210,16 +226,49 @@ def restore_state(data, game):
     if tutorial.active and tutorial.step==5:raise ValueError('Invalid guide stage')
     tutorial.origin=vector(row['origin']);tutorial.collected=number(row['collected'],integer=True);tutorial.sold=number(row['sold'],integer=True)
     tutorial.journal_seen=flag(row['journal']);tutorial.explaining=flag(row.get('explaining',tutorial.active))
-    shoppers=Shoppers();shoppers.next_identity=number(data['visitor_identity'],integer=True)
+    shoppers=Shoppers();shoppers.traffic_elapsed=number(data.get('traffic_clock',0),0,10**12)
+    shoppers.next_identity=number(data['visitor_identity'],integer=True)
     if requests.greetings:shoppers.next_identity=max(shoppers.next_identity,max(requests.greetings)+1)
+    from mall.courtyard import Courtyard
+    courtyard=Courtyard();saved_courtyard=data.get('courtyard') or {'unlocked':False}
+    courtyard.unlocked=flag(saved_courtyard['unlocked']);courtyard_position=None
+    if courtyard.unlocked:
+        if not courtyard.ready(mall):raise ValueError('Courtyard without Commons prerequisites')
+        world=courtyard.ensure_world()
+        if len(saved_courtyard['stores'])!=len(world.stores) or len(saved_courtyard['trash'])!=len(world.trash):raise ValueError('Courtyard layout mismatch')
+        for store,restored in zip(world.stores,saved_courtyard['stores']):store.restored=flag(restored)
+        for trash,row in zip(world.trash,saved_courtyard['trash']):
+            trash.cleaned=flag(row[0]);trash.ever_cleaned=flag(row[1]);trash.revision=number(row[2],0,10**12,True)
+            if trash.cleaned and not trash.ever_cleaned:raise ValueError('Invalid patio cleanup')
+        world._initial_cleanup_complete=all(t.ever_cleaned for t in world.trash)
+        for i,store in enumerate(world.stores):
+            if store.restored and i and (not world.initial_cleanup_complete or not world.stores[i-1].restored):raise ValueError('Invalid restaurant order')
+        world.refresh_businesses()
+        dirty={tuple(vector(p)) for p in saved_courtyard['dirty']}
+        if not dirty<=set(world.floor_tiles):raise ValueError('Invalid patio floor')
+        world.dirty_tiles=dirty
+        courtyard.spawner.elapsed=number(saved_courtyard['litter_timer'],0,4)
+        courtyard.spawner.turn=number(saved_courtyard['litter_turn'],0,10**12,True)
+        courtyard.shoppers.traffic_elapsed=number(saved_courtyard['traffic_clock'],0,10**12)
+        courtyard.shoppers.next_identity=number(saved_courtyard['identity'],integer=True)
+        if flag(saved_courtyard['scene']):
+            courtyard_position=vector(saved_courtyard['position'])
+            if not world.opening_area.collidepoint(courtyard_position) or any(w.colliderect(pygame.Rect(courtyard_position.x-13,courtyard_position.y-15,26,30)) for w in world.obstacles):
+                safe=[p for p in world.floor_tiles if not any(w.colliderect(pygame.Rect(p[0]-13,p[1]-15,26,30)) for w in world.obstacles)]
+                courtyard_position=pygame.Vector2(min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(courtyard_position)))
+    if any(getattr(u,key)>0 for key in ('courtyard_service_level','courtyard_comfort_level','courtyard_compost_level')) or any(k.startswith('courtyard_') for k in u.decor):
+        if not courtyard.unlocked or not courtyard.world.stores[0].restored:raise ValueError('Patio equipment without Provisions')
     state={'mall':mall,'upgrades':u,'owner_requests':requests,'janitors':workers,'story':story,'tutorial':tutorial,
-           'life':life,'player':player,'shoppers':shoppers,'cash':number(data['cash']),'rent_timer':number(data['rent_timer'],0,5),
+           'life':life,'courtyard':courtyard,'scene':'mall','main_position':None,'player':player,'shoppers':shoppers,'cash':number(data['cash']),'rent_timer':number(data['rent_timer'],0,5),
            'total_collected':number(data['collected'],integer=True),'total_sold':number(data['sold'],integer=True)}
     litter_timer=number(data['litter_timer'],0,4);turn=number(data['litter_turn'],0,10**12,True);muted=flag(data['muted'])
     # Commit only after every field passed; a damaged primary can safely fall back.
     for key,value in state.items():setattr(game,key,value)
     game.litter_spawner.elapsed=litter_timer;game.litter_spawner.turn=turn
     if muted!=game.audio.muted:game.audio.toggle()
+    from game.camera import Camera
+    game.camera=Camera(mall.size);game.main_camera=game.camera
+    if courtyard_position is not None:game.enter_courtyard(save=False,position=courtyard_position)
     game.frame_camera(game.screen.get_size())
 
 

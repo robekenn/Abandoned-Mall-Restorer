@@ -39,3 +39,15 @@ J -> Mall life (4): host optional gatherings after two regular shops reopen
 and your court is at least half clean. E at its gold table starts the
 conversation. C in an owner conversation: just chat. Developer F3 -> 7
 prepares a gathering for quick review.
+
+Families and teens arrive together; busy and quiet hours vary visitor traffic.
+Two social tables per indoor court offer seats after two regular shops reopen.
+Keepsake-givers leave after handing over their finds; community boards are near
+the side walls. Narrow connecting corridors are marked SERVICE PASSAGE.
+
+Courtyard: in Community Commons, finish the first sweep and reopen six shops.
+Use the west-side courtyard doors and pay $50,000 once. Reopen Provisions,
+finish the patio sweep, then open seven restaurants. Provisions sells service,
+comfort and compost upgrades, picnic tables, herb pots and evening lights.
+J outside opens the patio map. Return doors bring you back to the Commons.
+Cash, carried items and equipment are shared; both maps and your location save.
