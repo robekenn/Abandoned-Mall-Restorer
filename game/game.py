@@ -140,6 +140,19 @@ class Game:
         self.total_sold += count
         self.owner_requests.record_sale(count,trash_bin.position)
 
+    def pickup_at(self, screen_position):
+        if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu)):
+            return
+        viewport=pygame.Rect(0,190 if self.tutorial.active else 170,self.screen.get_width(),self.screen.get_height()-(248 if self.tutorial.active else 228))
+        if not viewport.collidepoint(screen_position):return
+        point=pygame.Vector2(screen_position)+self.camera.offset
+        candidates=[t for t in self.mall.trash if not t.cleaned and t.position.distance_squared_to(point)<=24**2]
+        if not candidates:return
+        target=min(candidates,key=lambda t:t.position.distance_squared_to(point))
+        if target.position.distance_squared_to(self.player.rect.center)>self.upgrades.tool[1]**2:
+            self.deny('Move closer to collect this litter.');return
+        self.collect(target)
+
     def collect(self, target):
         if self.upgrades.held >= self.upgrades.capacity:
             self.deny('Bag full. Sell your load at a SELL trash bin.')
@@ -149,7 +162,7 @@ class Game:
         origin = pygame.Vector2(self.player.rect.center)
         reach,batch = self.upgrades.tool[1:]
         nearby = sorted((t for t in self.mall.trash if not t.cleaned and origin.distance_to(t.position) <= reach),
-                        key=lambda t: origin.distance_squared_to(t.position))
+                        key=lambda t:(t is not target,origin.distance_squared_to(t.position)))
         east_sweep_was_done = self.mall.east.initial_cleanup_complete
         first_sweep_was_done = self.mall.initial_cleanup_complete
         collected = 0
@@ -456,6 +469,7 @@ class Game:
         elif self.owner_menu.open:self.owner_menu.handle(event,self)
         elif self.journal.open:self.journal.handle(event,self)
         elif self.tutorial.active and self.tutorial.handle(event,self):pass
+        elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:self.pickup_at(event.pos)
         elif event.type==pygame.KEYDOWN:
             if event.key==pygame.K_h:self.tutorial.start(self)
             elif event.key==pygame.K_j:self.tutorial.journal_seen=True;self.journal.open=True

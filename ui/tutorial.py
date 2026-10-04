@@ -6,7 +6,7 @@ from ui import theme
 class Tutorial:
     STEPS=(
         ('Take a small step','I remember these halls full of neighbors. I do not have to fix everything today. First, let me get my bearings.','Move with WASD or the arrow keys.'),
-        ('Pick up one piece','There is a little litter nearby. One piece is enough to begin. My bag only holds one for now.','Walk close to litter and press E.'),
+        ('Pick up one piece','There is a little litter nearby. One piece is enough to begin. My bag only holds one for now.','Walk close to litter and press E or click it.'),
         ('Make your first sale','That is a start. The recycling money can help bring the shops back. Look for a bin marked SELL.','Walk to a SELL bin and press E.'),
         ('Give yourself room','Supplies used to lend everyone a hand. I can reopen it for $10, then buy a two-slot bag for $5. I can collect and sell a few more pieces to earn that.','Reopen Supplies, buy its 2-slot bag, then close the shop menu.'),
         ('Find the next chapter','I can take this at my own pace. The journal has the map, stories and optional requests. Owners can wait; there are no deadlines.','Press J to look around the journal, then close it to finish the guide.'),

@@ -18,6 +18,24 @@ class PlaytesterTests(unittest.TestCase):
     def key(self,key):self.g.handle_event(pygame.event.Event(pygame.KEYDOWN,key=key))
     def click(self,pos):self.g.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=pos))
 
+    def test_mouse_collects_clicked_litter_with_range_capacity_and_modal_guards(self):
+        g=self.g;trash=g.mall.trash[0];g.player.rect.center=trash.position;g.frame_camera(g.screen.get_size())
+        pos=tuple(g.camera.point(trash.position));g.upgrades.held=g.upgrades.capacity
+        self.click(pos);self.assertFalse(trash.cleaned)
+        g.upgrades.held=0;g.pause.show();self.click(pos);self.assertFalse(trash.cleaned)
+        g.pause.open=False;g.tutorial.start(g);self.click(pos);self.assertFalse(trash.cleaned);g.tutorial.skip()
+        g.player.rect.x+=200;self.click(pos);self.assertFalse(trash.cleaned)
+        g.player.rect.center=trash.position;self.click(pos);self.assertTrue(trash.cleaned)
+        self.assertEqual(g.total_collected,1)
+
+    def test_mouse_chooses_clicked_piece_and_ignores_hud_clicks(self):
+        g=self.g;first,second=g.mall.trash[:2]
+        first.position=pygame.Vector2(400,350);second.position=pygame.Vector2(430,350)
+        g.player.rect.center=first.position;g.camera.offset=pygame.Vector2(0,0)
+        self.click((430,350));self.assertTrue(second.cleaned);self.assertFalse(first.cleaned)
+        g.upgrades.held=0;first.position=pygame.Vector2(400,50);g.player.rect.center=first.position
+        self.click((400,50));self.assertFalse(first.cleaned)
+
     def test_upgrade_clicks_inspect_until_explicit_purchase(self):
         g=self.g;g.mall.stores[0].restored=True;g.open_upgrade_shop(g.mall.stores[0]);g.cash=500
         self.click(g.shop_menu.rows(g)[1][1].center)

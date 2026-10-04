@@ -1,6 +1,6 @@
 # First release playtester improvements
 
-This PR addresses issues #16–#25 without replacing the published v0.1.0 downloads. It does not change VERSION or the release workflow, so merging these fixes runs CI and creates development packages for review rather than attempting to overwrite the first release.
+This PR addresses issues #16–#26 without replacing the published v0.1.0 downloads. It does not change VERSION or the release workflow, so merging these fixes runs CI and creates development packages for review rather than attempting to overwrite the first release.
 
 | Issue | Behavior |
 | --- | --- |
@@ -14,6 +14,8 @@ This PR addresses issues #16–#25 without replacing the published v0.1.0 downlo
 | #23 | The HUD names the active business and owner; its doorway and map position have blue request rings. |
 | #24 | North-facing owners' speech sits beside them, away from the worktable. Other quest-object overlap is checked before drawing. |
 | #25 | Speech bubbles move with their world anchor and disappear when the speaker leaves the playable viewport. They no longer clamp themselves against the HUD or window edge. |
+
+| #26 | Left-click nearby litter to collect the clicked piece first, within tool reach and bag capacity. Menus, HUD clicks and paused explanations cannot collect litter. |
 
 ## Controls
 

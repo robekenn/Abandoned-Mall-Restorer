@@ -54,7 +54,7 @@ class HUD:
         if isinstance(target,EventSpot):return 'E','Join '+target.title
         if isinstance(target,StoryPoint):return 'E',target.label
         if isinstance(target,Trash):
-            return 'E','Collect litter' if game.upgrades.held<game.upgrades.capacity else 'Bag full. Find a bin.'
+            return 'E / click','Collect litter' if game.upgrades.held<game.upgrades.capacity else 'Bag full. Find a bin.'
         if isinstance(target,TrashBin):return 'E','Sell carried trash'
         if isinstance(target,Shopper):return 'E',f'Say hello to {target.name}'
         if isinstance(target,RequestSpot):return ('Hold E' if target.duration else 'E'),target.title
