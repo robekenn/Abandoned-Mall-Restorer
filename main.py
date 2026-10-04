@@ -194,7 +194,7 @@ def main():
             # Exercise every optional kitchen in source and frozen distributions.
             for store in world.stores[1:]:
                 game.player.rect.center=store.position;game.frame_camera(game.screen.get_size())
-                game.courtyard.kitchen_requests.pending=store.name;game.courtyard.kitchen_requests.wait=0
+                game.courtyard.kitchen_requests.waits[store.name]=0
                 game.interact();game.draw()
                 menu=game.cooking_menu
                 if not menu.open:raise RuntimeError('Kitchen did not open: '+store.name)

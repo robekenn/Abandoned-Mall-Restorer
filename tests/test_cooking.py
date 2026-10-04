@@ -41,14 +41,14 @@ class CookingTests(unittest.TestCase):
         for t in self.world.trash:self.world.clean_trash(t)
         for store in self.world.stores:store.restored=True
         self.world.refresh_businesses()
-        self.g.courtyard.kitchen_requests.pending='Hearth Pizza';self.g.courtyard.kitchen_requests.wait=0
+        self.g.courtyard.kitchen_requests.waits['Hearth Pizza']=0
     def tearDown(self):self.helper.tearDown()
 
     def key(self,key,**extra):self.g.handle_event(pygame.event.Event(pygame.KEYDOWN,key=key,**extra))
     def click(self,point):self.g.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=point))
 
     def open(self,store):
-        g=self.g;g.courtyard.kitchen_requests.pending=store.name;g.courtyard.kitchen_requests.wait=0;g.player.rect.center=store.position;g.frame_camera(g.screen.get_size());g.interact()
+        g=self.g;g.courtyard.kitchen_requests.waits[store.name]=0;g.player.rect.center=store.position;g.frame_camera(g.screen.get_size());g.interact()
         self.assertTrue(g.cooking_menu.open);return g.cooking_menu
 
     def finish(self,menu,mouse=False):
@@ -133,16 +133,19 @@ class CookingTests(unittest.TestCase):
                 menu.act(r.order[r.step] if r.order else 0,g);g.draw()
             self.key(pygame.K_ESCAPE)
 
-    def test_request_gate_shared_cooldown_and_background_updates_without_swarm(self):
-        g=self.g;q=g.courtyard.kitchen_requests;q.pending=None;q.wait=1
+    def test_independent_cooldowns_progress_indoors_and_multiple_requests_stay_ready(self):
+        g=self.g;q=g.courtyard.kitchen_requests;q.waits={name:300 for name in RECIPES}
+        first,second=list(RECIPES)[:2];q.waits[first]=1;q.waits[second]=2
         store=self.world.stores[1];g.player.rect.center=store.position;g.interact()
         self.assertFalse(g.cooking_menu.open)
-        g.leave_courtyard();g.update(.5,(0,0));self.assertAlmostEqual(q.wait,.5)
-        g.journal.open=True;g.update(100,(0,0));g.journal.open=False;self.assertAlmostEqual(q.wait,.5)
-        g.update(.5,(0,0));self.assertIn(q.pending,RECIPES)
-        name=q.pending;g.update(100,(0,0));self.assertEqual(q.pending,name)
-        self.assertTrue(q.accept(name));self.assertIsNone(q.pending);self.assertGreaterEqual(q.wait,180);self.assertLessEqual(q.wait,600)
-        self.assertFalse(q.accept(name));q.wait=0;q.update(0,g);self.assertNotEqual(q.pending,name)
+        g.leave_courtyard();g.update(.5,(0,0));self.assertAlmostEqual(q.waits[first],.5)
+        g.journal.open=True;g.update(100,(0,0));g.journal.open=False;self.assertAlmostEqual(q.waits[first],.5)
+        g.update(.5,(0,0));self.assertTrue(q.ready(first));self.assertFalse(q.ready(second))
+        g.update(1,(0,0));self.assertTrue(q.ready(first));self.assertTrue(q.ready(second))
+        others=dict(q.waits);self.assertTrue(q.accept(first));self.assertFalse(q.ready(first));self.assertTrue(q.ready(second))
+        self.assertGreaterEqual(q.waits[first],180);self.assertLessEqual(q.waits[first],600)
+        self.assertEqual({k:v for k,v in q.waits.items() if k!=first},{k:v for k,v in others.items() if k!=first})
+        self.assertFalse(q.accept(first))
 
     def test_three_mistakes_forfeit_deposit_once_and_block_immediate_retry(self):
         g=self.g;store=self.world.stores[1];menu=self.open(store);cash=g.cash
@@ -153,7 +156,7 @@ class CookingTests(unittest.TestCase):
         g.update(1,(0,0));menu.act(0,g);self.assertEqual(g.cash,cash-fee)
         self.assertEqual(g.courtyard.cooking[store.name]['failed'],1)
         self.key(pygame.K_RETURN);g.interact();self.assertFalse(menu.open)
-        self.assertIsNone(g.courtyard.kitchen_requests.pending)
+        self.assertFalse(g.courtyard.kitchen_requests.ready(store.name))
 
     def test_progressive_ingredient_timeout_and_timing_bands_are_capped(self):
         g=self.g;store=self.world.stores[1]
@@ -180,13 +183,44 @@ class CookingTests(unittest.TestCase):
     def test_intro_cancel_and_insufficient_deposit_keep_request_and_accepted_save_cannot_retry(self):
         g=self.g;store=self.world.stores[1];menu=self.open(store);g.cash=0
         self.key(pygame.K_RETURN);self.assertFalse(menu.started);self.assertIn('deposit',menu.round.notice)
-        self.assertEqual(g.courtyard.kitchen_requests.pending,store.name);g.draw()
-        self.key(pygame.K_ESCAPE);self.assertEqual(g.courtyard.kitchen_requests.pending,store.name)
+        self.assertTrue(g.courtyard.kitchen_requests.ready(store.name));g.draw()
+        self.key(pygame.K_ESCAPE);self.assertTrue(g.courtyard.kitchen_requests.ready(store.name))
         g.cash=100;menu=self.open(store);self.key(pygame.K_RETURN);data=snapshot(g)
-        restore_state(data,g);self.assertEqual(g.cash,75);self.assertIsNone(g.courtyard.kitchen_requests.pending)
+        restore_state(data,g);self.assertEqual(g.cash,75);self.assertFalse(g.courtyard.kitchen_requests.ready(store.name))
         self.assertEqual(snapshot(g),data);g.interact();self.assertFalse(g.cooking_menu.open)
-        bad=copy.deepcopy(data);bad['courtyard']['kitchen_requests']['wait']=-1
+        bad=copy.deepcopy(data);bad['courtyard']['kitchen_requests']['waits'][store.name]=-1
         with self.assertRaises(ValueError):restore_state(bad,g)
         self.assertEqual(snapshot(g),data)
         old=copy.deepcopy(data);del old['courtyard']['kitchen_requests'];restore_state(old,g)
-        self.assertGreaterEqual(g.courtyard.kitchen_requests.wait,180)
+        self.assertTrue(all(wait>=180 for wait in g.courtyard.kitchen_requests.waits.values()))
+
+    def test_multiple_ready_kitchens_and_distinct_cooldowns_survive_continue_and_legacy_migrates(self):
+        g=self.g;q=g.courtyard.kitchen_requests;names=list(RECIPES)
+        q.waits[names[0]]=0;q.waits[names[1]]=0;q.waits[names[2]]=46.5
+        data=snapshot(g);restore_state(data,g);self.assertEqual(snapshot(g),data)
+        self.assertTrue(g.courtyard.kitchen_requests.ready(names[0]));self.assertTrue(g.courtyard.kitchen_requests.ready(names[1]))
+        self.assertEqual(g.courtyard.kitchen_requests.waits[names[2]],46.5)
+        for bad_waits in ({names[0]:0},{**data['courtyard']['kitchen_requests']['waits'],names[0]:601}):
+            bad=copy.deepcopy(data);bad['courtyard']['kitchen_requests']={'waits':bad_waits}
+            with self.assertRaises(ValueError):restore_state(bad,g)
+            self.assertEqual(snapshot(g),data)
+        legacy=copy.deepcopy(data);legacy['courtyard']['kitchen_requests']={'wait':0,'pending':names[0],'last':names[1]}
+        restore_state(legacy,g);self.assertTrue(g.courtyard.kitchen_requests.ready(names[0]))
+        self.assertTrue(all(g.courtyard.kitchen_requests.waits[name]>=180 for name in names[1:]))
+        legacy['courtyard']['kitchen_requests']={'wait':115.5,'pending':None,'last':names[1]}
+        restore_state(legacy,g);self.assertEqual(g.courtyard.kitchen_requests.waits[names[1]],115.5)
+
+    def test_journal_lists_each_kitchens_actual_timer_and_all_ready_markers(self):
+        from mall.store import Store
+        g=self.g;q=g.courtyard.kitchen_requests;names=list(RECIPES)
+        q.waits[names[0]]=30;q.waits[names[1]]=90;q.waits[names[2]]=0;q.waits[names[3]]=0
+        g.journal.open=True
+        with patch.object(g.hud.small,'render',wraps=g.hud.small.render) as render:
+            g.draw();texts=[c.args[0] for c in render.call_args_list]
+            self.assertIn('Next request in 0:30',texts);self.assertIn('Next request in 1:30',texts)
+            self.assertEqual(texts.count('Needs cooking help'),2)
+        g.journal.open=False
+        # The two ready restaurants share the indoor marker renderer.
+        g.camera.offset=pygame.Vector2(0,0);g.screen=pygame.display.set_mode((2000,1440))
+        with patch.object(Store,'draw_request_marker',wraps=Store.draw_request_marker) as marker:
+            g.draw();self.assertEqual(marker.call_count,2)

@@ -13,7 +13,7 @@ class CookingMenu:
     def visit(self,store,game):
         world=game.courtyard.world
         if game.scene!='courtyard' or not game.courtyard.unlocked or world is None or store not in world.stores or not store.restored or store.name not in RECIPES:return False
-        if game.courtyard.kitchen_requests.pending!=store.name:
+        if not game.courtyard.kitchen_requests.ready(store.name):
             game.notify('The kitchen is settled. Watch for its next cooking request.');return False
         served=game.courtyard.cooking.get(store.name,{}).get('served',0)
         self.store=store;self.round=CookingRound(store.name,served=served);self.started=False;self.tip=0;self.open=True

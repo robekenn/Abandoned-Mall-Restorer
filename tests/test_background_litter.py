@@ -15,7 +15,7 @@ class BackgroundLitterTests(unittest.TestCase):
         self.helper=helpers.FeatureTests();self.helper.setUp();self.world=self.helper.enter();self.g=self.helper.g
         for t in self.world.trash:self.world.clean_trash(t)
         self.world.stores[0].restored=True;self.world.refresh_businesses()
-        self.g.courtyard.kitchen_requests.wait=600
+        self.g.courtyard.kitchen_requests.waits={name:600 for name in self.g.courtyard.kitchen_requests.waits}
     def tearDown(self):self.helper.tearDown()
 
     def test_both_maps_spawn_from_either_scene_and_overall_cleanliness_changes(self):
@@ -55,7 +55,7 @@ class BackgroundLitterTests(unittest.TestCase):
         for modal in (g.pause,g.settings_menu,g.journal,g.shop_menu,g.owner_menu,g.display_menu,g.developer,g.story_menu,g.community_menu,g.welcome):
             modal.open=True;g.update(4,(0,0));modal.open=False
         with patch.object(type(g.tutorial),'paused',new_callable=lambda:property(lambda _:True)):g.update(4,(0,0))
-        g.courtyard.kitchen_requests.pending=self.world.stores[1].name;g.courtyard.kitchen_requests.wait=0
+        g.courtyard.kitchen_requests.waits[self.world.stores[1].name]=0
         self.world.stores[1].restored=True
         self.assertTrue(g.cooking_menu.visit(self.world.stores[1],g));g.update(4,(0,0))
         self.assertEqual((g.mall.active_litter_count,self.world.active_litter_count),(0,0))

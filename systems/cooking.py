@@ -108,21 +108,28 @@ class CookingRound:
 
 
 class KitchenRequests:
-    """One patient request shared by all kitchens, with a live-play cooldown."""
+    """Independent, patient kitchen requests measured in live play time."""
     def __init__(self,rng=None):
-        self.rng=rng or random;self.wait=self.rng.uniform(180,600);self.pending=None;self.last=None
+        self.rng=rng or random
+        self.waits={name:self.rng.uniform(180,600) for name in RECIPES}
+
+    def ready(self,name):return self.waits.get(name)==0
+
+    @property
+    def ready_names(self):return tuple(name for name,wait in self.waits.items() if wait==0)
 
     def update(self,dt,game):
-        stores=[s for s in game.courtyard.world.stores if s.restored and s.name in RECIPES]
-        if self.pending or not stores:return
-        self.wait=max(0,self.wait-dt)
-        if self.wait>0:return
-        choices=[s for s in stores if s.name!=self.last] or stores
-        self.pending=self.rng.choice(choices).name
-        game.notify(self.pending+' needs a hand cooking. Visit the Courtyard counter.')
-        game.save_checkpoint()
+        newly_ready=[]
+        for store in game.courtyard.world.stores:
+            if not store.restored or store.name not in self.waits or self.ready(store.name):continue
+            self.waits[store.name]=max(0,self.waits[store.name]-dt)
+            if self.ready(store.name):newly_ready.append(store.name)
+        if newly_ready:
+            message=newly_ready[0]+' needs a hand cooking.' if len(newly_ready)==1 else str(len(newly_ready))+' kitchens need a hand cooking.'
+            game.notify(message+' Visit their Courtyard counters.')
+            game.save_checkpoint()
 
     def accept(self,name):
-        if self.pending!=name:return False
-        self.pending=None;self.last=name;self.wait=self.rng.uniform(180,600)
+        if not self.ready(name):return False
+        self.waits[name]=self.rng.uniform(180,600)
         return True

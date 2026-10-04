@@ -316,14 +316,26 @@ def restore_state(data, game):
             courtyard.cooking[name]={'served':served,'best':best,'tips':tips,'failed':number(row.get('failed',0),0,10**12,True)}
         request=saved_courtyard.get('kitchen_requests')
         if request is not None:
-            if not isinstance(request,dict) or set(request)!={'wait','pending','last'}:raise ValueError('Invalid kitchen request')
-            pending,last=request['pending'],request['last']
+            if not isinstance(request,dict):raise ValueError('Invalid kitchen request')
             opened={s.name for s in world.stores if s.restored and s.name in RECIPES}
-            if pending is not None and (not isinstance(pending,str) or pending not in opened):raise ValueError('Invalid pending kitchen')
-            if last is not None and (not isinstance(last,str) or last not in opened):raise ValueError('Invalid previous kitchen')
-            wait=number(request['wait'],0,600)
-            if pending is not None and wait!=0:raise ValueError('Pending kitchen with cooldown')
-            courtyard.kitchen_requests.wait=wait;courtyard.kitchen_requests.pending=pending;courtyard.kitchen_requests.last=last
+            if set(request)=={'waits'}:
+                waits=request['waits']
+                if not isinstance(waits,dict) or set(waits)!=set(RECIPES):raise ValueError('Invalid kitchen cooldowns')
+                for name,value in waits.items():
+                    wait=number(value,0,600)
+                    if wait==0 and name not in opened:raise ValueError('Request from closed kitchen')
+                    courtyard.kitchen_requests.waits[name]=wait
+            elif set(request)=={'wait','pending','last'}:
+                # Migrate the earlier shared timer, preserving its ready kitchen.
+                pending,last=request['pending'],request['last']
+                if pending is not None and (not isinstance(pending,str) or pending not in opened):raise ValueError('Invalid pending kitchen')
+                if last is not None and (not isinstance(last,str) or last not in opened):raise ValueError('Invalid previous kitchen')
+                wait=number(request['wait'],0,600)
+                if pending is not None and wait!=0:raise ValueError('Pending kitchen with cooldown')
+                if pending is None:
+                    if opened:courtyard.kitchen_requests.waits[last or next(s.name for s in world.stores if s.name in opened)]=wait
+                else:courtyard.kitchen_requests.waits[pending]=0
+            else:raise ValueError('Invalid kitchen request')
         dirty={tuple(vector(p)) for p in saved_courtyard['dirty']}
         if not dirty<=set(world.floor_tiles):raise ValueError('Invalid patio floor')
         world.dirty_tiles=dirty

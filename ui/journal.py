@@ -224,9 +224,8 @@ class Journal:
             if not store.restored:status='Store closed'
             elif outside:
                 requests=game.courtyard.kitchen_requests
-                if requests.pending==store.name:status='Needs cooking help'
-                elif requests.pending:status='Waiting for current request'
-                else:status='Next request in '+theme.clock(requests.wait)+' (shared)'
+                if requests.ready(store.name):status='Needs cooking help'
+                else:status='Next request in '+theme.clock(requests.waits[store.name])
             elif game.owner_requests.store is store:status='Your active request'
             elif store.request_wait>0:status='Next idea in '+theme.clock(store.request_wait)
             else:status='New favor ready' if store.request_level==3 else 'New request ready'
@@ -234,5 +233,5 @@ class Journal:
             text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready','Needs cooking help') else theme.MUTED)
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
-        surface.blit(game.hud.small.render('Shared timer · Kitchen chosen when it ends · One request at a time' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
+        surface.blit(game.hud.small.render('Each kitchen has its own cooldown · Countdowns run during play' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
         surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))
