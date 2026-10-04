@@ -21,11 +21,6 @@ class LitterSpawner:
         self.elapsed %= self.interval
         order=list(range(len(pools)))
         order=order[self.turn%len(pools):]+order[:self.turn%len(pools)]
-        if requests and requests.favor and requests.favor.mode=='collect' and requests.progress<requests.favor.amount:
-            needed=requests.favor.amount-requests.progress
-            for i,pool in enumerate(pools):
-                if pool and requests.area.collidepoint(pool[0].position) and sum(not t.cleaned for t in pool)<needed:
-                    order=[i]+[j for j in order if j!=i];break
         # Fair court rotation preserves the global four-second interval and local caps.
         for i in order:
             pool=pools[i]

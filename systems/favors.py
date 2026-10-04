@@ -16,7 +16,7 @@ class Favor:
 FAVORS=(
     Favor('sketchbook','The missing sketchbook','Someone left drawings of the old mall on a bench. Let’s get them home.','lost',90),
     Favor('nameplates','Names worth remembering','The brass plaques are dull. They carry the names of our first neighbors.','polish',120,.5),
-    Favor('recycle','Neighborhood recycling drive','Every little load helps us keep Northgate welcoming. Collect five pieces here.','collect',100,0,5),
+    Favor('recycle','Neighborhood recycling drive','Every little load helps us keep Northgate welcoming. Collect litter from anywhere in the mall.','collect',100,0,5),
     Favor('notice','News for the neighborhood','Put up three community notices. There are still people who remember this place.','route',130),
     Favor('maker','A local maker’s window','A neighbor brought new work to show. Help arrange a window people will stop for.','display',160,.5),
     Favor('stories','Opening stories','Ask three different shoppers about Northgate. A mall is made of people, too.','greet',130,0,3),

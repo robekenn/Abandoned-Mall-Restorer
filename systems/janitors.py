@@ -76,9 +76,9 @@ class Janitor:
             if route is None:self.target=None;self.progress=0
         requests=game.owner_requests
         protected=[]
-        if requests.favor and requests.favor.mode=='collect' and requests.area==self.paths.area and requests.progress<requests.favor.amount:
-            remaining=requests.favor.amount-requests.progress
-            protected=sorted((t for t in pool if not t.cleaned),key=lambda t:t.position.distance_squared_to(game.player.rect.center))[:remaining]
+        if requests.favor and requests.favor.mode=='collect' and requests.progress<requests.amount:
+            remaining=requests.amount-requests.progress
+            protected=sorted((t for t in game.mall.trash if not t.cleaned),key=lambda t:t.position.distance_squared_to(game.player.rect.center))[:remaining]
         if self.target in protected:self.target=None;self.path=[];self.progress=0
         if self.target and (self.target.cleaned or getattr(self.target,'revision',0)!=self.target_revision):
             self.target=None;self.path=[];self.progress=0

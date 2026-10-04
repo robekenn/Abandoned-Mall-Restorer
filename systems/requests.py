@@ -85,6 +85,8 @@ class OwnerRequests:
     INTERVAL = 180.0
     RECURRING_MIN = 180.0
     RECURRING_MAX = 600.0
+    COLLECTION_MIN = 3
+    COLLECTION_MAX = 10
 
     def __init__(self):
         self.store = None
@@ -94,6 +96,7 @@ class OwnerRequests:
         self.delivery_name = ''
         self.favor = None
         self.progress = 0
+        self.collection_goal = 0
         self.area = None
 
     def eligible(self, store):
@@ -120,13 +123,17 @@ class OwnerRequests:
         if store.request_level>=len(PROJECTS):
             favor=self.favor if self.store is store and self.favor else self.next_favor(store)
             scale={'north':1,'east':2,'garden':4,'commons':6}[store.section_key]
-            return favor.title,favor.lore,'Community favor',favor.bonus,favor.cash*scale
+            description=favor.lore
+            if favor.mode=='collect':
+                goal=str(self.collection_goal) if self.store is store else f'{self.COLLECTION_MIN}–{self.COLLECTION_MAX}'
+                description=f'Every little load helps us keep Northgate welcoming. Collect {goal} pieces anywhere in the mall.'
+            return favor.title,description,'Community favor',favor.bonus,favor.cash*scale
         title,description,improvement,bonus,reward = PROJECTS[store.request_level]
         if store.request_level == 0:
             description = f'Our {SUPPLIES[store.name]} arrived. Bring them from our section’s signed delivery station so we can welcome our first customers.'
         return title,description,improvement,bonus,reward
 
-    def accept(self, store, mall):
+    def accept(self, store, mall, *, collection_goal=None):
         if self.store or store not in mall.stores or not self.eligible(store):
             return False
         self.store = store
@@ -135,6 +142,9 @@ class OwnerRequests:
         self.area=mall.area_for_store(store)
         self.progress=0
         self.favor=self.next_favor(store) if store.request_level>=len(PROJECTS) else None
+        self.collection_goal = 0
+        if self.favor and self.favor.mode=='collect':
+            self.collection_goal = random.randint(self.COLLECTION_MIN,self.COLLECTION_MAX) if collection_goal is None else collection_goal
         region=mall.region_for_store(store)
         depot=region.delivery if region else mall.delivery
         self.delivery_name=depot.name
@@ -183,7 +193,7 @@ class OwnerRequests:
         if not self.store:
             return False
         if self.favor:
-            if self.favor.mode in ('collect','sell'):return self.progress>=self.favor.amount
+            if self.favor.mode in ('collect','sell'):return self.progress>=self.amount
             if self.favor.mode in ('greet','welcome'):
                 return len(self.greetings)>=self.favor.amount and all(s.completed for s in self.spots)
             return all(s.completed for s in self.spots)
@@ -209,7 +219,7 @@ class OwnerRequests:
             return f'Return to {owner} at {self.store.name} / E, then Enter.'
         if self.favor:
             mode=self.favor.mode
-            if mode=='collect':return f'Collect litter here: {self.progress}/{self.favor.amount}.'
+            if mode=='collect':return f'Collect litter anywhere: {self.progress}/{self.amount}.'
             if mode=='sell':return f'Sell trash at this section’s bins: {self.progress}/{self.favor.amount}.'
             if mode=='greet':return f'Ask different shoppers about Northgate: {len(self.greetings)}/{self.favor.amount}.'
             if mode=='welcome':return f'Welcome board: {"done" if self.spots[0].completed else "Hold E"} · greetings {len(self.greetings)}/{self.favor.amount}.'
@@ -270,9 +280,14 @@ class OwnerRequests:
             if len(self.greetings)>limit:
                 self.greetings.remove(person.identity)
 
+    @property
+    def amount(self):
+        if not self.favor:return 0
+        return self.collection_goal if self.favor.mode=='collect' else self.favor.amount
+
     def record_collection(self, count, position):
-        if self.favor and self.favor.mode=='collect' and self.area.collidepoint(position):
-            self.progress=min(self.favor.amount,self.progress+count)
+        if self.favor and self.favor.mode=='collect':
+            self.progress=min(self.amount,self.progress+count)
 
     def record_sale(self, count, position):
         if self.favor and self.favor.mode=='sell' and self.area.collidepoint(position):
@@ -291,5 +306,6 @@ class OwnerRequests:
         self.parcel = False
         self.favor = None
         self.progress = 0
+        self.collection_goal = 0
         self.greetings.clear()
         return improvement,bonus,reward

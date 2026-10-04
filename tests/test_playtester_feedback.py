@@ -36,6 +36,28 @@ class PlaytesterTests(unittest.TestCase):
         g.upgrades.held=0;first.position=pygame.Vector2(400,50);g.player.rect.center=first.position
         self.click((400,50));self.assertFalse(first.cleaned)
 
+    def test_mouse_pickup_through_live_event_queue_after_start_and_camera_scroll(self):
+        for kind in ('dirt','trash'):
+            with self.subTest(kind=kind):
+                g=Game(start_screen=True);self.g=g
+                g.screen=pygame.display.set_mode((800,600))
+                g.welcome.start();g.update(1,(0,0))
+                self.assertFalse(g.welcome.open)
+                # Practice remains interactive while the first-steps guide is on.
+                g.tutorial.start(g);g.tutorial.step=1;g.tutorial.explaining=False
+                trash=next(t for t in g.mall.trash if t.kind==kind and t.position.x>500)
+                g.player.rect.center=trash.position;g.frame_camera(g.screen.get_size());g.draw()
+                self.assertGreater(g.camera.offset.length(),0)
+                pos=tuple(round(v) for v in g.camera.point(trash.position))
+                pygame.event.clear()
+                pygame.event.post(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=pos))
+                render=g.draw
+                def finish_frame():
+                    render();g.running=False
+                with patch.object(g,'draw',side_effect=finish_frame):g.run()
+                self.assertTrue(trash.cleaned)
+                self.assertEqual((g.upgrades.held,g.total_collected),(1,1))
+
     def test_upgrade_clicks_inspect_until_explicit_purchase(self):
         g=self.g;g.mall.stores[0].restored=True;g.open_upgrade_shop(g.mall.stores[0]);g.cash=500
         self.click(g.shop_menu.rows(g)[1][1].center)

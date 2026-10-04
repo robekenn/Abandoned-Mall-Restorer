@@ -223,7 +223,7 @@ class StoryAndSaveTests(unittest.TestCase):
             g.litter_spawner.update(.01,g.mall,(0,0));self.assertEqual(g.mall.active_litter_count,count)
         self.assertEqual([sum(not t.cleaned for t in pool) for pool in pools],[1,1,1,1])
 
-    def test_helpers_preserve_only_the_litter_needed_for_local_collect_favor(self):
+    def test_helpers_preserve_only_the_litter_needed_for_collect_favor(self):
         g=self.game;self.prepare();g.cash=10000;g.janitors.purchase('north','hire',g)
         store=g.mall.north_stores[1];store.request_level=3;store.request_wait=0
         index=next(i for i,f in enumerate(FAVORS) if f.mode=='collect')
@@ -234,5 +234,5 @@ class StoryAndSaveTests(unittest.TestCase):
         trash=next(t for t in g.mall.north_trash if not t.cleaned);j.position=trash.position.copy()
         g.janitors.update(10,g);self.assertFalse(trash.cleaned);self.assertEqual(r.progress,0)
         g.player.rect.center=trash.position;g.collect(trash);self.assertTrue(trash.cleaned);self.assertEqual(r.progress,1)
-        r.progress=r.favor.amount;g.mall.respawn_trash(trash);j.position=trash.position.copy()
+        r.progress=r.amount;g.mall.respawn_trash(trash);j.position=trash.position.copy()
         g.janitors.update(5,g);self.assertTrue(trash.cleaned)
