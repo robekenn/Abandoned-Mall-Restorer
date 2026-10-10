@@ -305,6 +305,7 @@ class Courtyard:
         game.speech.draw_bubble(game,game.speech.name,game.speech.text,game.speech.position) if game.speech.timer else None
         for p in self.shoppers.people:
             if p.visible and p.speech_time:game.speech.draw_bubble(game,p.name,p.speech,p.display_position)
+        if game.welcome.open:game.welcome.draw(game)
         if game.journal.open:game.journal.draw(game)
         if game.shop_menu.open:game.shop_menu.draw(game)
         if game.cooking_menu.open:game.cooking_menu.draw(game)
