@@ -597,7 +597,9 @@ class Game:
         elif self.cooking_menu.open:self.cooking_menu.handle(event,self)
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
-        elif self.tutorial.paused:self.tutorial.handle(event,self)
+        elif self.tutorial.paused:
+            if event.type==pygame.KEYDOWN and event.key==pygame.K_ESCAPE:self.pause.show()
+            else:self.tutorial.handle(event,self)
         elif self.scene=='courtyard' and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:pass
         elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
             if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):self.developer.open=not self.developer.open

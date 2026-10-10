@@ -402,3 +402,19 @@ class SaveMenuTests(unittest.TestCase):
         data.pop("play_seconds")
         restore_state(data, g)
         self.assertEqual(g.play_seconds, 0)
+
+    def test_pause_and_main_menu_are_available_during_tutorial_explanations(self):
+        g = self.g
+        g.welcome.tutorial_enabled = True
+        self.assertTrue(g.start_new_game("First Steps"))
+        g.update(0.9, (0, 0))
+        self.assertTrue(g.tutorial.paused)
+        self.key(pygame.K_ESCAPE)
+        self.assertTrue(g.pause.open)
+        g.pause.activate(g, 2)
+        g.pause.activate(g, 1)
+        self.assertTrue(g.welcome.open)
+        self.key(pygame.K_RETURN)
+        g.update(0.9, (0, 0))
+        self.assertTrue(g.tutorial.paused)
+        self.assertEqual(g.tutorial.step, 0)
