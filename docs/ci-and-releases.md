@@ -2,11 +2,11 @@
 
 ## Layout
 
-- `.github/workflows/ci.yml`: push-to-main, pull-request, manual, and reusable entry point. Runs dependency checks, Python syntax checks, regression tests, and headless launch/render checks on Windows, Ubuntu 22.04 and macOS 14 with Python 3.12 and 3.13. Packaging starts only when all tests pass.
+- `.github/workflows/ci.yml`: push-to-main, pull-request, manual, and reusable entry point. Runs dependency checks, Ruff correctness linting, Python syntax checks, regression tests, and headless launch/render checks on Windows, Ubuntu 22.04 and macOS 14 with Python 3.12 and 3.13. Packaging starts only when all tests pass.
 - `.github/workflows/build.yml`: reusable native build matrix with Python 3.12. Builds and tests each executable before uploading archives and SHA-256 checksum files.
 - `.github/workflows/release.yml`: merging a VERSION change into main runs CI and packages, verifies all three archives and their checksums, then publishes a playable preview. Version-tag pushes retain the manual draft-release path. Only the release-writing job has repository write permission.
 - `scripts/build_release.py`: shared local/CI packaging implementation. Uses PyInstaller in folder mode, includes the data directory, smoke-tests from outside the repository, adds player instructions, and creates a platform/architecture-specific archive.
-- `requirements.txt` and `requirements-build.txt`: pinned runtime and packaging dependencies. Update intentionally and let CI validate the change.
+- `requirements.txt`, `requirements-dev.txt` and `requirements-build.txt`: pinned runtime, development and packaging dependencies. Update intentionally and let CI validate the change.
 
 ## Check or download a development build
 
@@ -37,9 +37,12 @@ PR #27 sets VERSION to `0.1.1` and adds `docs/releases/v0.1.1.md`. Approve and m
 ## Run locally
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+python -m pip check
+python -m ruff check .
 python -m unittest discover -s tests -v
 python main.py --smoke-test
+python main.py --smoke-test --dev
 python -m pip install -r requirements-build.txt
 python scripts/build_release.py
 ```

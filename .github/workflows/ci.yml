@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Superseded PR checks can stop; main and release validation must finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   tests:
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
@@ -31,10 +36,15 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - name: Install game dependencies
-        run: python -m pip install -r requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install development dependencies
+        run: python -m pip install -r requirements-dev.txt
       - name: Check dependency compatibility
         run: python -m pip check
+      - name: Lint Python
+        run: python -m ruff check .
       - name: Check Python syntax
         run: python -m compileall -q game entities mall systems ui scripts main.py tests
       - name: Run regression tests

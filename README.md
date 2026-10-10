@@ -34,7 +34,7 @@ Open **J → Mall life** (journal key **4**) to host an optional community gathe
 
 Press E at any reopened rent-paying business to meet its owner. **C / Just chat** shares a personal memory or a reaction to the mall; these conversations develop as the owner earns improvements. Owners appear by their doors while speaking. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
-These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A fresh three-minute wait follows every claim. Litter pickup favors ask for a random 3–10 pieces from anywhere in the mall, with the target preserved through Continue. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
+These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 base rent and $50 / $100 / $200 thank-you payments. Each owner offers their first request after three minutes of open-store play; claiming an improvement starts another three-minute wait. After those three improvements, owners rotate through twelve repeatable community favors. Each pays cash; four favor types also add $0.50 permanent base rent. A random 3–10 minute wait follows each recurring favor. Litter pickup favors ask for a random 3–10 pieces from anywhere in the mall, with the target preserved through Continue. The HUD tracks one next action; the J-key journal holds the map, blue request markers and owner countdowns. Each section’s first business remains an equipment shop. See [shoppers and requests](docs/shoppers-and-requests.md) and [community favors and expansion](docs/community-favors-and-expansion.md) for details.
 
 ## The winter lantern walk
 
@@ -71,7 +71,7 @@ python3 -m venv .venv
 - **J:** open/close the journal (map, stats, owner countdowns, janitors and story)
 - **Esc:** close an open menu/journal, or pause from the mall; exiting requires confirmation
 
-Inside any upgrade shop, click an upgrade row to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
+Inside any upgrade shop, click an upgrade row to inspect it, then use the Purchase button or Enter to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
 
 Each court now has five shops on either side. After reopening the original row, continue through five opposing businesses before the next section gate appears. Hire one janitor per unlocked section through **J → Janitors**. Janitors stay local, walk slowly, spend five seconds on each piece and automatically sell it for 75% of your current trash value. Upgrade cleaning and walking speeds separately in the same tab. See [courts and janitors](docs/courts-and-janitors.md) for prices.
 
@@ -79,12 +79,16 @@ The camera follows the player and shifts its framing toward the nearby storefron
 
 ## Development
 
-`game/` owns the loop, settings, and camera; `entities/` owns the player, litter and bins; `mall/` owns the layout and storefronts; `ui/` owns the HUD. `systems/` owns upgrades, rent rules and bounded recurring litter. Remaining starter modules are placeholders for later systems.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, checks and PR guidance. [AGENTS.md](AGENTS.md) records project conventions for AI contributors; [architecture](docs/architecture.md) explains scene updates, pausing, storage and module responsibilities.
 
-Run the movement, collision, camera, shutdown, restoration, shoppers and request progression checks:
+Install development tools and run the checks:
 
 ```bash
+python -m pip install -r requirements-dev.txt
+python -m ruff check .
 python -m unittest discover -s tests -v
+python main.py --smoke-test
+python main.py --smoke-test --dev
 ```
 
 Tests use SDL's dummy display driver, so they also run without a desktop.
@@ -105,16 +109,16 @@ The H-key guide now pauses for your character’s explanations and resumes for r
 
 ### Downloadable releases
 
-Merging PR #27 publishes **v0.1.1 — Playable Preview** after all platform tests and packaged launch checks pass. Windows, Linux and Apple-silicon macOS downloads appear on the [Releases page](https://github.com/robekenn/Abandoned-Mall-Restorer/releases). Python is not required. See the [v0.1.1 release notes](docs/releases/v0.1.1.md) and [release workflow guide](docs/ci-and-releases.md).
+Published previews, including **v0.1.1**, are available on the Releases page. New releases publish after a version change is merged and all platform tests and packaged launch checks pass. Windows, Linux and Apple-silicon macOS downloads appear on the [Releases page](https://github.com/robekenn/Abandoned-Mall-Restorer/releases). Python is not required. See the [v0.1.1 release notes](docs/releases/v0.1.1.md) and [release workflow guide](docs/ci-and-releases.md).
 
 ### Playtester controls and settings
 
 Open **F2 → Settings** or **Esc → Settings** for independent music/effects sliders, fullscreen, tutorial/reminder preferences, and custom keys. Upgrade rows are now inspect-only; use the Purchase button or Enter to buy. Equipment shops are marked UPGRADES, and active owner favors identify their business. See [issue-by-issue changes and playtest notes](docs/playtester-issues.md).
 
-### Courtyard and social visitors (development branch)
+### Courtyard and social visitors
 
 Families and teen groups join shoppers, busy/quiet hours vary foot traffic, and restored indoor seating provides places to sit and chat. Story boards move to room edges and keepsake-givers leave after handing over their finds. From Community Commons, complete its sweep and reopen six businesses to pay $50,000 once with E at the hanging Courtyard wall sign, then walk through its opening in either direction. Outside is a separate food-court map with seven restaurants, picnic seating, and service, comfort and compost upgrades. Both maps and your current location save through Continue. Wait for a kitchen help request (each restaurant has its own 3–10 minute cooldown of live play), then visit its counter with E or a click to cook: top pizza, stir noodles, pour juice, roll pastry, flip skewers, layer salads or stack sundaes. Varied recipe tickets guide each activity; completed orders earn tips and save per-kitchen records. Ingredient deposits are refunded on success and lost on failure or abandonment. Three mistakes spoil an order; timing bands tighten and ingredient deadlines shorten every three successful orders per kitchen. Cooking is optional and pauses the mall. See [Courtyard and social life](docs/courtyard-and-social-life.md) for progression and review steps.
 
-Food-court visitors now walk from the front entrance through the mall to the Courtyard, queue at visible restaurant counters, and return indoors carrying restaurant-specific food. Outside, J → Janitors hires the local cleaner with saved upgrades and partial work. Larger framed doors, restored picnic benches, kitchen-side herb boxes, a framed Provisions sign and five-second rent popups improve courtyard readability. Indoor Furniture purchases repair visibly broken benches.
+Food-court visitors now walk from the front entrance through the mall to the Courtyard, queue at visible restaurant counters, and return indoors carrying restaurant-specific food. Outside, J → Janitors hires the local cleaner with saved upgrades and partial work. A walk-through wall opening, restored picnic benches, kitchen-side herb boxes, a framed Provisions sign and five-second rent popups improve courtyard readability. Indoor Furniture purchases repair visibly broken benches.
 
 Recurring litter continues on both maps during live play, alongside hired janitors. Each map follows its own foot traffic: busy every 2 seconds, steady every 4, quiet every 8. The first-sweep rules, fair indoor court rotation and 12-item local caps remain in place; menus and cooking pause both maps.

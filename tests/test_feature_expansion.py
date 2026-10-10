@@ -159,7 +159,7 @@ class FeatureTests(unittest.TestCase):
         self.assertTrue(trash.cleaned);self.assertEqual((g.upgrades.held,g.owner_requests.progress),(1,1))
 
     def test_only_active_world_renders_visitors_travel_and_menus_pause_courtyard(self):
-        world=self.enter();g=self.g
+        self.enter();g=self.g
         with patch.object(g.mall,'draw',side_effect=AssertionError('Indoor map must not render')):g.draw()
         clock=g.shoppers.traffic_elapsed
         g.update(1,(0,0));self.assertEqual(g.shoppers.traffic_elapsed,clock+1)
@@ -202,7 +202,7 @@ class FeatureTests(unittest.TestCase):
         self.assertEqual(len(g.mall.social_tables),2)
 
     def test_corrupt_courtyard_save_does_not_mutate_live_game(self):
-        world=self.enter();g=self.g;before=snapshot(g);bad=copy.deepcopy(before);bad['courtyard']['stores'][2]=True
+        self.enter();g=self.g;before=snapshot(g);bad=copy.deepcopy(before);bad['courtyard']['stores'][2]=True
         with self.assertRaises(ValueError):restore_state(bad,g)
         self.assertEqual(snapshot(g),before)
         bad=copy.deepcopy(before);bad['upgrades']['courtyard_service_level']=99

@@ -172,7 +172,7 @@ class StoryAndSaveTests(unittest.TestCase):
 
     def test_failed_atomic_replace_preserves_primary_and_removes_temporary_file(self):
         g=self.game;g.cash=10;g.save_checkpoint();previous=g.save_store.path.read_bytes();g.cash=20
-        with patch('systems.saves.os.replace',side_effect=OSError('disk error')):self.assertFalse(g.save_checkpoint())
+        with patch('game.storage.os.replace',side_effect=OSError('disk error')):self.assertFalse(g.save_checkpoint())
         self.assertEqual(g.save_store.path.read_bytes(),previous)
         self.assertEqual(list(Path(self.directory.name).glob('*.tmp')),[])
 

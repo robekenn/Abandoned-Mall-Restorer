@@ -1,0 +1,12 @@
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+# Catch broken imports, undefined names and basic correctness problems without
+# requiring a repository-wide style rewrite of the existing compact code.
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E701", "E702", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+# Headless SDL must be configured before importing pygame or the game.
+"tests/*.py" = ["E402"]

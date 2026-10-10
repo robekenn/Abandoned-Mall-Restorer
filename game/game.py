@@ -28,7 +28,8 @@ from ui.tutorial import Tutorial
 from ui.developer import Developer
 from ui.story_menu import StoryMenu
 from systems.story import Story, StoryPoint
-from systems.saves import SaveStore, save_directory
+from systems.saves import SaveStore
+from game.storage import save_directory
 from game.preferences import Preferences, HintFont
 from ui.settings_menu import SettingsMenu
 from systems.mall_life import MallLife, EventSpot, EventTask
@@ -127,6 +128,17 @@ class Game:
     def notify(self, message):
         self.message,self.message_timer = message,3.0
 
+    @property
+    def modal_menus(self):
+        """Register new menus here so input and simulation pause consistently."""
+        return (self.pause, self.settings_menu, self.shop_menu, self.owner_menu,
+                self.journal, self.display_menu, self.developer, self.story_menu,
+                self.community_menu, self.cooking_menu)
+
+    @property
+    def world_paused(self):
+        return self.welcome.open or self.tutorial.paused or any(menu.open for menu in self.modal_menus)
+
     def deny(self, message):
         self.notify(message)
         self.audio.play('blocked')
@@ -156,7 +168,7 @@ class Game:
         self.owner_requests.record_sale(count,trash_bin.position)
 
     def pickup_at(self, screen_position):
-        if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu,self.cooking_menu)):
+        if self.world_paused:
             return
         if self.scene=='courtyard':self.courtyard.pickup_at(self,screen_position);return
         viewport=pygame.Rect(0,190 if self.tutorial.active else 170,self.screen.get_width(),self.screen.get_height()-(248 if self.tutorial.active else 228))
@@ -201,7 +213,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open or self.cooking_menu.open:
+        if self.world_paused:
             return
         if self.scene=='courtyard':self.courtyard.interact(self);return
         target = self.target()
@@ -309,6 +321,32 @@ class Game:
             self.courtyard.shoppers.update(dt,self.courtyard.world,self.upgrades)
             self.visitor_travel.update(dt,self)
 
+    def update_shared_worlds(self, dt):
+        """Both scenes keep visitors, litter and hired cleaners active."""
+        self.shoppers.update(dt, self.mall, self.upgrades, self.owner_requests.store)
+        self.update_courtyard_visitors(dt)
+        self.update_litter(dt)
+        self.update_janitors(dt)
+
+    def update_income_and_autosave(self, dt):
+        """Keep the same rent phase and save cadence when crossing scenes."""
+        has_income = (any(s.restored and s.rent > 0 for s in self.mall.stores)
+                      or self.upgrades.fixture_rent or self.courtyard.unlocked)
+        if has_income:
+            self.rent_timer += dt
+            while self.rent_timer >= 5:
+                income = self.rent_income
+                self.cash += income
+                self.rent_timer -= 5
+                if income:
+                    self.feedback.burst(self.player.rect.center, f'+{money(income)} rent', restored=True)
+                    world = self.courtyard.world if self.scene == 'courtyard' else self.mall
+                    if rent_multiplier(world.cleanliness) == 1.5:
+                        self.audio.play('bonus_rent')
+        self.save_store.elapsed += dt
+        if self.save_started and self.save_store.elapsed >= 30:
+            self.save_checkpoint()
+
     def update_janitors(self,dt):
         self.janitors.update(dt,self)
         if self.courtyard.unlocked:
@@ -381,7 +419,7 @@ class Game:
                 if self.welcome.tutorial_enabled and not self.welcome.continuing:self.tutorial.start(self)
                 if not self.welcome.continuing:self.save_checkpoint()
             return
-        if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
+        if any(menu.open for menu in self.modal_menus if menu is not self.cooking_menu):
             return
         if self.tutorial.paused:return
         if self.cooking_menu.open:self.cooking_menu.update(dt,self);return
@@ -401,10 +439,7 @@ class Game:
         if ready and not self.owner_requests.store:
             self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
             self.request_notice_timer=8
-        self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
-        self.update_courtyard_visitors(dt)
-        self.update_litter(dt)
-        self.update_janitors(dt)
+        self.update_shared_worlds(dt)
         self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:
@@ -414,19 +449,7 @@ class Game:
             self.player.use_tool('setup',spot.position+pygame.Vector2(48,-16))
             self.feedback.burst(spot.position,'DONE',restored=True)
             self.audio.play('pickup')
-        opened = [s for s in self.mall.stores if s.restored and s.rent > 0]
-        if opened or self.upgrades.fixture_rent:
-            self.rent_timer += dt
-            while self.rent_timer >= 5:
-                multiplier = self.rent_multiplier
-                self.cash += self.rent_income
-                if multiplier == 1.5:
-                    self.audio.play('bonus_rent')
-                if multiplier:
-                    self.feedback.burst(self.player.rect.center,f'+{money(self.rent_income)} rent',restored=True)
-                self.rent_timer -= 5
-        self.save_store.elapsed+=dt
-        if self.save_started and self.save_store.elapsed>=30:self.save_checkpoint()
+        self.update_income_and_autosave(dt)
 
     @property
     def rent_multiplier(self):

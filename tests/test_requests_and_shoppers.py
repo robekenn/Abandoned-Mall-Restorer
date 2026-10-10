@@ -5,7 +5,6 @@ import unittest
 from unittest.mock import patch
 import pygame
 from game.game import Game
-from systems.requests import PROJECTS
 from systems.shoppers import Shopper, Walkways
 
 

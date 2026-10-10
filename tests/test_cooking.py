@@ -6,7 +6,7 @@ import random
 import unittest
 from unittest.mock import patch
 import pygame
-from systems.cooking import CookingRound, RECIPES, KitchenRequests
+from systems.cooking import CookingRound, RECIPES
 from systems.saves import snapshot, restore_state
 from tests import test_feature_expansion as helpers
 

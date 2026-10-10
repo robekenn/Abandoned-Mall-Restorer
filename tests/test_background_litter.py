@@ -3,7 +3,6 @@ import os
 os.environ.setdefault('SDL_VIDEODRIVER','dummy');os.environ.setdefault('SDL_AUDIODRIVER','dummy')
 import unittest
 from unittest.mock import patch
-import pygame
 from game.game import Game
 from systems.saves import snapshot,restore_state
 from systems.litter import LitterSpawner
