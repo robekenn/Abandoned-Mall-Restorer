@@ -30,6 +30,8 @@ user's current instructions take precedence; check for any more specific
 | `game/art.py`, `game/patio_art.py` | Procedural pixel sprites and their cached rendering |
 | `game/audio.py`, `game/music.py` | Synthesized effects and soundtrack, with audio fallback |
 | `game/smoke.py` | Staged integration checks for source and frozen launches |
+| `systems/save_slots.py` | Named save catalog, allocation and deletion |
+| `ui/welcome.py`, `ui/menu_scene.py` | Main-menu controls and cosmetic restored concourse |
 | `entities/` | Player, trash and bins |
 | `mall/` | Layout, collision, stores, seating and courtyard scene |
 | `systems/` | Progression, requests, visitors, janitors, economy and saves |
@@ -76,8 +78,14 @@ audio are generated locally; do not assume `assets/` files are loaded.
 - `systems/saves.py` owns snapshot validation and migrations. Validate a
   replacement world completely before assigning it to the live `Game`.
 - Preserve the envelope version/checksum, recovery backup, atomic replacement,
-  separate `progress.json` and `developer.json` slots, and existing OS paths.
-  `settings.json` is separate and shared by the two play modes.
+  original `progress.json` and `developer.json` slots, and existing OS paths.
+  Additional UUID slots live in `slots/normal/` or `slots/developer/`, with
+  their own backups. `settings.json` stays shared by the two play modes.
+- Creating a new game allocates an unused slot and resets every session system.
+  Never replace another save as part of creation. Main-menu returns save before
+  leaving; failure keeps the session open unless the player explicitly discards.
+  Deletion requires confirmation and removes only the selected save and backup.
+  Menu animation is cosmetic and must never advance world timers.
 - Keep existing saves loadable, including older seating layouts, missing
   optional features and the old shared kitchen timer. Never renumber trash
   IDs or change serialized fixture/store keys without a migration.

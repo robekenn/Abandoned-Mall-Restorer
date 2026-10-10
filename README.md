@@ -6,7 +6,7 @@ A top-down 2D restoration game built with Python and pygame-ce, without a commer
 
 ## A small beginning
 
-The game starts fullscreen on a short introduction to Northgate’s story. Choose **Start restoring** or press **Enter/Space** to fade into the mall. After a checkpoint exists, **Continue** resumes it; **New game / N** asks for a second confirmation. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**. The optional first-steps guide can be disabled before starting, skipped with **T**, or replayed with **H**.
+The game starts fullscreen on a warm, animated view of a restored Northgate concourse. Choose a named save and **Continue selected**, or use **New game / N** to name a fresh mall. Saves keep independent progress and recovery backups; starting another game preserves the existing ones. **Delete / D** removes only the selected save after confirmation. **Esc → Main menu** saves the current mall and returns here without closing the app. Movement, litter and rent stay paused until the transition finishes. **F11** switches to a window; `python main.py --windowed` starts windowed instead. Music can be muted on the opening screen with **M**. The optional first-steps guide can be disabled before starting, skipped with **T**, or replayed with **H**.
 
 ## First playable prototype
 
@@ -30,7 +30,7 @@ Shoppers begin returning when stores reopen. Every visitor uses one visible main
 
 Open **J → Mall life** (journal key **4**) to host an optional community gathering. Each court needs two reopened regular shops and at least 50% local cleanliness. Book swaps, café tastings, plant sales and evening makers markets rotate after each completed gathering. Visit the gold-marked community table and listen to three neighbors before choosing something they will enjoy. There is no deadline or penalty for trying again. Completion pays $200/$500/$1,000/$1,800 by court; the next gathering becomes available after five minutes of play. Progress and owner conversations save with the existing checkpoint.
 
-**Esc** opens a pause screen, freezing movement, work, rent and event timers. Resume, save, or choose Exit game and confirm. Closing the window also asks for confirmation. The default confirmation is to stay; a failed save keeps the game open and offers a deliberate exit without saving.
+**Esc** opens a pause screen, freezing movement, work, rent and event timers. Resume, save, open Settings, return to the main menu, or choose Exit game and confirm. Closing the window also asks for confirmation. The default confirmation is to stay; a failed save keeps the game open and offers a deliberate exit without saving.
 
 Press E at any reopened rent-paying business to meet its owner. **C / Just chat** shares a personal memory or a reaction to the mall; these conversations develop as the owner earns improvements. Owners appear by their doors while speaking. Accept a relaxed request with Enter or a click: collect supplies from a permanent DELIVERIES station in a separate satchel, arrange a shop-specific window display by matching three products to the owner’s shelf plan, then set up a welcome sign and greet three different visitors. Return to the owner to finish each request. Jobs have no deadlines and are optional; one is active at a time.
 
@@ -91,7 +91,7 @@ python main.py --smoke-test
 python main.py --smoke-test --dev
 ```
 
-Tests use SDL's dummy display driver, so they also run without a desktop.
+Tests use SDL's dummy display driver, so they also run without a desktop. See [main menu and saves](docs/main-menu-and-saves.md) for save management, controls and compatibility.
 
 ## Developer playtesting
 

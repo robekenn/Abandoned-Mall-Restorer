@@ -183,16 +183,18 @@ class StoryAndSaveTests(unittest.TestCase):
         h=Game(persistence=True,save_dir=self.directory.name);self.assertTrue(h.save_store.load(h));self.assertEqual(h.cash,9)
         self.assertNotEqual(dev.save_store.path,normal.save_store.path)
 
-    def test_intro_continue_and_new_game_confirmation_do_not_overwrite_on_launch(self):
+    def test_intro_continue_and_named_new_game_do_not_overwrite_existing_save(self):
         g=self.game;g.cash=123;g.tutorial.start(g);g.tutorial.step=3;g.save_checkpoint()
         h=Game(developer=True,persistence=True,save_dir=self.directory.name,start_screen=True)
         self.assertTrue(h.welcome.has_save);self.assertFalse(h.save_started);self.assertFalse(h.save_checkpoint())
         self.assertTrue(h.continue_game());h.update(.9,(0,0))
         self.assertEqual(h.cash,123);self.assertEqual(h.tutorial.step,3);self.assertTrue(h.save_started)
         fresh=Game(developer=True,persistence=True,save_dir=self.directory.name,start_screen=True)
-        fresh.welcome.choose_new();self.assertFalse(fresh.welcome.leaving)
-        fresh.welcome.choose_new();fresh.update(.9,(0,0));self.assertEqual(fresh.cash,0)
-        self.assertEqual(fresh.save_store.read(fresh.save_store.backup)['cash'],123)
+        original=fresh.save_store.path
+        fresh.welcome.choose_new(fresh);self.assertFalse(fresh.welcome.leaving)
+        fresh.welcome.dialog_action(fresh,True);fresh.update(.9,(0,0));self.assertEqual(fresh.cash,0)
+        self.assertNotEqual(fresh.save_store.path,original)
+        self.assertEqual(fresh.save_store.read(original)['cash'],123)
 
     def test_autosave_contains_current_rent_and_pauses_with_menus(self):
         g=self.game;self.prepare();g.rent_timer=4;g.save_store.elapsed=29

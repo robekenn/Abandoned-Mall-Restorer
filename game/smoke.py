@@ -22,6 +22,7 @@ def run(developer=False):
         _exercise_story(game)
         _exercise_events_and_checkpoint(game, developer)
         _exercise_courtyard(game, developer)
+        _exercise_save_menu(game, developer)
     finally:
         pygame.quit()
 
@@ -243,7 +244,7 @@ def _exercise_events_and_checkpoint(game, developer):
     game.life.choose(game, game.life.event.guests[0][2])
     game.pause.show()
     game.draw()
-    game.pause.activate(game, 2)
+    game.pause.activate(game, 4)
     game.draw()
     game.pause.activate(game, 0)
     game.pause.open = False
@@ -327,3 +328,46 @@ def _exercise_courtyard(game, developer):
             raise RuntimeError("Courtyard state lost")
     game.leave_courtyard()
     game.draw()
+
+
+def _exercise_save_menu(game, developer):
+    from systems.save_slots import SaveSlots
+
+    with TemporaryDirectory() as directory:
+        game.save_slots = SaveSlots(directory, developer, True)
+        game.save_store = game.save_slots.store(name="Lantern Northgate")
+        game.save_started = True
+        original_cash = game.cash
+        if not game.return_to_main_menu():
+            raise RuntimeError("Could not return to main menu")
+        game.draw()
+        game.welcome.choose_new(game)
+        game.welcome.name = "Weekend Northgate"
+        game.draw()
+        game.welcome.dialog_action(game, True)
+        game.update(0.9, (0, 0))
+        game.tutorial.skip()
+        if game.cash or game.courtyard.unlocked or game.mall.commons.unlocked:
+            raise RuntimeError("A new save inherited the old game")
+        new_slot = game.save_store.slot
+        if not game.return_to_main_menu() or len(game.welcome.saves) != 2:
+            raise RuntimeError("Multiple save slots were not retained")
+        game.draw()
+        if not game.continue_game():
+            raise RuntimeError("Could not resume the original save")
+        game.update(0.9, (0, 0))
+        if game.cash != original_cash or not game.courtyard.unlocked:
+            raise RuntimeError("Original save changed after starting a new game")
+        if not game.return_to_main_menu():
+            raise RuntimeError("Could not revisit main menu")
+        game.welcome.selection = next(
+            i for i, s in enumerate(game.welcome.saves) if s.identifier == new_slot
+        )
+        game.welcome.choose_delete()
+        game.draw()
+        game.welcome.dialog_action(game, False)
+        game.welcome.choose_delete()
+        game.welcome.dialog_action(game, True)
+        if len(game.welcome.saves) != 1:
+            raise RuntimeError("Save deletion failed")
+        game.draw()
