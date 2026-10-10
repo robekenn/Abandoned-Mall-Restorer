@@ -1,7 +1,7 @@
 """A relaxed owner conversation; Enter/click accepts or claims, Esc/E returns to play."""
 import pygame
 from systems.economy import money
-from systems.requests import OWNERS, PROJECTS
+from systems.requests import OWNERS
 from ui import theme
 from game.lore import OWNER_LORE
 

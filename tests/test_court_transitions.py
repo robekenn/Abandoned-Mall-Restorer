@@ -1,7 +1,5 @@
 """Shared visitor entry, uninterrupted crossings and persistent discovery locations."""
-import copy
 import os
-import tempfile
 import unittest
 from unittest.mock import patch
 os.environ['SDL_VIDEODRIVER']='dummy';os.environ['SDL_AUDIODRIVER']='dummy'

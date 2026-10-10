@@ -3,7 +3,6 @@ import os
 os.environ.setdefault('SDL_VIDEODRIVER','dummy');os.environ.setdefault('SDL_AUDIODRIVER','dummy')
 import copy
 import unittest
-from unittest.mock import patch
 import pygame
 from tests import test_feature_expansion as feature_helpers
 from systems.courtyard_visitors import FoodCustomer, MENU

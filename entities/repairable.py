@@ -1,1 +1,0 @@
-"""Repairable mall objects."""

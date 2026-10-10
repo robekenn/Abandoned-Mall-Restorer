@@ -13,7 +13,8 @@ NAME = 'MallRestorer'
 
 def write_checksum(archive):
     """Use LF even on Windows so every platform can verify the download."""
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    with archive.open('rb') as stream:
+        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
     checksum = archive.with_name(archive.name + '.sha256')
     checksum.write_text(f'{digest}  {archive.name}\n', encoding='utf-8', newline='\n')
     return checksum

@@ -168,7 +168,8 @@ class OwnerRequests:
         safe=[point for point in mall.floor_tiles if self.area.collidepoint(point) and not any(
             wall.colliderect(pygame.Rect(point[0]-16,point[1]-16,32,32)) for wall in mall.obstacles)]
         positions=[pygame.Vector2(min(safe,key=lambda p:pygame.Vector2(p).distance_squared_to(q))) for q in desired]
-        spot=lambda point,title,kind,duration=0:RequestSpot(pygame.Vector2(point),title,kind,duration)
+        def spot(point,title,kind,duration=0):
+            return RequestSpot(pygame.Vector2(point),title,kind,duration)
         desk=work_desk(self.store)
         if mode=='lost':return [spot(positions[0],'Collect the lost sketchbook','keepsake')]
         if mode=='memories':return [spot(p,f'Collect photograph {i+1}','keepsake') for i,p in enumerate(positions)]

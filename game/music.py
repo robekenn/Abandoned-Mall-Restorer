@@ -1,7 +1,6 @@
 """Original, gentle four-level chiptune; synthesized locally with no asset downloads."""
 from array import array
 from functools import lru_cache
-import math
 
 
 BEAT_SECONDS = 0.75  # 80 BPM, eight bars; the loop ends on a quiet cadence.

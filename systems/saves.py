@@ -2,11 +2,9 @@
 import hashlib
 import json
 import math
-import os
 from pathlib import Path
-import sys
-import tempfile
 import pygame
+from game.storage import atomic_write, save_directory
 from entities.player import Player
 from mall.mall import Mall
 from systems.upgrades import Upgrades
@@ -16,12 +14,6 @@ from systems.janitors import Janitors, Janitor
 from systems.story import Story
 from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.tutorial import Tutorial
-
-
-def save_directory():
-    if sys.platform=='win32':return Path(os.environ.get('APPDATA',Path.home()))/'MallRestorer'
-    if sys.platform=='darwin':return Path.home()/'Library'/'Application Support'/'MallRestorer'
-    return Path(os.environ.get('XDG_DATA_HOME',Path.home()/'.local'/'share'))/'MallRestorer'
 
 
 def canonical(data):return json.dumps(data,sort_keys=True,separators=(',',':'),allow_nan=False).encode('utf-8')
@@ -390,16 +382,8 @@ class SaveStore:
             except (OSError,ValueError,KeyError,TypeError):pass
         return False
 
-    @staticmethod
-    def atomic(path, content):
-        path.parent.mkdir(parents=True,exist_ok=True)
-        descriptor,temp=tempfile.mkstemp(prefix=path.name+'.',suffix='.tmp',dir=path.parent)
-        try:
-            with os.fdopen(descriptor,'wb') as stream:
-                stream.write(content);stream.flush();os.fsync(stream.fileno())
-            os.replace(temp,path)
-        finally:
-            if os.path.exists(temp):os.unlink(temp)
+    # Retain the public helper used by existing callers and save-failure tests.
+    atomic = staticmethod(atomic_write)
 
     def save(self, game):
         if not self.enabled:return False

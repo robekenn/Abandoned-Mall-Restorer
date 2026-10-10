@@ -4,7 +4,6 @@ os.environ.setdefault('SDL_VIDEODRIVER','dummy')
 os.environ.setdefault('SDL_AUDIODRIVER','dummy')
 import unittest
 from unittest.mock import patch
-import pygame
 from game.game import Game
 from tests import test_feature_expansion as helpers
 from systems.saves import snapshot, restore_state

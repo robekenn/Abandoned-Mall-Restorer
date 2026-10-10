@@ -2,7 +2,6 @@
 import os
 os.environ['SDL_VIDEODRIVER']='dummy';os.environ['SDL_AUDIODRIVER']='dummy'
 import unittest
-from unittest.mock import patch
 import pygame
 from game.game import Game
 from systems.favors import FAVORS
@@ -46,7 +45,7 @@ class JanitorTests(unittest.TestCase):
                 self.assertEqual(g.shoppers.walkways.nearest(store.position) in g.shoppers.walkways.nodes,True)
             self.assertTrue(all(area.collidepoint(t.position) for t in pool))
         # Five original shops alone no longer reveal the next gate.
-        north=Game();
+        north=Game()
         for t in north.mall.trash:north.mall.clean_trash(t)
         for store in north.mall.north_stores[:5]:store.restored=True
         self.assertFalse(north.mall.east.ready(north.mall))

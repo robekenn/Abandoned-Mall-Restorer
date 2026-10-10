@@ -189,17 +189,8 @@ class Courtyard:
         if self.crossing(game,direction):return
         game.frame_camera(game.screen.get_size())
         game.feedback.update(dt);game.speech.update(dt);game.message_timer=max(0,game.message_timer-dt)
-        game.shoppers.update(dt,game.mall,game.upgrades,game.owner_requests.store)
-        game.update_courtyard_visitors(dt)
-        game.update_litter(dt)
-        game.update_janitors(dt)
-        game.rent_timer+=dt
-        while game.rent_timer>=5:
-            income=game.rent_income;game.cash+=income;game.rent_timer-=5
-            if income:game.feedback.burst(game.player.rect.center,f'+{money(income)} rent',restored=True)
-            if rent_multiplier(world.cleanliness)==1.5:game.audio.play('bonus_rent')
-        game.save_store.elapsed+=dt
-        if game.save_started and game.save_store.elapsed>=30:game.save_checkpoint()
+        game.update_shared_worlds(dt)
+        game.update_income_and_autosave(dt)
 
     def journal_handle(self,event,game):
         game.journal.handle(event,game)

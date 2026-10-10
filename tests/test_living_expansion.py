@@ -10,7 +10,6 @@ from systems.favors import FAVORS
 from systems.requests import OWNERS
 from systems.saves import snapshot, restore_state
 from systems.upgrades import Upgrades
-from systems.shoppers import Shopper
 
 
 class ExpansionTests(unittest.TestCase):
