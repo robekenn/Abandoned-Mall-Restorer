@@ -219,16 +219,19 @@ class Journal:
         for label,rect in zip(('<','>'),self.page_buttons(surface)):
             theme.frame(surface,rect,theme.CARD);text=game.hud.font.render(label,True,theme.ACCENT);surface.blit(text,text.get_rect(center=rect.center))
         for i,store in enumerate(owners[self.page*6:self.page*6+6]):
-            r=pygame.Rect(panel.x+22,y+35+i*27,panel.width-44,24)
+            r=pygame.Rect(panel.x+22,y+35+i*24,panel.width-44,22)
             if i%2==0:theme.frame(surface,r,theme.CARD,False)
             if not store.restored:status='Store closed'
-            elif outside:status='Kitchen open'
+            elif outside:
+                requests=game.courtyard.kitchen_requests
+                if requests.ready(store.name):status='Needs cooking help'
+                else:status='Next request in '+theme.clock(requests.waits[store.name])
             elif game.owner_requests.store is store:status='Your active request'
             elif store.request_wait>0:status='Next idea in '+theme.clock(store.request_wait)
             else:status='New favor ready' if store.request_level==3 else 'New request ready'
             surface.blit(game.hud.small.render(store.name if outside else f'{OWNERS[store.name]} · {store.name}',True,theme.TEXT),(r.x+8,r.y+5))
-            text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready') else theme.MUTED)
+            text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready','Needs cooking help') else theme.MUTED)
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
-        surface.blit(game.hud.small.render('Provisions: service & patio upgrades · Walk through west wall opening' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
+        surface.blit(game.hud.small.render('Each kitchen has its own cooldown · Countdowns run during play' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
         surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))

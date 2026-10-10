@@ -227,7 +227,8 @@ class FeatureTests(unittest.TestCase):
         for t in world.trash:world.clean_trash(t)
         for store in world.stores:store.restored=True
         g.player.rect.center=world.stores[1].position
-        self.assertEqual(g.hud.prompt(g,g.target()),('E','Chat with the cooks'))
+        g.courtyard.kitchen_requests.waits['Hearth Pizza']=0
+        self.assertEqual(g.hud.prompt(g,g.target()),('E / click','Help cook at Hearth Pizza'))
         with patch.object(g.hud,'draw',wraps=g.hud.draw) as hud:
             g.draw();hud.assert_called_once()
         g.journal.open=True

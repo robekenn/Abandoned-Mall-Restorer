@@ -191,6 +191,20 @@ def main():
             game.upgrades.decor.update(o.key for category in ('Furniture','Garden') for o in game.upgrades.offers(category,'courtyard'))
             game.shop_menu.open=False;game.update(.2,(0,0));game.draw()
             game.journal.open=True;game.draw();game.journal.open=False
+            # Exercise every optional kitchen in source and frozen distributions.
+            for store in world.stores[1:]:
+                game.player.rect.center=store.position;game.frame_camera(game.screen.get_size())
+                game.courtyard.kitchen_requests.waits[store.name]=0
+                game.interact();game.draw()
+                menu=game.cooking_menu
+                if not menu.open:raise RuntimeError('Kitchen did not open: '+store.name)
+                menu.primary(game);game.draw()
+                while not menu.round.complete:
+                    cooking=menu.round
+                    if not cooking.order:game.update(cooking.target*cooking.sweep_seconds,(0,0))
+                    menu.act(cooking.order[cooking.step] if cooking.order else 0,game);game.draw()
+                if game.courtyard.cooking[store.name]['served']!=1:raise RuntimeError('Kitchen order not served')
+                menu.open=False
             with TemporaryDirectory() as directory:
                 game.save_store=SaveStore(directory,developer=args.dev,enabled=True)
                 cash=game.cash

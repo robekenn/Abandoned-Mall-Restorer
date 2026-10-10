@@ -34,6 +34,7 @@ from ui.settings_menu import SettingsMenu
 from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.pause import PauseMenu
 from ui.community_menu import CommunityMenu
+from ui.cooking_menu import CookingMenu
 
 
 class Game:
@@ -66,6 +67,7 @@ class Game:
         self.upgrades = Upgrades()
         self.shop_menu = UpgradeShop()
         self.owner_menu = OwnerMenu()
+        self.cooking_menu = CookingMenu()
         self.journal = Journal()
         self.display_menu = DisplayMenu()
         self.welcome = Welcome(start_screen)
@@ -154,7 +156,7 @@ class Game:
         self.owner_requests.record_sale(count,trash_bin.position)
 
     def pickup_at(self, screen_position):
-        if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu)):
+        if self.tutorial.paused or any(menu.open for menu in (self.welcome,self.pause,self.settings_menu,self.shop_menu,self.owner_menu,self.journal,self.display_menu,self.developer,self.story_menu,self.community_menu,self.cooking_menu)):
             return
         if self.scene=='courtyard':self.courtyard.pickup_at(self,screen_position);return
         viewport=pygame.Rect(0,190 if self.tutorial.active else 170,self.screen.get_width(),self.screen.get_height()-(248 if self.tutorial.active else 228))
@@ -199,7 +201,7 @@ class Game:
             self.audio.play('milestone')
 
     def interact(self):
-        if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
+        if self.settings_menu.open or self.tutorial.paused or self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.welcome.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open or self.cooking_menu.open:
             return
         if self.scene=='courtyard':self.courtyard.interact(self);return
         target = self.target()
@@ -303,6 +305,7 @@ class Game:
 
     def update_courtyard_visitors(self,dt):
         if self.courtyard.unlocked:
+            self.courtyard.kitchen_requests.update(dt,self)
             self.courtyard.shoppers.update(dt,self.courtyard.world,self.upgrades)
             self.visitor_travel.update(dt,self)
 
@@ -310,6 +313,13 @@ class Game:
         self.janitors.update(dt,self)
         if self.courtyard.unlocked:
             self.courtyard.janitors.update(dt,self,self.courtyard.world)
+
+    def update_litter(self,dt):
+        position=self.player.rect.center if self.scene=='mall' else None
+        self.litter_spawner.update(dt,self.mall,position,self.owner_requests,traffic=self.shoppers.traffic)
+        if self.courtyard.unlocked:
+            position=self.player.rect.center if self.scene=='courtyard' else None
+            self.courtyard.spawner.update(dt,self.courtyard.world,position,traffic=self.courtyard.shoppers.traffic)
 
     @property
     def cleanliness(self):
@@ -374,6 +384,7 @@ class Game:
         if self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open or self.developer.open or self.story_menu.open or self.pause.open or self.community_menu.open:
             return
         if self.tutorial.paused:return
+        if self.cooking_menu.open:self.cooking_menu.update(dt,self);return
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         if self.courtyard.crossing(self,direction):return
@@ -386,14 +397,14 @@ class Game:
         self.feedback.update(dt)
         self.story.update(dt,self.mall)
         self.life.update(dt,self)
-        self.litter_spawner.update(dt,self.mall,self.player.rect.center,self.owner_requests)
-        self.update_janitors(dt)
         ready = self.owner_requests.update(dt,self.mall)
         if ready and not self.owner_requests.store:
             self.request_notice=(ready[0].name+' has a favor' if len(ready)==1 else f'{len(ready)} owners have new favors')
             self.request_notice_timer=8
         self.shoppers.update(dt,self.mall,self.upgrades,self.owner_requests.store)
         self.update_courtyard_visitors(dt)
+        self.update_litter(dt)
+        self.update_janitors(dt)
         self.life.work(dt,self,interaction_held,not any(direction))
         completed = self.owner_requests.work(dt,self.player.rect.center,interaction_held,not any(direction))
         for spot in self.owner_requests.visible_spots:
@@ -523,6 +534,7 @@ class Game:
             if self.preferences.guide!=self.welcome.tutorial_enabled:
                 self.preferences.guide=self.welcome.tutorial_enabled;self.preferences.save()
         elif event.type==pygame.KEYDOWN and event.key==pygame.K_F5:self.save_checkpoint()
+        elif self.cooking_menu.open:self.cooking_menu.handle(event,self)
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
         elif self.tutorial.paused:self.tutorial.handle(event,self)

@@ -305,6 +305,37 @@ def restore_state(data, game):
         for i,store in enumerate(world.stores):
             if store.restored and i and (not world.initial_cleanup_complete or not world.stores[i-1].restored):raise ValueError('Invalid restaurant order')
         world.refresh_businesses()
+        from systems.cooking import RECIPES
+        cooking=saved_courtyard.get('cooking',{})
+        if not isinstance(cooking,dict) or not set(cooking)<=set(RECIPES):raise ValueError('Invalid kitchen records')
+        for name,row in cooking.items():
+            if not next(s for s in world.stores if s.name==name).restored:raise ValueError('Cooking in a closed kitchen')
+            if not isinstance(row,dict) or set(row) not in ({'served','best','tips'},{'served','best','tips','failed'}):raise ValueError('Invalid cooking record')
+            served=number(row['served'],0,10**12,True);best=number(row['best'],0,100,True);tips=number(row['tips'],0,10**15,True)
+            if (served==0 and (best or tips)) or (served>0 and best<40):raise ValueError('Invalid cooking result')
+            courtyard.cooking[name]={'served':served,'best':best,'tips':tips,'failed':number(row.get('failed',0),0,10**12,True)}
+        request=saved_courtyard.get('kitchen_requests')
+        if request is not None:
+            if not isinstance(request,dict):raise ValueError('Invalid kitchen request')
+            opened={s.name for s in world.stores if s.restored and s.name in RECIPES}
+            if set(request)=={'waits'}:
+                waits=request['waits']
+                if not isinstance(waits,dict) or set(waits)!=set(RECIPES):raise ValueError('Invalid kitchen cooldowns')
+                for name,value in waits.items():
+                    wait=number(value,0,600)
+                    if wait==0 and name not in opened:raise ValueError('Request from closed kitchen')
+                    courtyard.kitchen_requests.waits[name]=wait
+            elif set(request)=={'wait','pending','last'}:
+                # Migrate the earlier shared timer, preserving its ready kitchen.
+                pending,last=request['pending'],request['last']
+                if pending is not None and (not isinstance(pending,str) or pending not in opened):raise ValueError('Invalid pending kitchen')
+                if last is not None and (not isinstance(last,str) or last not in opened):raise ValueError('Invalid previous kitchen')
+                wait=number(request['wait'],0,600)
+                if pending is not None and wait!=0:raise ValueError('Pending kitchen with cooldown')
+                if pending is None:
+                    if opened:courtyard.kitchen_requests.waits[last or next(s.name for s in world.stores if s.name in opened)]=wait
+                else:courtyard.kitchen_requests.waits[pending]=0
+            else:raise ValueError('Invalid kitchen request')
         dirty={tuple(vector(p)) for p in saved_courtyard['dirty']}
         if not dirty<=set(world.floor_tiles):raise ValueError('Invalid patio floor')
         world.dirty_tiles=dirty
@@ -328,6 +359,7 @@ def restore_state(data, game):
     litter_timer=number(data['litter_timer'],0,4);turn=number(data['litter_turn'],0,10**12,True);muted=flag(data['muted'])
     # Commit only after every field passed; a damaged primary can safely fall back.
     for key,value in state.items():setattr(game,key,value)
+    game.cooking_menu.open=False
     game.litter_spawner.elapsed=litter_timer;game.litter_spawner.turn=turn
     if muted!=game.audio.muted:game.audio.toggle()
     from game.camera import Camera

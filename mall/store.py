@@ -24,6 +24,11 @@ class Store:
     def rent(self):
         return self.base_rent+self.request_bonus
 
+    @staticmethod
+    def draw_request_marker(surface,point):
+        pygame.draw.line(surface,(173,217,210),(point.x,point.y-35),(point.x,point.y-27),3)
+        pygame.draw.circle(surface,(173,217,210),(point.x,point.y-22),2)
+
     @property
     def label(self):
         if self.restored:
@@ -86,7 +91,6 @@ class Store:
             point = camera.point(self.position)
             pygame.draw.circle(surface, (105,181,147) if self.restored else (216,177,104), point, 12)
             if self.restored and not self.upgrade_shop and self.request_wait <= 0:
-                pygame.draw.line(surface,(173,217,210),(point.x,point.y-35),(point.x,point.y-27),3)
-                pygame.draw.circle(surface,(173,217,210),(point.x,point.y-22),2)
+                self.draw_request_marker(surface,point)
             if selected:
                 pygame.draw.circle(surface, (245,218,156), point, 21, 2)

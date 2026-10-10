@@ -28,7 +28,9 @@ class HUD:
             if not world.stores[0].restored:return 'Courtyard Provisions','Reopen Provisions · '+money(world.stores[0].cost)
             if not world.initial_cleanup_complete:return 'First courtyard sweep',f'Clean the patio. {world.active_litter_count} patches left.'
             if world.next_store:return 'Next kitchen',world.next_store.name+' · '+money(world.next_store.cost)
-            return 'A table for everyone','All seven kitchens open. Visit Provisions for service and garden upgrades.'
+            ready=game.courtyard.kitchen_requests.ready_names
+            if ready:return 'Cooking requests',str(len(ready))+' kitchen'+('s need' if len(ready)>1 else ' needs')+' help. See J → Restaurants.'
+            return 'Courtyard kitchens','Watch for a cooking request, or visit Provisions for patio upgrades.'
         mall=game.mall;requests=game.owner_requests
         if game.tutorial.active:return game.tutorial.goal
         if requests.store:
@@ -69,6 +71,8 @@ class HUD:
         if isinstance(target,RequestSpot):return ('Hold E' if target.duration else 'E'),target.title
         if isinstance(target,Store):
             if not target.restored:return 'E',f'Reopen {target.name}' if target.available else 'This store is still closed'
+            if game.scene=='courtyard' and not target.upgrade_shop:
+                return ('E / click','Help cook at '+target.name) if game.courtyard.kitchen_requests.ready(target.name) else ('Wait',target.name+' will ask when help is needed')
             return 'E',('Enter '+target.name) if target.upgrade_shop else f'Talk to {OWNERS[target.name]}' if target.name in OWNERS else 'Chat with the cooks'
         if target:return 'E',f'Open {target.name} · {money(target.cost)}'
         return 'Move','WASD or arrow keys'
@@ -154,6 +158,12 @@ class HUD:
         if available_requests and game.preferences.notifications and not game.owner_requests.store:
             text=(game.request_notice if game.request_notice_timer else f'{available_requests} owner favors available')+' · J: owners'
             box=pygame.Rect(width-310,88,290,52);theme.frame(surface,box)
+            for i,line in enumerate(theme.wrap(self.small,text,box.width-24)[:2]):
+                surface.blit(self.small.render(line,True,theme.GOLD),(box.x+12,box.y+9+i*18))
+        ready=game.courtyard.kitchen_requests.ready_names
+        if ready and game.preferences.notifications:
+            text=(ready[0] if len(ready)==1 else str(len(ready))+' kitchens')+' need'+('s' if len(ready)==1 else '')+' cooking help · Courtyard'
+            box=pygame.Rect(width-310,148 if available_requests else 88,290,52);theme.frame(surface,box)
             for i,line in enumerate(theme.wrap(self.small,text,box.width-24)[:2]):
                 surface.blit(self.small.render(line,True,theme.GOLD),(box.x+12,box.y+9+i*18))
         if game.message_timer:
