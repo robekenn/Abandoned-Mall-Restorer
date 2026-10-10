@@ -25,6 +25,8 @@ class Welcome:
     FADE_SECONDS = 0.9
 
     def __init__(self, open=True):
+        # Only the naming dialog owns text input; menu shortcuts must not type.
+        pygame.key.stop_text_input()
         self.open = open
         self.tutorial_enabled = True
         self.has_save = False
