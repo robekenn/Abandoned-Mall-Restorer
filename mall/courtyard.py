@@ -311,6 +311,7 @@ class Courtyard:
         if game.cooking_menu.open:game.cooking_menu.draw(game)
         if game.settings_menu.open:game.settings_menu.draw(game)
         elif game.pause.open:game.pause.draw(game)
+        game.mouse_controls.draw(game)
         pygame.display.flip()
 
     def snapshot(self,game):

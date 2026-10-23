@@ -8,7 +8,7 @@ from systems.shoppers import Shopper
 from mall.store import Store
 from systems.story import StoryPoint, CHAPTERS
 from ui import theme
-from systems.mall_life import EventSpot
+from systems.mall_life import EventSpot, EventTask
 from mall.courtyard import SceneDoor, Courtyard
 
 
@@ -21,6 +21,21 @@ class HUD:
     def wrap(self, text, width):
         return theme.wrap(self.font,text,width)
 
+    @staticmethod
+    def button_rects(surface):
+        width,height=surface.get_size()
+        labels=(('journal',88),('help',60),('settings',88),('pause',72))
+        x=width-20-sum(size for _,size in labels)-8*(len(labels)-1)
+        buttons={'action':pygame.Rect(20,height-50,x-32,42)}
+        for key,size in labels:
+            buttons[key]=pygame.Rect(x,height-47,size,36)
+            x+=size+8
+        return buttons
+
+    @staticmethod
+    def developer_rect(surface):
+        return pygame.Rect(228,10,66,32)
+
     def goal(self, game):
         if game.scene=='courtyard':
             world=game.courtyard.world
@@ -29,7 +44,7 @@ class HUD:
             if not world.initial_cleanup_complete:return 'First courtyard sweep',f'Clean the patio. {world.active_litter_count} patches left.'
             if world.next_store:return 'Next kitchen',world.next_store.name+' · '+money(world.next_store.cost)
             ready=game.courtyard.kitchen_requests.ready_names
-            if ready:return 'Cooking requests',str(len(ready))+' kitchen'+('s need' if len(ready)>1 else ' needs')+' help. See J → Restaurants.'
+            if ready:return 'Cooking requests',str(len(ready))+' kitchen'+('s need' if len(ready)>1 else ' needs')+' help. See Journal → Restaurants.'
             return 'Courtyard kitchens','Watch for a cooking request, or visit Provisions for patio upgrades.'
         mall=game.mall;requests=game.owner_requests
         if game.tutorial.active:return game.tutorial.goal
@@ -57,12 +72,13 @@ class HUD:
         if game.story.current<4:
             chapter=game.story.current
             if game.story.ready(game,chapter):return CHAPTERS[chapter].title,'Return to the community board to gather the neighbors.'
-            return 'The lantern walk','J → Story: help each court bring the festival back.'
+            return 'The lantern walk','Journal → Story: help each court bring the festival back.'
         return 'A place for everyone','Visit the Commons board to begin another lantern walk.'
 
     def prompt(self, game, target):
         if isinstance(target,SceneDoor):return 'E',target.title
         if isinstance(target,EventSpot):return 'E','Join '+target.title
+        if isinstance(target,EventTask):return ('Hold E' if target.duration else 'E'),target.title
         if isinstance(target,StoryPoint):return 'E',target.label
         if isinstance(target,Trash):
             return 'E / click','Collect litter' if game.upgrades.held<game.upgrades.capacity else 'Bag full. Find a bin.'
@@ -129,6 +145,8 @@ class HUD:
         surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
         region=mall.area_name(game.player.rect.center)
         surface.blit(self.small.render(region+" · "+(game.courtyard.shoppers if outside else game.shoppers).traffic,True,theme.MUTED),(23,47))
+        if game.developer.enabled and not outside:
+            theme.button(surface,self.developer_rect(surface),'DEV',self.small)
         values=[('CLEAN',cleanliness_label(game.cleanliness)),('CASH',money(game.cash)),('BAG',f'{game.upgrades.held} / {game.upgrades.capacity}')]
         for i,(label,value) in enumerate(values):
             r=pygame.Rect(width-450+i*145,10,133,56);theme.frame(surface,r,theme.PANEL,False)
@@ -145,15 +163,16 @@ class HUD:
             skip=game.tutorial.skip_rect(surface);theme.frame(surface,skip,theme.CARD,False)
             label=self.small.render('T Skip',True,theme.MUTED);surface.blit(label,label.get_rect(center=skip.center))
         pygame.draw.rect(surface,theme.BG,(0,height-58,width,58))
-        key,action=self.prompt(game,target)
-        key_width=max(44,self.small.size(key)[0]+20)
-        r=pygame.Rect(20,height-43,key_width,28);theme.frame(surface,r,theme.CARD,False)
-        label=self.small.render(key,True,theme.GOLD);surface.blit(label,label.get_rect(center=r.center))
-        controls=self.small.render('J Journal   H Help   F2 Settings   Esc Pause',True,theme.MUTED)
-        available=max(100,width-key_width-controls.get_width()-64)
-        for i,line in enumerate(theme.wrap(self.small,action,available)[:2]):
-            surface.blit(self.small.render(line,True,theme.TEXT),(r.right+12,height-41+i*17))
-        surface.blit(controls,controls.get_rect(midright=(width-20,height-29)))
+        buttons=self.button_rects(surface)
+        for key,label in (('journal','Journal'),('help','Help'),('settings','Settings'),('pause','Menu')):
+            theme.button(surface,buttons[key],label,self.small)
+        action=buttons['action'];theme.frame(surface,action,theme.CARD if target else theme.PANEL)
+        key,caption=self.prompt(game,target)
+        if target is None:caption='Click / right-click the floor to walk'
+        elif isinstance(target,(RequestSpot,EventTask)) and target.duration:caption='Hold click · '+target.title
+        else:caption='Click · '+caption
+        for i,line in enumerate(theme.wrap(self.small,caption,action.width-24)[:2]):
+            surface.blit(self.small.render(line,True,theme.TEXT if target else theme.MUTED),(action.x+12,action.y+5+i*17))
         available_requests=0 if outside else sum(game.owner_requests.eligible(s) for s in mall.stores)
         if available_requests and game.preferences.notifications and not game.owner_requests.store:
             text=(game.request_notice if game.request_notice_timer else f'{available_requests} owner favors available')+' · J: owners'

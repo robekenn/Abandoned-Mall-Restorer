@@ -13,6 +13,14 @@ before world actions. Custom keys normalize to the existing action keys.
 `Game.world_paused` also includes the welcome screen and tutorial explanations.
 Menu registration doesn't automatically provide rendering or input handlers.
 
+`ui/mouse_controls.py` handles shared Back buttons and HUD actions before world
+clicks, and renders hover outlines/cursor feedback over the active panel in both
+scenes. Panel-specific controls still belong to their menus. A held click is
+bound to one visible work marker; button release, focus loss or menus clear it.
+`systems/player_navigation.py` uses a player-sized `Walkways` graph for optional
+floor-click routes. Keyboard movement overrides routes. These routes and mouse
+hold state are transient and never enter a checkpoint.
+
 `Game.update()` handles the welcome transition and pauses before ticking a
 scene. Cooking updates only its active round; settings and pause freeze that
 round too. Tutorial practice permits normal play, while its explanations pause.

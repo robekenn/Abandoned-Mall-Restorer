@@ -36,6 +36,7 @@ from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.pause import PauseMenu
 from ui.community_menu import CommunityMenu
 from ui.cooking_menu import CookingMenu
+from ui.mouse_controls import MouseControls
 
 
 class Game:
@@ -80,6 +81,7 @@ class Game:
         self.developer=Developer(developer);self.owner_requests=OwnerRequests();self.shoppers=Shoppers()
         self.janitors=Janitors();self.story=Story();self.story.setup(self.mall);self.story_menu=StoryMenu()
         self.life=MallLife();self.community_menu=CommunityMenu();self.skip_exit_save=False
+        self.mouse_controls=MouseControls()
         self.total_collected=self.total_sold=0;self.cash=0;self.rent_timer=0;self.play_seconds=0
         self.message='';self.message_timer=0;self.request_notice='';self.request_notice_timer=0
 
@@ -98,6 +100,7 @@ class Game:
 
     def return_to_main_menu(self, *, save=True):
         if save and self.save_started and not self.save_checkpoint():return False
+        self.mouse_controls.cancel()
         for menu in self.modal_menus:menu.open=False
         self.speech.timer=0;self.feedback.popups.clear();self.feedback.particles.clear()
         self.save_started=False
@@ -231,11 +234,11 @@ class Game:
             self.notify('East gallery sweep complete! Reopen Vinyl & Company and keep growing.')
             self.audio.play('milestone')
 
-    def interact(self):
+    def interact(self, target=None):
         if self.world_paused:
             return
-        if self.scene=='courtyard':self.courtyard.interact(self);return
-        target = self.target()
+        if self.scene=='courtyard':self.courtyard.interact(self,target);return
+        target = self.target() if target is None else target
         if isinstance(target,SceneDoor):
             self.enter_courtyard()
         elif isinstance(target,Trash):
@@ -402,6 +405,7 @@ class Game:
         record=next((r for r in self.welcome.saves if r.identifier==identifier),None)
         if record:store.name=record.name
         if store.load(self):
+            self.mouse_controls.cancel()
             self.save_store=store
             for menu in self.modal_menus:menu.open=False
             self.speech.timer=0;self.feedback.popups.clear();self.feedback.particles.clear()
@@ -438,6 +442,7 @@ class Game:
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         self.frame_camera(viewport)
+        if self.world_paused:self.mouse_controls.cancel()
         if self.settings_menu.open or self.pause.open:return
         if self.welcome.open:
             self.welcome.update(dt)
@@ -450,6 +455,9 @@ class Game:
             return
         if self.tutorial.paused:return
         if self.cooking_menu.open:self.cooking_menu.update(dt,self);return
+        if any(direction):self.mouse_controls.release()
+        direction=self.mouse_controls.navigation.direction(self,dt,direction)
+        interaction_held=interaction_held or self.mouse_controls.working(self)
         self.play_seconds+=dt
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
@@ -493,6 +501,7 @@ class Game:
             self.welcome.draw(self)
             if self.settings_menu.open:self.settings_menu.draw(self)
             elif self.pause.open:self.pause.draw(self)
+            self.mouse_controls.draw(self)
             pygame.display.flip();return
         if self.scene=='courtyard':self.courtyard.draw(self);return
         target = self.target()
@@ -545,9 +554,6 @@ class Game:
             self.feedback.draw(self.screen,self.camera,self.hud.font)
             self.hud.draw(self,target)
             self.speech.draw(self)
-            if self.developer.enabled:
-                badge=self.hud.small.render('DEV · F3',True,(230,194,124))
-                self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
             if self.tutorial.paused:
                 self.tutorial.draw(self)
             elif self.community_menu.open:
@@ -566,9 +572,13 @@ class Game:
                 self.display_menu.draw(self)
         if self.settings_menu.open:self.settings_menu.draw(self)
         elif self.pause.open:self.pause.draw(self)
+        self.mouse_controls.draw(self)
         pygame.display.flip()
 
     def handle_event(self, event):
+        if event.type==pygame.MOUSEBUTTONUP and event.button==1:self.mouse_controls.release()
+        if event.type==pygame.WINDOWFOCUSLOST:self.mouse_controls.cancel()
+        if self.mouse_controls.handle(event,self):return
         if event.type==pygame.QUIT:self.settings_menu.open=False
         if self.settings_menu.open and event.type!=pygame.QUIT:
             self.settings_menu.handle(event,self);return
@@ -611,7 +621,7 @@ class Game:
             if self.scene=='courtyard':self.courtyard.journal_handle(event,self)
             else:self.journal.handle(event,self)
         elif self.tutorial.active and self.tutorial.handle(event,self):pass
-        elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:self.pickup_at(event.pos)
+        elif event.type==pygame.MOUSEBUTTONDOWN and event.button in (1,3):self.mouse_controls.world_click(event,self)
         elif event.type==pygame.KEYDOWN:
             if event.key==pygame.K_h:
                 if self.scene=='mall':self.tutorial.start(self)

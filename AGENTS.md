@@ -32,6 +32,7 @@ user's current instructions take precedence; check for any more specific
 | `game/smoke.py` | Staged integration checks for source and frozen launches |
 | `systems/save_slots.py` | Named save catalog, allocation and deletion |
 | `ui/welcome.py`, `ui/menu_scene.py` | Main-menu controls and cosmetic restored concourse |
+| `ui/mouse_controls.py`, `systems/player_navigation.py` | Mouse actions, menu return/hover controls and transient click-to-walk routes |
 | `entities/` | Player, trash and bins |
 | `mall/` | Layout, collision, stores, seating and courtyard scene |
 | `systems/` | Progression, requests, visitors, janitors, economy and saves |
@@ -52,6 +53,10 @@ audio are generated locally; do not assume `assets/` files are loaded.
 - Settings, pause, the journal and other menus freeze simulation. The tutorial
   pauses during explanations, then allows practice. A cooking round advances
   its own timer while the mall stays paused; settings and pause also freeze it.
+- Every modal needs a clickable return path. Register its Back/Close behavior
+  and hover targets in `ui/mouse_controls.py`, alongside its normal input/draw
+  routes. Preserve action reach and collision rules for mouse interactions.
+  Mouse walking and held work stop on menus/focus loss; neither state saves.
 - Both scenes call `Game.update_shared_worlds()` exactly once per live frame.
   Visitors, litter and janitors must keep working in opened offscreen maps.
   Do not create the courtyard world merely to tick a locked area.

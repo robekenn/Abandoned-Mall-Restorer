@@ -45,8 +45,8 @@ class SettingsMenu:
             for i,rect in enumerate(rows):
                 if not rect.collidepoint(event.pos):continue
                 if self.tab==1:
-                    if i<6:self.capture=self.actions()[i];self.notice='Press a new key · Esc cancels'
-                    else:self.page=1-self.page
+                    if i<len(self.actions()):self.capture=self.actions()[i];self.notice='Press a new key · Esc cancels'
+                    elif i==len(self.actions()):self.page=1-self.page
                 elif i<2:
                     self.drag=i
                     value=max(0,min(1,(event.pos[0]-rect.x-240)/(rect.width-260)))

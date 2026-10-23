@@ -60,6 +60,8 @@ python3 -m venv .venv
 
 ## Controls
 
+- **Mouse:** click open floor to walk; right-click floor to walk without activating an object. Click nearby litter, bins, shops, visitors, task markers, boards and passages to interact. The bottom action button performs the nearby action; hold it or a task marker for timed work.
+- **Journal / Help / Settings / Menu buttons:** open these screens without keyboard shortcuts. Panels have clickable Back/Close controls; shops have paging arrows, displays have Undo, and Story has Show keepsakes/Show goals. Kitchen Menu pauses an order without abandoning it.
 - **WASD / Arrow keys:** move
 - **E:** collect nearby litter, sell at a trash bin, reopen a business, open a section gate, enter an upgrade shop, meet an owner, greet a visitor or read a community board / keepsake
 - **Hold E while still:** set up a request sign
@@ -71,7 +73,7 @@ python3 -m venv .venv
 - **J:** open/close the journal (map, stats, owner countdowns, janitors and story)
 - **Esc:** close an open menu/journal, or pause from the mall; exiting requires confirmation
 
-Inside any upgrade shop, click an upgrade row to inspect it, then use the Purchase button or Enter to buy. Use **1/2/3** or **Tab** to select menu tabs, **Up/Down** to select a row, **Enter** to buy, and **Esc/E** to close. Gameplay and owner request countdowns pause while any menu or the journal is open.
+Inside any upgrade shop, click an upgrade row to inspect it, then use the Purchase button or Enter to buy. Use paging arrows or the wheel to browse. Keyboard alternatives remain **1/2/3** or **Tab** for tabs, **Up/Down** for rows, **Enter** to buy, and **Esc/E** to close. Hover outlines and a hand cursor identify clickable controls. Mouse walking respects furniture and locked gates; opening a menu, losing window focus or pressing movement keys cancels the route. Gameplay and owner request countdowns pause while any menu or the journal is open.
 
 Each court now has five shops on either side. After reopening the original row, continue through five opposing businesses before the next section gate appears. Hire one janitor per unlocked section through **J → Janitors**. Janitors stay local, walk slowly, spend five seconds on each piece and automatically sell it for 75% of your current trash value. Upgrade cleaning and walking speeds separately in the same tab. See [courts and janitors](docs/courts-and-janitors.md) for prices.
 

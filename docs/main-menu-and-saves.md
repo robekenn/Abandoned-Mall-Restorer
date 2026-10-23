@@ -21,9 +21,20 @@ request, rent, litter or janitor timer advances while the menu is open.
   name field accepts text without triggering gameplay shortcuts. Menu N/D and
   navigation keys remain fixed even when movement keys are rebound.
 
-During play, choose **Esc → Main menu → Save and return to main menu**. The app
+During play, click **Menu → Main menu → Save and return to main menu** (or
+press Esc to open Menu). The app
 stays open, allowing another save or a fresh game. The current save is selected
 on return. Startup selects the most recently saved available checkpoint.
+
+The bottom Journal, Help, Settings and Menu controls are buttons. Other panels
+have visible Back/Close buttons, with hover feedback and a hand cursor. Use the
+shop's paging arrows, display's Undo button and Story's Show keepsakes toggle
+instead of their keyboard shortcuts. Click open floor to walk; right-click
+floor always walks. Nearby objects and the bottom action button can be clicked,
+and timed tasks accept a held left click. Releasing the button stops work.
+Keyboard movement remains available and cancels mouse walking. Menus and focus
+loss cancel the route too. The kitchen's Menu button pauses without losing an
+ingredient deposit; Close retains the existing abandonment penalty.
 
 If saving fails, the session stays open with a retry/stay choice. Returning
 without saving requires an explicit separate action. Starting a new save also

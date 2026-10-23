@@ -17,6 +17,7 @@ def run(developer=False):
     game = Game(start_screen=True, developer=developer)
     try:
         _exercise_opening_and_shops(game)
+        _exercise_mouse_controls(game)
         _exercise_owner_requests(game)
         _exercise_helpers(game, developer)
         _exercise_story(game)
@@ -77,6 +78,29 @@ def _exercise_opening_and_shops(game):
             game.shop_menu.category = category
             game.draw()
     game.shop_menu.open = False
+
+
+def _exercise_mouse_controls(game):
+    def click(point):
+        game.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=point))
+        game.handle_event(pygame.event.Event(pygame.MOUSEBUTTONUP,button=1,pos=point))
+
+    click(game.hud.button_rects(game.screen)['journal'].center)
+    if not game.journal.open:
+        raise RuntimeError('Mouse journal button did not open')
+    game.draw()
+    click(game.mouse_controls.back_rect(game).center)
+    if game.journal.open:
+        raise RuntimeError('Mouse close button did not return to play')
+    game.player.rect.center=(650,720)
+    if not game.mouse_controls.navigation.start(game,(1040,720)):
+        raise RuntimeError('Mouse navigation could not route around the fountain')
+    before=game.player.rect.center
+    game.update(.05,(0,0))
+    if game.player.rect.center==before:
+        raise RuntimeError('Mouse navigation did not move the player')
+    game.draw()
+    game.mouse_controls.cancel()
 
 
 def _exercise_owner_requests(game):
