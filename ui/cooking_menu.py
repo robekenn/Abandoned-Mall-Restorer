@@ -33,6 +33,10 @@ class CookingMenu:
         if r.mode=='fold':return ARROWS
         return ('Pour / stop' if r.mode=='pour' else 'Flip skewer' if self.round.step==0 else 'Plate skewer',)
 
+    def pause_rect(self, surface):
+        panel,_,_,_=self.geometry(surface)
+        return pygame.Rect(panel.right-172,panel.y+18,68,30)
+
     def choice_rects(self,surface):
         panel,_,_,_=self.geometry(surface);count=len(self.choices());cols=min(3,count)
         width=(panel.width-48-12*(cols-1))//cols

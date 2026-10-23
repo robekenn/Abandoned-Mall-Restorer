@@ -19,6 +19,10 @@ class Journal:
         panel,_=self.geometry(surface)
         return [pygame.Rect(panel.right-110+i*44,panel.y+298,36,27) for i in range(2)]
 
+    def memories_rect(self, surface):
+        panel,_=self.geometry(surface)
+        return pygame.Rect(panel.x+22,panel.y+294,170,32)
+
     def tabs(self, surface):
         panel,_=self.geometry(surface)
         return [pygame.Rect(panel.x+22+i*124,panel.y+59,114,25) for i in range(4)]
@@ -84,6 +88,8 @@ class Journal:
                     if row.collidepoint(event.pos):self.court=i;self.start_event(game,i)
                 return
             if self.tab==2:
+                if self.memories_rect(game.screen).collidepoint(event.pos):
+                    self.memories_view=not self.memories_view;return
                 for i,rect in enumerate(self.page_buttons(game.screen)):
                     if rect.collidepoint(event.pos):self.chapter=max(0,min(3,self.chapter+(-1 if i==0 else 1)))
                 return
@@ -170,6 +176,7 @@ class Journal:
             game.screen.blit(game.hud.small.render(line,True,theme.MUTED),(panel.x+22,panel.y+163+n*21))
         for label,rect in zip(('<','>'),self.page_buttons(game.screen)):
             theme.frame(game.screen,rect,theme.CARD);text=game.hud.font.render(label,True,theme.ACCENT);game.screen.blit(text,text.get_rect(center=rect.center))
+        theme.button(game.screen,self.memories_rect(game.screen),'Show goals' if self.memories_view else 'Show keepsakes',game.hud.small)
         if self.memories_view:
             y=panel.y+329
             for n,text in enumerate(chapter.memories):

@@ -2,6 +2,8 @@
 import hashlib
 import json
 import math
+from datetime import datetime, timezone
+import re
 from pathlib import Path
 import pygame
 from game.storage import atomic_write, save_directory
@@ -85,7 +87,7 @@ def snapshot(game):
                'active':life.active,'position':list(life.spot.position) if life.spot else None,'round':life.round,'participants':life.participants,'activity':life.activity,
                'tasks':[[list(t.position),t.title,t.kind,t.duration,t.progress,t.completed] for t in life.tasks]}
     return {'seating_layout':4,'courtyard':game.courtyard.snapshot(game),'traffic_clock':game.shoppers.traffic_elapsed,
-            'life':community,'cash':game.cash,'player':list(game.main_position if game.scene=='courtyard' else game.player.rect.center),'facing':game.player.facing,
+            'life':community,'play_seconds':getattr(game,'play_seconds',0),'cash':game.cash,'player':list(game.main_position if game.scene=='courtyard' else game.player.rect.center),'facing':game.player.facing,
             'unlocked':[r.key for r in game.mall.active_regions],
             'stores':{s.name:[s.restored,s.request_level,s.request_bonus,s.recurring_completed,s.request_wait] for s in game.mall.stores},
             'trash':[[t.cleaned,t.ever_cleaned,getattr(t,'revision',0)] for t in game.mall.trash],
@@ -347,7 +349,7 @@ def restore_state(data, game):
     from systems.courtyard_visitors import CourtyardTravel
     state={'visitor_travel':CourtyardTravel(),'mall':mall,'upgrades':u,'owner_requests':requests,'janitors':workers,'story':story,'tutorial':tutorial,
            'life':life,'courtyard':courtyard,'scene':'mall','main_position':None,'player':player,'shoppers':shoppers,'cash':number(data['cash']),'rent_timer':number(data['rent_timer'],0,5),
-           'total_collected':number(data['collected'],integer=True),'total_sold':number(data['sold'],integer=True)}
+           'play_seconds':number(data.get('play_seconds',0)),'total_collected':number(data['collected'],integer=True),'total_sold':number(data['sold'],integer=True)}
     litter_timer=number(data['litter_timer'],0,4);turn=number(data['litter_turn'],0,10**12,True);muted=flag(data['muted'])
     # Commit only after every field passed; a damaged primary can safely fall back.
     for key,value in state.items():setattr(game,key,value)
@@ -364,16 +366,23 @@ def restore_state(data, game):
 class SaveStore:
     VERSION=1
 
-    def __init__(self, directory=None, developer=False, enabled=False):
-        self.enabled=enabled;self.path=Path(directory or save_directory())/('developer.json' if developer else 'progress.json')
+    def __init__(self, directory=None, developer=False, enabled=False, *, slot=None, name='My Northgate'):
+        self.enabled=enabled;self.directory=Path(directory or save_directory())
+        self.developer=developer;self.slot=slot;self.name=name
+        if slot is not None and (not isinstance(slot,str) or not re.fullmatch(r'[0-9a-f]{32}',slot)):raise ValueError('Invalid save slot')
+        self.path=(self.directory/('developer.json' if developer else 'progress.json') if slot is None else
+                   self.directory/'slots'/('developer' if developer else 'normal')/(slot+'.json'))
         self.backup=self.path.with_suffix('.bak');self.status='Not saved yet';self.elapsed=0;self.recovering=False
 
-    def read(self, path):
+    def read_envelope(self, path):
         if path.stat().st_size>2*1024*1024:raise ValueError('Checkpoint is too large')
         envelope=json.loads(path.read_text(encoding='utf-8'))
         if envelope['version']!=self.VERSION:raise ValueError('Unsupported checkpoint version')
         if envelope['checksum']!=hashlib.sha256(canonical(envelope['data'])).hexdigest():raise ValueError('Checkpoint checksum mismatch')
-        return envelope['data']
+        return envelope
+
+    def read(self, path):
+        return self.read_envelope(path)['data']
 
     def available(self):
         if not self.enabled:return False
@@ -388,7 +397,8 @@ class SaveStore:
     def save(self, game):
         if not self.enabled:return False
         try:
-            data=snapshot(game);content=canonical({'version':self.VERSION,'data':data,'checksum':hashlib.sha256(canonical(data)).hexdigest()})
+            data=snapshot(game);content=canonical({'version':self.VERSION,'name':self.name,'saved_at':datetime.now(timezone.utc).isoformat(),
+                                                  'data':data,'checksum':hashlib.sha256(canonical(data)).hexdigest()})
             try:
                 if not self.recovering:
                     self.read(self.path);self.atomic(self.backup,self.path.read_bytes())

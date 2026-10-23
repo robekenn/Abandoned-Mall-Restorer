@@ -6,7 +6,8 @@ from game.lore import SHOPPER_LINES
 
 
 class Walkways:
-    def __init__(self):
+    def __init__(self, footprint=(20,24)):
+        self.footprint = footprint
         self.signature = None
         self.nodes = set()
         self.edges = {}
@@ -17,9 +18,10 @@ class Walkways:
         if self.signature == signature:
             return
         self.signature = signature
+        width,height = self.footprint
         self.nodes = {p for p in mall.floor_tiles if not any(
-            w.colliderect(pygame.Rect(p[0]-10,p[1]-12,20,24)) for w in mall.obstacles)}
-        walls = [w.inflate(20,24) for w in mall.obstacles]
+            w.colliderect(pygame.Rect(p[0]-width/2,p[1]-height/2,width,height)) for w in mall.obstacles)}
+        walls = [w.inflate(width,height) for w in mall.obstacles]
         self.walls=walls
         self.edges = {p:[q for q in ((p[0]+64,p[1]),(p[0]-64,p[1]),(p[0],p[1]+64),(p[0],p[1]-64))
                          if q in self.nodes and not any(w.clipline(p,q) for w in walls)] for p in self.nodes}

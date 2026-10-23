@@ -13,6 +13,14 @@ before world actions. Custom keys normalize to the existing action keys.
 `Game.world_paused` also includes the welcome screen and tutorial explanations.
 Menu registration doesn't automatically provide rendering or input handlers.
 
+`ui/mouse_controls.py` handles shared Back buttons and HUD actions before world
+clicks, and renders hover outlines/cursor feedback over the active panel in both
+scenes. Panel-specific controls still belong to their menus. A held click is
+bound to one visible work marker; button release, focus loss or menus clear it.
+`systems/player_navigation.py` uses a player-sized `Walkways` graph for optional
+floor-click routes. Keyboard movement overrides routes. These routes and mouse
+hold state are transient and never enter a checkpoint.
+
 `Game.update()` handles the welcome transition and pauses before ticking a
 scene. Cooking updates only its active round; settings and pause freeze that
 round too. Tutorial practice permits normal play, while its explanations pause.
@@ -52,11 +60,18 @@ keep those paths when changing serialization. Runtime visitor routes and
 unfinished cooking rounds are transient; consumed cooking deposits and the
 individual kitchen cooldowns already save when an order is accepted.
 
-The existing per-user `MallRestorer` directory contains `progress.json`,
+The existing per-user `MallRestorer` directory retains `progress.json`,
 `developer.json`, recovery `.bak` files and separate `settings.json`. Source and
 frozen launches use the same directory. Tests disable persistence or supply a
 temporary directory. Atomic writes flush a temporary sibling and replace the
 destination only after flushing succeeds.
+
+`systems/save_slots.py` catalogs the original slots alongside named UUID files
+in `slots/normal/` and `slots/developer/`, each with its own backup. Optional
+envelope names/timestamps and checkpoint playtime remain compatible with older
+version-1 saves. There is no separate index file. The main-menu concourse in
+`ui/menu_scene.py` is cosmetic; it never ticks the world. See
+[main menu and saves](main-menu-and-saves.md) for the session lifecycle.
 
 ## Configuration and production checks
 

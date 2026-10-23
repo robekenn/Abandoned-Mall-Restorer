@@ -65,7 +65,7 @@ class OwnerMenu:
         subtitle=store.name+(f' · {store.recurring_completed} favors completed' if store.request_level==3 else '')
         surface.blit(game.hud.small.render(subtitle,True,theme.MUTED),(panel.x+20,panel.y+55))
         for i in range(3):
-            pygame.draw.circle(surface,theme.GOLD if i<store.request_level else theme.BORDER,(panel.right-28-i*20,panel.y+38),5)
+            pygame.draw.circle(surface,theme.GOLD if i<store.request_level else theme.BORDER,(panel.right-110-i*20,panel.y+38),5)
         chat=self.chat_button(surface);theme.frame(surface,chat,theme.CARD,False)
         surface.blit(game.hud.small.render('C  Just chat',True,theme.ACCENT),(chat.x+8,chat.y+4))
         reward = ''
