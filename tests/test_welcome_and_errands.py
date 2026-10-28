@@ -170,6 +170,8 @@ class WelcomeAndErrandsTests(unittest.TestCase):
         g.update(.5,(1,0));self.assertFalse(g.welcome.open)
         self.assertEqual(g.player.rect.center,before[1])
         self.assertTrue(g.tutorial.paused)
+        self.assertFalse(g.mall.stores[1].restored)  # A new game resets the old session.
+        g.mall.stores[1].restored=True
         g.handle_event(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_RETURN))
         g.update(.1,(1,0))
         self.assertGreater(g.player.rect.centerx,before[1][0])

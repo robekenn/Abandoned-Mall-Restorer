@@ -43,6 +43,10 @@ class UpgradeShop:
         panel,_=self.geometry(game.screen)
         return pygame.Rect(panel.right-150,panel.bottom-60,130,30)
 
+    def page_buttons(self, game):
+        panel,_=self.geometry(game.screen)
+        return [pygame.Rect(panel.right-100+i*42,panel.y+49,36,30) for i in range(2)]
+
     def buy(self, game, key):
         self.notice = game.buy_upgrade(key)
 
@@ -65,6 +69,11 @@ class UpgradeShop:
             count=len(self.offers(game))
             self.selection=max(0,min(count-1,self.selection-event.y))
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            for i,rect in enumerate(self.page_buttons(game)):
+                if rect.collidepoint(event.pos):
+                    self.selection=max(0,min(len(self.offers(game))-1,self.selection+(-1 if i==0 else 1)*self.capacity(game)))
+                    self.keep_visible(game)
+                    return
             _,tabs = self.geometry(game.screen)
             for i,rect in enumerate(tabs):
                 if rect.collidepoint(event.pos):
@@ -92,7 +101,9 @@ class UpgradeShop:
         count=len(self.offers(game))
         if count>len(rows):
             page=game.hud.small.render(f'{self.scroll+1}–{self.scroll+len(rows)} of {count}',True,theme.MUTED)
-            surface.blit(page,page.get_rect(topright=(panel.right-20,panel.y+56)))
+            surface.blit(page,page.get_rect(topright=(panel.right-112,panel.y+56)))
+        for label,rect in zip(('<','>'),self.page_buttons(game)):
+            theme.button(surface,rect,label,game.hud.small)
         for local,(offer,rect) in enumerate(rows):
             i=self.scroll+local
             theme.frame(surface,rect,theme.CARD if i==self.selection else theme.PANEL, i==self.selection)
@@ -111,6 +122,6 @@ class UpgradeShop:
         for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-190)[:2]):
             surface.blit(game.hud.small.render(line,True,theme.GOLD),(panel.x+20,panel.bottom-55+i*18))
         button=self.purchase_rect(game);theme.frame(surface,button,theme.CARD)
-        label=game.hud.small.render('Purchase · Enter',True,theme.GOLD)
+        label=game.hud.small.render('Purchase',True,theme.GOLD)
         surface.blit(label,label.get_rect(center=button.center))
-        surface.blit(game.hud.small.render('Click: inspect · Enter: buy · Arrows / wheel: browse · 1–3: tabs · Esc: close',True,theme.MUTED),(panel.x+20,panel.bottom-23))
+        surface.blit(game.hud.small.render('Click a row, then Purchase · < / > or wheel: browse · Back: close',True,theme.MUTED),(panel.x+20,panel.bottom-23))

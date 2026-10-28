@@ -28,7 +28,7 @@ from ui.tutorial import Tutorial
 from ui.developer import Developer
 from ui.story_menu import StoryMenu
 from systems.story import Story, StoryPoint
-from systems.saves import SaveStore
+from systems.save_slots import SaveSlots
 from game.storage import save_directory
 from game.preferences import Preferences, HintFont
 from ui.settings_menu import SettingsMenu
@@ -36,6 +36,7 @@ from systems.mall_life import MallLife, EventSpot, EventTask
 from ui.pause import PauseMenu
 from ui.community_menu import CommunityMenu
 from ui.cooking_menu import CookingMenu
+from ui.mouse_controls import MouseControls
 
 
 class Game:
@@ -51,47 +52,68 @@ class Game:
                                               pygame.FULLSCREEN if fullscreen else pygame.RESIZABLE)
         pygame.display.set_caption(TITLE)
         self.clock = pygame.time.Clock()
-        self.mall = Mall()
-        self.player = Player((240, 430))
-        self.camera = Camera(self.mall.size)
         self.hud = HUD()
         self.hud.font=HintFont(self.hud.font,self.preferences)
         self.hud.small=HintFont(self.hud.small,self.preferences)
         self.art = Art()
         from game.patio_art import install
         install(self.art)
-        self.courtyard=Courtyard();self.visitor_travel=CourtyardTravel();self.scene='mall';self.main_position=None;self.main_camera=self.camera
         self.audio = Audio()
         self.audio.set_volumes(self.preferences.music,self.preferences.effects)
-        self.feedback = Feedback()
-        self.litter_spawner = LitterSpawner()
-        self.upgrades = Upgrades()
-        self.shop_menu = UpgradeShop()
-        self.owner_menu = OwnerMenu()
-        self.cooking_menu = CookingMenu()
-        self.journal = Journal()
-        self.display_menu = DisplayMenu()
-        self.welcome = Welcome(start_screen)
-        self.welcome.tutorial_enabled=self.preferences.guide
-        self.speech=Speech()
-        self.tutorial=Tutorial()
-        self.developer=Developer(developer)
-        self.total_collected=self.total_sold=0
-        self.owner_requests = OwnerRequests()
-        self.shoppers = Shoppers()
-        self.janitors = Janitors()
-        self.story=Story();self.story.setup(self.mall)
-        self.story_menu=StoryMenu()
-        self.life=MallLife();self.pause=PauseMenu();self.community_menu=CommunityMenu();self.skip_exit_save=False
-        self.save_store=SaveStore(save_dir,developer,persistence)
+        self.pause=PauseMenu()
+        self.save_slots=SaveSlots(save_dir,developer,persistence)
+        self.save_store=self.save_slots.store()
         self.save_started=persistence and not start_screen
-        self.welcome.has_save=self.save_store.available()
-        self.cash = 0
-        self.rent_timer = 0.0
-        self.message = ''
-        self.request_notice='';self.request_notice_timer=0
-        self.message_timer = 0.0
+        self.welcome=Welcome(start_screen)
+        self.welcome.tutorial_enabled=self.preferences.guide
+        self.reset_playthrough(developer)
+        self.welcome.refresh(self)
         self.running = True
+
+    def reset_playthrough(self, developer=False):
+        """Create fresh session objects while retaining display, art, audio and settings."""
+        self.mall=Mall();self.player=Player((240,430));self.camera=Camera(self.mall.size)
+        self.courtyard=Courtyard();self.visitor_travel=CourtyardTravel();self.scene='mall'
+        self.main_position=None;self.main_camera=self.camera
+        self.feedback=Feedback();self.litter_spawner=LitterSpawner();self.upgrades=Upgrades()
+        self.shop_menu=UpgradeShop();self.owner_menu=OwnerMenu();self.cooking_menu=CookingMenu()
+        self.journal=Journal();self.display_menu=DisplayMenu();self.speech=Speech();self.tutorial=Tutorial()
+        self.developer=Developer(developer);self.owner_requests=OwnerRequests();self.shoppers=Shoppers()
+        self.janitors=Janitors();self.story=Story();self.story.setup(self.mall);self.story_menu=StoryMenu()
+        self.life=MallLife();self.community_menu=CommunityMenu();self.skip_exit_save=False
+        self.mouse_controls=MouseControls()
+        self.total_collected=self.total_sold=0;self.cash=0;self.rent_timer=0;self.play_seconds=0
+        self.message='';self.message_timer=0;self.request_notice='';self.request_notice_timer=0
+
+    def start_new_game(self, name='My Northgate'):
+        if not self.welcome.open or self.welcome.leaving:return False
+        try:store=self.save_slots.allocate(name)
+        except (OSError,ValueError):
+            self.welcome.status='Could not create the save. Check that your save folder is accessible.';return False
+        self.reset_playthrough(self.developer.enabled)
+        if store.enabled and not store.save(self):
+            self.save_started=False;self.welcome.status='Could not create the save. Your other malls are safe. Please try again.'
+            return False
+        self.save_store=store;self.save_started=store.enabled
+        self.welcome.continuing=False;self.welcome.start()
+        return True
+
+    def return_to_main_menu(self, *, save=True):
+        if save and self.save_started and not self.save_checkpoint():return False
+        self.mouse_controls.cancel()
+        for menu in self.modal_menus:menu.open=False
+        self.speech.timer=0;self.feedback.popups.clear();self.feedback.particles.clear()
+        self.save_started=False
+        self.welcome=Welcome(True);self.welcome.tutorial_enabled=self.preferences.guide
+        self.welcome.refresh(self,selected=self.save_store.slot)
+        return True
+
+    def delete_save(self, identifier):
+        if not self.welcome.open or self.welcome.leaving or self.save_started:return False
+        result=self.save_slots.delete(identifier)
+        self.welcome.status=self.save_slots.status
+        self.welcome.refresh(self)
+        return result
 
     def target(self):
         if self.scene=='courtyard':return self.courtyard.target(self)
@@ -212,11 +234,11 @@ class Game:
             self.notify('East gallery sweep complete! Reopen Vinyl & Company and keep growing.')
             self.audio.play('milestone')
 
-    def interact(self):
+    def interact(self, target=None):
         if self.world_paused:
             return
-        if self.scene=='courtyard':self.courtyard.interact(self);return
-        target = self.target()
+        if self.scene=='courtyard':self.courtyard.interact(self,target);return
+        target = self.target() if target is None else target
         if isinstance(target,SceneDoor):
             self.enter_courtyard()
         elif isinstance(target,Trash):
@@ -377,10 +399,19 @@ class Game:
     def save_checkpoint(self):
         return self.save_store.save(self) if self.save_started else False
 
-    def continue_game(self):
-        if self.save_store.load(self):
+    def continue_game(self, identifier=None):
+        if not self.welcome.open or self.welcome.leaving:return False
+        store=self.save_slots.store(identifier)
+        record=next((r for r in self.welcome.saves if r.identifier==identifier),None)
+        if record:store.name=record.name
+        if store.load(self):
+            self.mouse_controls.cancel()
+            self.save_store=store
+            for menu in self.modal_menus:menu.open=False
+            self.speech.timer=0;self.feedback.popups.clear();self.feedback.particles.clear()
+            self.message_timer=self.request_notice_timer=0;self.skip_exit_save=False
             self.welcome.continuing=True;self.welcome.start();return True
-        self.welcome.status=self.save_store.status
+        self.welcome.status=store.status
         return False
 
     def toggle_fullscreen(self):
@@ -411,6 +442,7 @@ class Game:
     def update(self, dt, direction, interaction_held=False):
         viewport = self.screen.get_size()
         self.frame_camera(viewport)
+        if self.world_paused:self.mouse_controls.cancel()
         if self.settings_menu.open or self.pause.open:return
         if self.welcome.open:
             self.welcome.update(dt)
@@ -423,6 +455,10 @@ class Game:
             return
         if self.tutorial.paused:return
         if self.cooking_menu.open:self.cooking_menu.update(dt,self);return
+        if any(direction):self.mouse_controls.release()
+        direction=self.mouse_controls.navigation.direction(self,dt,direction)
+        interaction_held=interaction_held or self.mouse_controls.working(self)
+        self.play_seconds+=dt
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
         self.player.move(direction,dt,self.mall.obstacles,self.upgrades.speed_multiplier)
         if self.courtyard.crossing(self,direction):return
@@ -461,6 +497,12 @@ class Game:
         return (sum(s.rent for s in self.mall.stores if s.restored)+fixtures)*self.rent_multiplier+self.courtyard.income(self.upgrades)
 
     def draw(self):
+        if self.welcome.open and not self.welcome.leaving:
+            self.welcome.draw(self)
+            if self.settings_menu.open:self.settings_menu.draw(self)
+            elif self.pause.open:self.pause.draw(self)
+            self.mouse_controls.draw(self)
+            pygame.display.flip();return
         if self.scene=='courtyard':self.courtyard.draw(self);return
         target = self.target()
         self.mall.draw(self.screen,self.camera,self.hud.font,self.art,target,self.upgrades)
@@ -512,9 +554,6 @@ class Game:
             self.feedback.draw(self.screen,self.camera,self.hud.font)
             self.hud.draw(self,target)
             self.speech.draw(self)
-            if self.developer.enabled:
-                badge=self.hud.small.render('DEV · F3',True,(230,194,124))
-                self.screen.blit(badge,(self.screen.get_width()-badge.get_width()-20,84))
             if self.tutorial.paused:
                 self.tutorial.draw(self)
             elif self.community_menu.open:
@@ -533,12 +572,20 @@ class Game:
                 self.display_menu.draw(self)
         if self.settings_menu.open:self.settings_menu.draw(self)
         elif self.pause.open:self.pause.draw(self)
+        self.mouse_controls.draw(self)
         pygame.display.flip()
 
     def handle_event(self, event):
+        if event.type==pygame.MOUSEBUTTONUP and event.button==1:self.mouse_controls.release()
+        if event.type==pygame.WINDOWFOCUSLOST:self.mouse_controls.cancel()
+        if self.mouse_controls.handle(event,self):return
         if event.type==pygame.QUIT:self.settings_menu.open=False
         if self.settings_menu.open and event.type!=pygame.QUIT:
             self.settings_menu.handle(event,self);return
+        if self.welcome.open and self.welcome.editing and not self.pause.open:
+            if event.type in (pygame.KEYDOWN,pygame.TEXTINPUT):self.welcome.handle(event,self);return
+        if self.welcome.open and not self.pause.open and event.type==pygame.KEYDOWN and event.key in (pygame.K_RETURN,pygame.K_SPACE,pygame.K_n,pygame.K_d,pygame.K_UP,pygame.K_DOWN,pygame.K_PAGEUP,pygame.K_PAGEDOWN):
+            self.welcome.handle(event,self);return
         if event.type==pygame.KEYDOWN and event.key==pygame.K_F2:
             self.settings_menu.open=True;return
         event=self.preferences.normalize(event)
@@ -560,7 +607,9 @@ class Game:
         elif self.cooking_menu.open:self.cooking_menu.handle(event,self)
         elif self.community_menu.open:self.community_menu.handle(event,self)
         elif self.story_menu.open:self.story_menu.handle(event,self)
-        elif self.tutorial.paused:self.tutorial.handle(event,self)
+        elif self.tutorial.paused:
+            if event.type==pygame.KEYDOWN and event.key==pygame.K_ESCAPE:self.pause.show()
+            else:self.tutorial.handle(event,self)
         elif self.scene=='courtyard' and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:pass
         elif self.developer.enabled and event.type==pygame.KEYDOWN and event.key==pygame.K_F3:
             if not (self.shop_menu.open or self.owner_menu.open or self.journal.open or self.display_menu.open):self.developer.open=not self.developer.open
@@ -572,7 +621,7 @@ class Game:
             if self.scene=='courtyard':self.courtyard.journal_handle(event,self)
             else:self.journal.handle(event,self)
         elif self.tutorial.active and self.tutorial.handle(event,self):pass
-        elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:self.pickup_at(event.pos)
+        elif event.type==pygame.MOUSEBUTTONDOWN and event.button in (1,3):self.mouse_controls.world_click(event,self)
         elif event.type==pygame.KEYDOWN:
             if event.key==pygame.K_h:
                 if self.scene=='mall':self.tutorial.start(self)

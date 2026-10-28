@@ -100,7 +100,7 @@ class MallLifeTests(unittest.TestCase):
         self.assertTrue(g.running);self.assertFalse(g.pause.open)
         g.handle_event(pygame.event.Event(pygame.QUIT));self.assertTrue(g.pause.confirm);self.assertTrue(g.running)
         g.handle_event(key(pygame.K_RETURN));self.assertTrue(g.running);self.assertFalse(g.pause.confirm)
-        g.pause.activate(g,2);g.handle_event(key(pygame.K_DOWN));g.handle_event(key(pygame.K_RETURN))
+        g.pause.activate(g,4);g.handle_event(key(pygame.K_DOWN));g.handle_event(key(pygame.K_RETURN))
         self.assertFalse(g.running)
 
     def test_save_failure_keeps_game_open_until_explicit_discard(self):

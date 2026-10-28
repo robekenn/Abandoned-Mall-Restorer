@@ -23,6 +23,20 @@ def dim(surface):
     shade.fill((8,16,20,220));surface.blit(shade,(0,0))
 
 
+def button(surface, rect, label, font, *, enabled=True):
+    """Consistent visible affordance for mouse actions and keyboard shortcuts."""
+    hovered = enabled and rect.collidepoint(pygame.mouse.get_pos())
+    frame(surface, rect, CARD if enabled else PANEL)
+    if hovered:
+        pygame.draw.rect(surface, ACCENT, rect, 2, border_radius=9)
+    text = font.render(label, True, TEXT if enabled else MUTED)
+    surface.blit(text, text.get_rect(center=rect.center))
+
+
+def back_rect(panel):
+    return pygame.Rect(panel.right-90, panel.y+14, 70, 32)
+
+
 def wrap(font, text, width):
     lines=[];line=''
     for word in text.split():

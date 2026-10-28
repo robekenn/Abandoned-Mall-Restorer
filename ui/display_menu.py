@@ -27,7 +27,7 @@ class DisplayMenu:
             self.open=False
             return
         if index in self.arrangement:
-            self.notice='Each item has one place. Backspace undoes your last choice.'
+            self.notice='Each item has one place. Choose Undo to remove the last choice.'
             return
         self.arrangement.append(index)
         self.notice=''
@@ -51,8 +51,15 @@ class DisplayMenu:
             elif event.key==pygame.K_BACKSPACE and self.arrangement:
                 self.arrangement.pop();self.notice=''
         elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:
+            if self.undo_rect(game.screen).collidepoint(event.pos):
+                if self.arrangement:self.arrangement.pop();self.notice=''
+                return
             for i,rect in enumerate(self.geometry(game.screen)[1]):
                 if rect.collidepoint(event.pos):self.choose(i,game);break
+
+    def undo_rect(self, surface):
+        panel,_=self.geometry(surface)
+        return pygame.Rect(panel.right-110,panel.y+95,90,32)
 
     def draw(self, game):
         theme.dim(game.screen)
@@ -63,6 +70,7 @@ class DisplayMenu:
         game.screen.blit(game.hud.title.render('A window worth stopping for',True,theme.TEXT),(panel.x+20,panel.y+20))
         game.screen.blit(game.hud.small.render('Match the shelf plan, from left to right.',True,theme.MUTED),(panel.x+20,panel.y+62))
         game.screen.blit(game.hud.small.render('OWNER’S SHELF PLAN',True,theme.ACCENT),(panel.x+20,panel.y+110))
+        theme.button(game.screen,self.undo_rect(game.screen),'Undo',game.hud.small,enabled=bool(self.arrangement))
         width=choices[0].width
         for slot,index in enumerate(game.owner_requests.display_plan):
             r=pygame.Rect(choices[slot].x,panel.y+140,width,46)

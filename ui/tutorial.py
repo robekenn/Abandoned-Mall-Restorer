@@ -5,11 +5,11 @@ from ui import theme
 
 class Tutorial:
     STEPS=(
-        ('Take a small step','I remember these halls full of neighbors. I do not have to fix everything today. First, let me get my bearings.','Move with WASD or the arrow keys.'),
+        ('Take a small step','I remember these halls full of neighbors. I do not have to fix everything today. First, let me get my bearings.','Click an open spot to walk, or use WASD / arrow keys.'),
         ('Pick up one piece','There is a little litter nearby. One piece is enough to begin. My bag only holds one for now.','Walk close to litter and press E or click it.'),
-        ('Make your first sale','That is a start. The recycling money can help bring the shops back. Look for a bin marked SELL.','Walk to a SELL bin and press E.'),
+        ('Make your first sale','That is a start. The recycling money can help bring the shops back. Look for a bin marked SELL.','Walk to a SELL bin and click it, or press E.'),
         ('Give yourself room','Supplies used to lend everyone a hand. I can reopen it for $10, then buy a two-slot bag for $5. I can collect and sell a few more pieces to earn that.','Reopen Supplies, buy its 2-slot bag, then close the shop menu.'),
-        ('Find the next chapter','I can take this at my own pace. The journal has the map, stories and optional requests. Owners can wait; there are no deadlines.','Press J to look around the journal, then close it to finish the guide.'),
+        ('Find the next chapter','I can take this at my own pace. The journal has the map, stories and optional requests. Owners can wait; there are no deadlines.','Click Journal, look around, then click Close to finish the guide.'),
     )
     def __init__(self):
         self.active=False;self.step=0;self.journal_seen=False;self.explaining=False
@@ -72,6 +72,6 @@ class Tutorial:
         y+=16
         for line in theme.wrap(game.hud.small,task,panel.width-48):
             game.screen.blit(game.hud.small.render(line,True,theme.ACCENT),(panel.x+24,y));y+=20
-        for rect,label in ((proceed,'Enter / Space · Let me try'),(skip,'T · Skip')):
+        for rect,label in ((proceed,'Let me try'),(skip,'Skip guide')):
             theme.frame(game.screen,rect,theme.CARD)
             game.screen.blit(game.hud.small.render(label,True,theme.ACCENT),(rect.x+12,rect.y+12))
