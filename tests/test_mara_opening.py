@@ -115,6 +115,17 @@ class MaraOpeningTests(unittest.TestCase):
             self.assertFalse(g.story.completed[0])
             self.assertEqual(g.cash, cash)
 
+    def test_reading_guests_have_safe_routes_and_leave_dining_seats_clear(self):
+        g = self.g
+        g.story.prepare(g)
+        g.shoppers.walkways.refresh(g.mall)
+        table = next(table for table in g.mall.social_tables if table.fixture_key == 'table_0')
+        for goal in g.story.gathering_goals(g.mall, 0):
+            self.assertTrue(all(goal.distance_to(seat) >= 32 for seat in table.seats))
+            self.assertIsNotNone(g.shoppers.walkways.route(g.mall.entrance, goal))
+            body = pygame.FRect(goal.x - 13, goal.y - 15, 26, 30)
+            self.assertFalse(any(body.colliderect(wall) for wall in g.mall.obstacles))
+
     def test_earlier_restoration_counts_and_partial_project_survives_continue(self):
         g = self.g
         self.sweep()

@@ -183,7 +183,8 @@ class Story:
         """North's first reading uses the existing west table without moving furniture."""
         if i == 0:
             table = next(table for table in mall.social_tables if table.fixture_key == READING_TABLE)
-            return [seat.copy() for seat in table.seats] + [table.position + pygame.Vector2(0, 112)]
+            # Gather on clear approach tiles; ordinary diners can still reserve the chairs.
+            return [seat + pygame.Vector2(0, 64) for seat in table.seats] + [table.position + pygame.Vector2(0, 112)]
         board = next(point.position for point in self.points if point.chapter == i and point.memory < 0)
         return [board + pygame.Vector2(dx, dy) for dx, dy in ((-64, 64), (64, 64), (0, 128))]
 
