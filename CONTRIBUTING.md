@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to Marty's Mall
 
 Use Python 3.12 or 3.13 and read [AGENTS.md](AGENTS.md) and the
 [architecture guide](docs/architecture.md) before changing a shared system.

@@ -39,6 +39,9 @@ The checkpoint includes cash and fractional payouts, bag, equipment, fixtures, o
 | macOS | `~/Library/Application Support/MallRestorer` |
 | Linux | `$XDG_DATA_HOME/MallRestorer`, or `~/.local/share/MallRestorer` |
 
+Marty's Mall intentionally retains these legacy directory names so existing
+checkpoints, recovery backups, named slots and settings remain discoverable.
+
 `progress.json` is the normal slot. `--dev` uses only `developer.json`; shortcuts cannot overwrite the normal playthrough. Each has its own `.bak` recovery file. Checkpoints have a version and checksum, use an atomic file replacement, and retain the preceding verified checkpoint. Loading constructs and validates a replacement world before changing live state. Damaged primary files fall back to their backup; a failed save preserves the previous file. A recovered backup is retained on the first subsequent save. Unsupported versions or two unreadable files show a message instead of crashing.
 
 For a backup copy, close the game and copy the save folder. Save format version 1 is introduced here; older builds did not write checkpoints. Source tests and smoke tests use temporary folders or disable persistence, so CI cannot alter real progress.

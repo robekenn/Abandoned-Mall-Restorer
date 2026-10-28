@@ -7,7 +7,7 @@ import tempfile
 
 
 def save_directory():
-    """Use the same per-user directory for source and packaged launches."""
+    """Keep the legacy directory so Marty's Mall finds existing saves/settings."""
     if sys.platform == "win32":
         return Path(os.environ.get("APPDATA", Path.home())) / "MallRestorer"
     if sys.platform == "darwin":

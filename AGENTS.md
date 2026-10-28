@@ -1,4 +1,4 @@
-# Working on Abandoned Mall Restorer
+# Working on Marty's Mall
 
 This file applies to the whole repository. Read it before changing code. The
 user's current instructions take precedence; check for any more specific
@@ -6,6 +6,11 @@ user's current instructions take precedence; check for any more specific
 
 ## Project and workflow
 
+- `game/settings.py:TITLE` is the shared game title for the window, main menu,
+  HUD and command-line help. Packages use `MartysMall`. Northgate is the
+  fictional setting; keep its story, shop names and serialized identifiers.
+- The legacy `MallRestorer` save directory and published preview filenames
+  remain intentional compatibility names. Keep existing repository URLs valid.
 - A Python 3.12+ desktop game using **pygame-ce**, not the original `pygame`
   package. CI covers Python 3.12 and 3.13 on Windows, Linux and macOS.
 - Start from current `origin/main` for new work. For an existing PR, update its

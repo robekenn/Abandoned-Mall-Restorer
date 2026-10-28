@@ -3,9 +3,11 @@
 import argparse
 import os
 
+from game.settings import TITLE
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Abandoned Mall Restorer")
+    parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument(
         "--smoke-test",
         action="store_true",

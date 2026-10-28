@@ -1,6 +1,15 @@
-# Abandoned Mall Restorer
+# Marty's Mall
 
 [![CI](https://github.com/robekenn/Abandoned-Mall-Restorer/actions/workflows/ci.yml/badge.svg)](https://github.com/robekenn/Abandoned-Mall-Restorer/actions/workflows/ci.yml)
+
+Restore Northgate Mall, one shop at a time. The window, main menu, HUD and
+command-line help share the **Marty's Mall** title. New standalone builds use
+`MartysMall` (`MartysMall.exe` on Windows).
+
+Existing saves and settings are loaded from the same `MallRestorer` folder;
+no manual move or conversion is needed. Northgate remains the mall's fictional
+setting, including shop and story names. Repository links and already-published
+preview downloads keep their existing addresses and filenames.
 
 A top-down 2D restoration game built with Python and pygame-ce, without a commercial game engine.
 

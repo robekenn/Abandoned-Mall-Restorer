@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-NAME = 'MallRestorer'
+NAME = 'MartysMall'
 
 
 def write_checksum(archive):

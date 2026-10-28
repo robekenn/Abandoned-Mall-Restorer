@@ -12,7 +12,7 @@ For a windowed preview:
 py main.py --dev --windowed
 ```
 
-On macOS/Linux, use `python3` in place of `py` (or the Python executable in your virtual environment). Standalone builds accept the same flags, for example `MallRestorer.exe --dev`. Launch normally without `--dev` to play the regular progression.
+On macOS/Linux, use `python3` in place of `py` (or the Python executable in your virtual environment). Standalone builds accept the same flags, for example `MartysMall.exe --dev` on Windows or `./MartysMall --dev` on macOS/Linux. Launch normally without `--dev` to play the regular progression.
 
 After the opening screen, press **F3** to open the Developer playtest panel. Movement, rent, litter, owner timers and janitors pause while the panel is open.
 

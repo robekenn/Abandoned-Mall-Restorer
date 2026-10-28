@@ -1,4 +1,4 @@
-TITLE = "Abandoned Mall Restorer"
+TITLE = "Marty's Mall"
 WINDOW_SIZE = (1100, 720)
 WORLD_SIZE = (3600, 3040)
 FPS = 60
