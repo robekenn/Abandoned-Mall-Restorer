@@ -1,5 +1,9 @@
 # Main menu and multiple saves
 
+The main menu and HUD display **Marty's Mall**, matching the window title and
+command-line help. Existing player-named saves are kept exactly as named;
+Northgate remains the story setting and the basis of default save names.
+
 The opening menu shows a restored concourse with warm glass, plants, lanterns
 and gently walking visitors. Its animation is cosmetic: no game world, kitchen
 request, rent, litter or janitor timer advances while the menu is open.

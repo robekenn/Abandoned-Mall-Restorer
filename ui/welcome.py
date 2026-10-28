@@ -1,6 +1,7 @@
 """Warm main menu, named save cards and deliberate save-management dialogs."""
 
 import pygame
+from game.settings import TITLE
 from systems.economy import money
 from systems.save_slots import save_name
 from ui import theme
@@ -351,11 +352,11 @@ class Welcome:
         surface = pygame.Surface(game.screen.get_size(), pygame.SRCALPHA)
         draw_concourse(surface, game.art, self.elapsed)
         panel, start, quit = self.geometry(surface)
-        title = self.heading.render("Northgate Mall", True, INK)
+        title = self.heading.render(TITLE, True, INK)
         surface.blit(title, (panel.x + 4, 23))
         surface.blit(
             self.font.render(
-                "Abandoned Mall Restorer  ·  A place worth coming back to.", True, INK
+                "A place worth coming back to.", True, INK
             ),
             (panel.x + 6, 80),
         )

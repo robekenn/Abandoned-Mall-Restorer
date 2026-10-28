@@ -1,5 +1,6 @@
 """Three essential counters, one objective and a contextual action."""
 import pygame
+from game.settings import TITLE
 from entities.trash import Trash
 from entities.trash_bin import TrashBin
 from systems.economy import money, cleanliness_label
@@ -142,7 +143,7 @@ class HUD:
     def draw(self, game, target, surface=None):
         surface=game.screen if surface is None else surface;width,height=surface.get_size();outside=game.scene=='courtyard';mall=game.courtyard.world if outside else game.mall
         pygame.draw.rect(surface,theme.BG,(0,0,width,76))
-        surface.blit(self.title.render('NORTHGATE',True,theme.TEXT),(22,13))
+        surface.blit(self.title.render(TITLE,True,theme.TEXT),(22,13))
         region=mall.area_name(game.player.rect.center)
         surface.blit(self.small.render(region+" · "+(game.courtyard.shoppers if outside else game.shoppers).traffic,True,theme.MUTED),(23,47))
         if game.developer.enabled and not outside:

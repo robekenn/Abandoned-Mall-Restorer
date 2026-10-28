@@ -1,4 +1,14 @@
-# Automated checks and releases
+# Marty's Mall: automated checks and releases
+
+New packages use `MartysMall` as their folder and executable name
+(`MartysMall.exe` on Windows). Archives are named
+`MartysMall-windows-<architecture>.zip`,
+`MartysMall-linux-<architecture>.tar.gz`, or
+`MartysMall-darwin-<architecture>.tar.gz`, with matching `.sha256` files.
+The release workflow verifies these same names. Published v0.1.0/v0.1.1
+downloads retain their historical `MallRestorer` filenames and are not replaced
+by the rename. Save files and settings also retain their existing
+`MallRestorer` directory; executable names do not determine save locations.
 
 ## Layout
 

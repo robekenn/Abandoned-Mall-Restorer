@@ -9,7 +9,7 @@ from scripts.build_release import write_checksum
 class ReleaseChecksumTests(unittest.TestCase):
     def test_checksum_uses_lf_and_names_the_archive_on_every_platform(self):
         with tempfile.TemporaryDirectory() as directory:
-            archive=Path(directory)/'MallRestorer-windows-amd64.zip'
+            archive=Path(directory)/'MartysMall-windows-amd64.zip'
             archive.write_bytes(b'first playable archive')
             checksum=write_checksum(archive)
             row=checksum.read_bytes()
