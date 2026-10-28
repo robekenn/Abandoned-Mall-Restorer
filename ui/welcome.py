@@ -384,7 +384,7 @@ class Welcome:
         self.button(surface, self.settings_rect(surface), "Settings")
         self.button(surface, quit, "Quit")
         for i, line in enumerate(
-            ("Restore the shops.", "Bring your neighborhood home.")
+            ("Come home as Marty.", "Restore Northgate together.")
         ):
             surface.blit(
                 self.small.render(line, True, (222, 224, 191)),

@@ -47,7 +47,9 @@ These jobs earn three permanent storefront improvements, with +$0.5 / +$1 / +$2 
 
 ## The winter lantern walk
 
-You return to the mall you visited as a child. Mara, Remy, Fern and Wren help recover its neighborhood festival through four chapters: reading, music, lantern-making and a shared table. Find the gold community boards, discover two scattered keepsakes and talk to a neighbor holding a third in each court, reopen six businesses, help owners twice and restore three local fixtures. Earlier work counts. Chapters hang pixel lanterns on restored storefronts and bring gatherings of real shoppers and one-time rewards; the final lantern walk leaves the mall playable. **J → Story** tracks goals; **R** reads your keepsakes. See [discovery and court transitions](docs/court-transitions-and-discovery.md) for the new search mechanics and entrance, and [saving and the lantern story](docs/saving-and-lantern-story.md) for the narrative, save locations and review guide.
+Play Marty, returning to the mall they visited as a child. Mara's **First lights** project starts with a reading circle: reopen Pages, finish the North sweep, recover its three keepsakes, and restore North table 1 with its left and right chairs through Supplies → Furniture. The first readers gather at that west table. Its $1,000 thank-you can be earned earlier; older completed chapters stay complete. Mara's conversation and **J → Story** follow the project's next step.
+
+Remy, Fern and Wren continue the festival through music, lantern-making and a shared table. Their current chapters each require three keepsakes, six reopened businesses, two owner requests, a first sweep and three local fixtures. Earlier work counts. Chapters hang pixel lanterns on restored storefronts and bring gatherings of real shoppers and one-time rewards; the final lantern walk leaves the mall playable. **R** in Story reads your keepsakes. See [the section roadmap and playtest guide](docs/full-game-roadmap.md), [discovery and court transitions](docs/court-transitions-and-discovery.md), and [saving and the lantern story](docs/saving-and-lantern-story.md).
 
 ## Run on Windows
 

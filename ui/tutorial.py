@@ -5,11 +5,11 @@ from ui import theme
 
 class Tutorial:
     STEPS=(
-        ('Take a small step','I remember these halls full of neighbors. I do not have to fix everything today. First, let me get my bearings.','Use [WASD] or the arrow keys to walk.'),
+        ('One door to begin','Northgate looks smaller than I remember. I thought coming home would feel easier. Mara kept my old lantern; she asked if we could make room for a reading circle. First, I need to find my feet.','Use [WASD] or the arrow keys to walk.'),
         ('Pick up one piece','There is a little litter nearby. One piece is enough to begin. My bag only holds one for now.','Walk close to litter and press [E] or click it.'),
         ('Make your first sale','That is a start. The recycling money can help bring the shops back. Look for a bin marked SELL.','Walk to a SELL bin and click it, or press [E].'),
         ('Give yourself room','Supplies used to lend everyone a hand. I can reopen it for $10, then buy a two-slot bag for $5. I can collect and sell a few more pieces to earn that.','Reopen Supplies, buy its 2-slot bag, then close the shop menu.'),
-        ('Find the next chapter','I can take this at my own pace. The journal has the map, stories and optional requests. Owners can wait; there are no deadlines.','Click Journal, look around, then click Close to finish the guide.'),
+        ('A place for a story','One open door is a beginning. Mara left a note on the gold community board by the west wall. The journal will help me find it when I am ready. I can take this at my own pace.','Click Journal, look around, then click Close. Read the gold board to begin Mara\'s project.'),
     )
     def __init__(self):
         self.active=False;self.step=0;self.journal_seen=False;self.explaining=False
@@ -64,7 +64,7 @@ class Tutorial:
         theme.dim(game.screen);panel,proceed,skip=self.geometry(game.screen);theme.frame(game.screen,panel)
         game.art.draw(game.screen,'player_down_0',(panel.x+55,panel.y+68),(48,72))
         title,story,task=self.STEPS[self.step]
-        game.screen.blit(game.hud.small.render(f'Your thoughts · {self.step+1}/5 · World paused',True,theme.GOLD),(panel.x+95,panel.y+26))
+        game.screen.blit(game.hud.small.render(f"Marty's thoughts · {self.step+1}/5 · World paused",True,theme.GOLD),(panel.x+95,panel.y+26))
         game.screen.blit(game.hud.title.render(title,True,theme.TEXT),(panel.x+95,panel.y+55))
         y=panel.y+115
         for line in theme.wrap(game.hud.font,story,panel.width-48):

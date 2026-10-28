@@ -1,6 +1,6 @@
 # Northgate remembers
 
-You visited Northgate as a child. Its winter lantern walk was a neighborhood tradition, made from borrowed chairs, homemade lanterns and people making room for one another. Returning with the keys begins a new chapter. Restoring the mall gives the community somewhere to belong again.
+You play Marty, returning to Northgate after years away. Its winter lantern walk was a childhood tradition, made from borrowed chairs, homemade lanterns and people making room for one another. Mara kept Marty's crooked lantern with the reading-circle books. She asks for help making room for readers again, including neighbors with new stories to bring. Restoring the mall gives the community somewhere to belong again.
 
 The story runs alongside normal business progression. Court gates keep their existing prices and prerequisites; story chapters are optional and do not require a perfectly clean mall every time litter returns. There are no story deadlines. Owner work completed before finding the community board counts toward its goals.
 
@@ -15,7 +15,9 @@ Find the gold community board in each court and press E, then Enter to begin. Tw
 | Garden | Fern — Things made by hand | A lantern workshop; the flower pattern, shared thread and mended lantern | $12,000 |
 | Commons | Wren — A place for everyone | A neighborhood supper; the guest book, extended table plan and undated invitation | $30,000 |
 
-Each chapter asks for three recovered keepsakes, that court's first sweep, six reopened businesses, two claimed owner requests and three purchased local fixtures. Any combination of initial projects or recurring favors counts. The Story journal shows the checklist; the HUD keeps a single current action. Return to the community board and confirm to complete a chapter. Claims pay once; repeating a conversation cannot pay again.
+**First lights** is Mara's reading-circle project: reopen Pages, complete the North first sweep, recover its three keepsakes, and restore North table 1 with both of its chairs through Supplies → Furniture. Table and chairs are purchased separately. The first gathering visits this existing west table; furniture positions and collision stay the same. The $1,000 chapter reward is available earlier than the old six-business/two-request checklist. Earlier work counts, and older completed chapters remain complete without buying new fixtures.
+
+The other three chapters currently ask for three recovered keepsakes, that court's first sweep, six reopened businesses, two claimed owner requests and three purchased local fixtures. Any combination of initial projects or recurring favors counts. The Story journal shows the checklist; the HUD keeps a single current action. Return to the community board and confirm to complete a chapter. Claims pay once; repeating a conversation cannot pay again. See [the section roadmap](full-game-roadmap.md) for the staged story and room expansion.
 
 A completed chapter hangs four animated paper lanterns on each restored business’s front and invites a few real shoppers to gather along normal obstacle-safe paths. Brief confetti celebrates the opening. Gathering destinations return for thirty seconds every two and a half minutes of active play. Read a completed board to invite neighbors again without generating money. Visitor counts remain bounded.
 
