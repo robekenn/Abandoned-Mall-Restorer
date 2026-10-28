@@ -71,6 +71,6 @@ class Developer:
         for i,((_,label),row) in enumerate(zip(self.ACTIONS,rows)):
             theme.frame(game.screen,row,theme.CARD)
             if i==self.selection:pygame.draw.rect(game.screen,theme.ACCENT,row,1,border_radius=6)
-            game.screen.blit(game.hud.font.render(f'{i+1}  {label}',True,theme.TEXT),(row.x+14,row.y+9))
+            game.screen.blit(theme.KeycapFont(game.hud.font).render(f'[{i+1}] {label}',True,theme.TEXT),(row.x+14,row.y+9))
         game.screen.blit(game.hud.small.render(self.notice,True,theme.ACCENT),(panel.x+24,panel.bottom-61))
-        game.screen.blit(game.hud.small.render('1–7 / click: apply   Up/Down: select   F3 / Esc: close',True,theme.MUTED),(panel.x+24,panel.bottom-29))
+        theme.hint_footer(game.screen,panel,game.hud.small,'[1]–[7] / click: apply   [Enter]: selected   [F3] / [Esc]: close',margin=24)

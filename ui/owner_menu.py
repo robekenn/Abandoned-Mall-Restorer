@@ -67,7 +67,7 @@ class OwnerMenu:
         for i in range(3):
             pygame.draw.circle(surface,theme.GOLD if i<store.request_level else theme.BORDER,(panel.right-110-i*20,panel.y+38),5)
         chat=self.chat_button(surface);theme.frame(surface,chat,theme.CARD,False)
-        surface.blit(game.hud.small.render('C  Just chat',True,theme.ACCENT),(chat.x+8,chat.y+4))
+        theme.hint(surface,game.hud.small,'[C] Just chat',(chat.x+8,chat.y+1),theme.ACCENT)
         reward = ''
         if requests.store is not store and store.request_wait>0:
             title = 'A little time to settle in'
@@ -87,14 +87,14 @@ class OwnerMenu:
             status = requests.objective if requests.store is store else 'Take your time. There is no deadline.'
             action = ('Claim reward' if requests.ready else 'Keep helping') if requests.store is store else 'Accept request'
         surface.blit(game.hud.font.render(title,True,theme.ACCENT),(panel.x+20,panel.y+101))
-        for i,line in enumerate(theme.wrap(game.hud.font,description,panel.width-40)):
-            surface.blit(game.hud.font.render(line,True,theme.TEXT),(panel.x+20,panel.y+140+i*25))
+        for i,line in enumerate(theme.KeycapFont(game.hud.font).wrap(theme.key_hints(description),panel.width-40)):
+            surface.blit(theme.KeycapFont(game.hud.font).render(line,True,theme.TEXT),(panel.x+20,panel.y+140+i*25))
         if reward:
             theme.frame(surface,pygame.Rect(panel.x+20,panel.y+227,panel.width-40,38),theme.CARD,False)
             surface.blit(game.hud.small.render(reward,True,theme.GOLD),(panel.x+30,panel.y+239))
-        for i,line in enumerate(theme.wrap(game.hud.font,status,panel.width-40)):
-            surface.blit(game.hud.font.render(line,True,theme.MUTED),(panel.x+20,panel.y+284+i*25))
+        for i,line in enumerate(theme.KeycapFont(game.hud.font).wrap(theme.key_hints(status),panel.width-40)):
+            surface.blit(theme.KeycapFont(game.hud.font).render(line,True,theme.MUTED),(panel.x+20,panel.y+284+i*25))
         theme.frame(surface,button,theme.CARD)
-        label = game.hud.font.render(action,True,theme.ACCENT)
+        label = theme.KeycapFont(game.hud.font).render('[Enter] '+action,True,theme.ACCENT)
         surface.blit(label,label.get_rect(center=button.center))
-        surface.blit(game.hud.small.render('Enter: request   C: just chat   Esc / E: close',True,theme.MUTED),(panel.x+20,panel.bottom-26))
+        theme.hint_footer(surface,panel,game.hud.small,'[Enter] / click: request   [C]: chat   [Esc] / [E]: close',margin=20)

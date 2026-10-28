@@ -69,7 +69,7 @@ python3 -m venv .venv
 
 ## Controls
 
-- **Mouse:** click open floor to walk; right-click floor to walk without activating an object. Click nearby litter, bins, shops, visitors, task markers, boards and passages to interact. The bottom action button performs the nearby action; hold it or a task marker for timed work.
+- **Mouse:** click nearby litter, bins, shops, visitors, task markers, boards and passages to interact. The bottom action button performs the nearby action; hold it or a task marker for timed work. Move with the keyboard; floor clicks and right-clicks do not move the player.
 - **Journal / Help / Settings / Menu buttons:** open these screens without keyboard shortcuts. Panels have clickable Back/Close controls; shops have paging arrows, displays have Undo, and Story has Show keepsakes/Show goals. Kitchen Menu pauses an order without abandoning it.
 - **WASD / Arrow keys:** move
 - **E:** collect nearby litter, sell at a trash bin, reopen a business, open a section gate, enter an upgrade shop, meet an owner, greet a visitor or read a community board / keepsake

@@ -96,7 +96,7 @@ class UpgradeShop:
         surface.blit(game.hud.small.render(f'{money(game.cash)} available',True,theme.GOLD),(panel.x+20,panel.y+56))
         for i,rect in enumerate(tabs):
             theme.frame(surface,rect,theme.CARD if i==self.category else theme.PANEL)
-            surface.blit(game.hud.font.render(f'{i+1}  '+('Service' if self.shop=='courtyard' and i==0 else self.categories[i]),True,theme.ACCENT if i==self.category else theme.MUTED),(rect.x+10,rect.y+8))
+            surface.blit(theme.KeycapFont(game.hud.font).render(f'[{i+1}] '+('Service' if self.shop=='courtyard' and i==0 else self.categories[i]),True,theme.ACCENT if i==self.category else theme.MUTED),(rect.x+10,rect.y+8))
         rows = self.rows(game)
         count=len(self.offers(game))
         if count>len(rows):
@@ -122,6 +122,6 @@ class UpgradeShop:
         for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-190)[:2]):
             surface.blit(game.hud.small.render(line,True,theme.GOLD),(panel.x+20,panel.bottom-55+i*18))
         button=self.purchase_rect(game);theme.frame(surface,button,theme.CARD)
-        label=game.hud.small.render('Purchase',True,theme.GOLD)
+        label=theme.KeycapFont(game.hud.small).render('[Enter] Buy',True,theme.GOLD)
         surface.blit(label,label.get_rect(center=button.center))
-        surface.blit(game.hud.small.render('Click a row, then Purchase · < / > or wheel: browse · Back: close',True,theme.MUTED),(panel.x+20,panel.bottom-23))
+        theme.hint_footer(surface,panel,game.hud.small,'Click a row, then Buy / [Enter]   ·   Wheel: browse   ·   [Esc] / [E]: close',margin=20)

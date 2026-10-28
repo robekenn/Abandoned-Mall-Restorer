@@ -30,10 +30,10 @@ class StoryMenu:
         game.screen.blit(game.hud.title.render(chapter.title,True,theme.TEXT),(panel.x+24,panel.y+55))
         for i,line in enumerate(theme.wrap(game.hud.font,self.text,panel.width-48)):
             game.screen.blit(game.hud.font.render(line,True,theme.TEXT),(panel.x+24,panel.y+107+i*26))
-        caption='J → Story: chapter goals and recovered memories'
-        game.screen.blit(game.hud.small.render(caption,True,theme.MUTED),(panel.x+24,panel.bottom-112))
+        caption='[J] → Story: chapter goals and recovered memories'
+        theme.hint(game.screen,game.hud.small,caption,(panel.x+24,panel.bottom-112),width=panel.width-48)
         labels={'begin':'Remember Northgate','claim':'Bring the neighbors together','festival':'Begin the lantern walk','gather':'Invite the neighbors again'}
         theme.frame(game.screen,button,theme.CARD)
-        text=game.hud.font.render(labels.get(self.action,'Back to the mall'),True,theme.ACCENT)
+        text=theme.KeycapFont(game.hud.font).render('[Enter] '+labels.get(self.action,'Back to the mall'),True,theme.ACCENT)
         game.screen.blit(text,text.get_rect(center=button.center))
-        game.screen.blit(game.hud.small.render('Enter / click: continue   Esc / E: return',True,theme.MUTED),(panel.x+24,panel.bottom-26))
+        theme.hint_footer(game.screen,panel,game.hud.small,'[Enter] / click: continue   [Esc] / [E]: return',margin=24)

@@ -1,4 +1,4 @@
-"""Mouse journeys exercise real input routing, navigation and paused overlays."""
+"""Mouse journeys exercise real input routing, nearby actions and paused overlays."""
 
 import os
 
@@ -196,44 +196,42 @@ class MouseTests(unittest.TestCase):
         self.back()
         self.assertFalse(menu.open)
 
-    def test_mouse_walk_routes_around_furniture_and_keyboard_cancels_it(self):
+    def test_floor_clicks_never_move_the_player_in_either_scene(self):
         g = self.g
-        # The opening fountain sits between these two clear floor positions.
-        g.player.rect.center = (650, 720)
-        destination = pygame.Vector2(1040, 720)
-        self.assertTrue(g.mouse_controls.navigation.start(g, destination))
-        for _ in range(1000):
-            g.update(0.02, (0, 0))
-            self.assertFalse(
-                any(g.player.rect.colliderect(wall) for wall in g.mall.obstacles)
-            )
-            if not g.mouse_controls.navigation.path:
-                break
-        self.assertLess(
-            pygame.Vector2(g.player.rect.center).distance_to(destination), 1
-        )
-        self.assertTrue(g.mouse_controls.navigation.start(g, (650, 720)))
-        g.update(0.02, (0, 1))
-        self.assertFalse(g.mouse_controls.navigation.path)
+        for outside in (False, True):
+            if outside:
+                self.enter_courtyard()
+                g.player.rect.center = (500, 740)
+            else:
+                g.player.rect.center = (650, 720)
+            g.frame_camera(g.screen.get_size())
+            point = pygame.Vector2(g.player.rect.center) + (80, 40)
+            self.assertIsNone(g.mouse_controls.world_target(g, point))
+            origin = g.player.rect.center
+            for button in (1, 3):
+                with self.subTest(outside=outside, button=button):
+                    self.click(g.camera.point(point), button)
+                    for _ in range(10):
+                        g.update(0.05, (0, 0))
+                    self.assertEqual(g.player.rect.center, origin)
+            g.update(0.1, (1, 0))
+            self.assertGreater(g.player.rect.centerx, origin[0])
+            self.assertFalse(any(g.player.rect.colliderect(wall) for wall in
+                                 (g.courtyard.world if outside else g.mall).obstacles))
 
-    def test_click_walk_has_destination_feedback_and_stops_on_menu_or_focus_loss(self):
+    def test_right_clicking_objects_never_interacts_or_moves(self):
         g = self.g
-        point = pygame.Vector2(g.player.rect.center) + (80, 40)
-        self.click(g.camera.point(point), 3)
-        self.assertTrue(g.mouse_controls.navigation.path)
+        store = g.mall.stores[0]
+        g.cash = 100
+        g.player.rect.center = store.position
+        g.frame_camera(g.screen.get_size())
         origin = g.player.rect.center
-        g.update(0.1, (0, 0))
-        self.assertNotEqual(g.player.rect.center, origin)
-        self.toolbar("pause")
-        g.update(2, (0, 0))
-        self.assertFalse(g.mouse_controls.navigation.path)
-        self.back()
-        self.assertTrue(g.mouse_controls.navigation.start(g, point))
-        g.handle_event(pygame.event.Event(pygame.WINDOWFOCUSLOST))
-        self.assertFalse(g.mouse_controls.navigation.path)
-        self.assertFalse(
-            g.mouse_controls.navigation.start(g, g.mall.stores[0].rect.center)
-        )
+        self.click(g.camera.point(store.position), 3)
+        g.update(0.2, (0, 0))
+        self.assertFalse(store.restored)
+        self.assertFalse(g.shop_menu.open)
+        self.assertEqual(g.cash, 100)
+        self.assertEqual(g.player.rect.center, origin)
 
     def test_hold_action_and_mouse_release_control_owner_work(self):
         g = self.g
@@ -257,7 +255,7 @@ class MouseTests(unittest.TestCase):
         g.update(spot.duration, (0, 0))
         self.assertTrue(spot.completed)
 
-    def test_courtyard_buttons_walk_and_kitchen_close_keep_existing_rules(self):
+    def test_courtyard_buttons_and_kitchen_close_keep_existing_rules(self):
         g = self.g
         world = self.enter_courtyard()
         for trash in world.trash:
@@ -287,17 +285,6 @@ class MouseTests(unittest.TestCase):
         self.assertEqual(g.courtyard.cooking[store.name]["failed"], 1)
         self.toolbar("journal")
         self.back()
-        g.player.rect.center = (500, 740)
-        g.frame_camera(g.screen.get_size())
-        destination = pygame.Vector2(650, 740)
-        self.click(g.camera.point(destination), 3)
-        self.assertTrue(g.mouse_controls.navigation.path)
-        for _ in range(200):
-            g.update(0.02, (0, 0))
-        self.assertLess(
-            pygame.Vector2(g.player.rect.center).distance_to(destination), 1
-        )
-
     def test_courtyard_passage_can_be_used_in_both_directions_with_clicks(self):
         g = self.g
         self.enter_courtyard()

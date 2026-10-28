@@ -84,8 +84,8 @@ class DisplayMenu:
             game.screen.blit(text,text.get_rect(center=placement.center))
         for i,r in enumerate(choices):
             theme.frame(game.screen,r,theme.CARD)
-            text=game.hud.font.render(f'{i+1}  {items[i]}',True,theme.MUTED if i in self.arrangement else theme.ACCENT)
+            text=theme.KeycapFont(game.hud.font).render(f'[{i+1}] {items[i]}',True,theme.MUTED if i in self.arrangement else theme.ACCENT)
             game.screen.blit(text,text.get_rect(center=r.center))
         for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-40)):
             game.screen.blit(game.hud.small.render(line,True,theme.GOLD),(panel.x+20,panel.y+366+i*18))
-        game.screen.blit(game.hud.small.render('1–3 / click: place an item     Backspace: undo     Esc: return',True,theme.MUTED),(panel.x+20,panel.bottom-26))
+        theme.hint_footer(game.screen,panel,game.hud.small,'[1]–[3] / click: place   [Backspace]: undo   [Esc]: return',margin=20)

@@ -456,7 +456,6 @@ class Game:
         if self.tutorial.paused:return
         if self.cooking_menu.open:self.cooking_menu.update(dt,self);return
         if any(direction):self.mouse_controls.release()
-        direction=self.mouse_controls.navigation.direction(self,dt,direction)
         interaction_held=interaction_held or self.mouse_controls.working(self)
         self.play_seconds+=dt
         if self.scene=='courtyard':self.courtyard.update(self,dt,direction);return
@@ -621,7 +620,7 @@ class Game:
             if self.scene=='courtyard':self.courtyard.journal_handle(event,self)
             else:self.journal.handle(event,self)
         elif self.tutorial.active and self.tutorial.handle(event,self):pass
-        elif event.type==pygame.MOUSEBUTTONDOWN and event.button in (1,3):self.mouse_controls.world_click(event,self)
+        elif event.type==pygame.MOUSEBUTTONDOWN and event.button==1:self.mouse_controls.world_click(event,self)
         elif event.type==pygame.KEYDOWN:
             if event.key==pygame.K_h:
                 if self.scene=='mall':self.tutorial.start(self)

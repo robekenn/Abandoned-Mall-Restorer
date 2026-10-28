@@ -451,8 +451,8 @@ class Welcome:
                 (area.x + 88, area.bottom - 23),
             )
             self.button(surface, self.delete_rect(surface), "Delete", danger=True)
-        caption = "Up / Down: saves  ·  Enter: play  ·  N: new  ·  D: delete"
-        surface.blit(self.small.render(caption, True, INK), (area.x, area.bottom - 61))
+        caption = "[Up] / [Down]: saves  ·  [Enter]: play  ·  [N]: new  ·  [D]: delete"
+        theme.hint(surface, self.small, caption, (area.x, area.bottom - 73), INK, width=area.width)
         if self.status and not self.dialog:
             for i, line in enumerate(
                 theme.wrap(self.small, self.status, area.width)[:2]

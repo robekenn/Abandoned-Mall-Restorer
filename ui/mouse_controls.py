@@ -1,9 +1,8 @@
-"""Mouse access to navigation, nearby actions and every menu's return path."""
+"""Mouse access to nearby actions and every menu's return path."""
 
 import pygame
 from entities.trash import Trash
 from mall.courtyard import SceneDoor
-from systems.player_navigation import PlayerNavigation
 from systems.requests import RequestSpot
 from systems.mall_life import EventTask
 from ui import theme
@@ -11,7 +10,6 @@ from ui import theme
 
 class MouseControls:
     def __init__(self):
-        self.navigation = PlayerNavigation()
         self.work_target = None
         self.cursor = None
 
@@ -20,7 +18,6 @@ class MouseControls:
 
     def cancel(self):
         self.release()
-        self.navigation.cancel()
 
     @staticmethod
     def modal(game):
@@ -171,14 +168,12 @@ class MouseControls:
         )
 
     def world_click(self, event, game):
-        if game.world_paused or not self.world_rect(game).collidepoint(event.pos):
+        if event.button != 1 or game.world_paused or not self.world_rect(game).collidepoint(event.pos):
             return
         self.cancel()
         point = pygame.Vector2(event.pos) + game.camera.offset
-        target = self.world_target(game, point) if event.button == 1 else None
+        target = self.world_target(game, point)
         if target is None:
-            if not self.navigation.start(game, point):
-                game.notify("Choose an open spot on the floor to walk there.")
             return
         reach = (
             game.upgrades.tool[1]
@@ -188,7 +183,7 @@ class MouseControls:
             else 72
         )
         if target.position.distance_to(game.player.rect.center) > reach:
-            game.deny("Walk closer, then click again. Right-click the floor to walk.")
+            game.deny("Walk closer with the movement keys, then click again.")
             return
         self.activate(game, target)
 
@@ -304,11 +299,6 @@ class MouseControls:
         )
         if hovered:
             pygame.draw.rect(surface, theme.ACCENT, hovered, 2, border_radius=8)
-        if not game.world_paused and self.navigation.path:
-            destination = game.camera.point(self.navigation.path[-1])
-            if self.world_rect(game).collidepoint(destination):
-                pygame.draw.circle(surface, theme.ACCENT, destination, 10, 2)
-                pygame.draw.circle(surface, theme.TEXT, destination, 3)
         clickable = hovered is not None
         if not game.world_paused and self.world_rect(game).collidepoint(point):
             clickable |= (
