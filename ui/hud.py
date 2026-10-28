@@ -158,28 +158,31 @@ class HUD:
         reminder=not outside and game.preferences.notifications and not game.owner_requests.store and any(game.owner_requests.eligible(s) for s in mall.stores)
         card=pygame.Rect(20,88,min(width-350 if reminder else width-40,480),94 if game.tutorial.active else 72);theme.frame(surface,card)
         surface.blit(self.small.render(title,True,theme.ACCENT),(card.x+14,card.y+12))
-        for i,line in enumerate(theme.wrap(self.font,objective,card.width-28)[:3 if game.tutorial.active else 2]):
-            surface.blit(self.font.render(line,True,theme.TEXT),(card.x+14,card.y+34+i*21))
+        hint_font=theme.KeycapFont(self.font)
+        for i,line in enumerate(hint_font.wrap(theme.key_hints(objective),card.width-28)[:3 if game.tutorial.active else 2]):
+            surface.blit(hint_font.render(line,True,theme.TEXT),(card.x+14,card.y+29+i*22))
         if game.tutorial.active:
             skip=game.tutorial.skip_rect(surface);theme.frame(surface,skip,theme.CARD,False)
-            label=self.small.render('T Skip',True,theme.MUTED);surface.blit(label,label.get_rect(center=skip.center))
+            label=theme.KeycapFont(self.small).render('[T] Skip',True,theme.MUTED);surface.blit(label,label.get_rect(center=skip.center))
         pygame.draw.rect(surface,theme.BG,(0,height-58,width,58))
         buttons=self.button_rects(surface)
         for key,label in (('journal','Journal'),('help','Help'),('settings','Settings'),('pause','Menu')):
             theme.button(surface,buttons[key],label,self.small)
         action=buttons['action'];theme.frame(surface,action,theme.CARD if target else theme.PANEL)
         key,caption=self.prompt(game,target)
-        if target is None:caption='Click / right-click the floor to walk'
-        elif isinstance(target,(RequestSpot,EventTask)) and target.duration:caption='Hold click · '+target.title
-        else:caption='Click · '+caption
-        for i,line in enumerate(theme.wrap(self.small,caption,action.width-24)[:2]):
-            surface.blit(self.small.render(line,True,theme.TEXT if target else theme.MUTED),(action.x+12,action.y+5+i*17))
+        if target is None:caption='[WASD] / arrow keys: move'
+        elif isinstance(target,(RequestSpot,EventTask)) and target.duration:caption='Hold [E] / click · '+target.title
+        elif key=='Wait':caption='Wait · '+caption
+        else:caption='[E] / click · '+caption
+        hint_font=theme.KeycapFont(self.small)
+        for i,line in enumerate(hint_font.wrap(caption,action.width-24)[:2]):
+            surface.blit(hint_font.render(line,True,theme.TEXT if target else theme.MUTED),(action.x+12,action.y+3+i*19))
         available_requests=0 if outside else sum(game.owner_requests.eligible(s) for s in mall.stores)
         if available_requests and game.preferences.notifications and not game.owner_requests.store:
-            text=(game.request_notice if game.request_notice_timer else f'{available_requests} owner favors available')+' · J: owners'
+            text=(game.request_notice if game.request_notice_timer else f'{available_requests} owner favors available')+' · [J]: owners'
             box=pygame.Rect(width-310,88,290,52);theme.frame(surface,box)
-            for i,line in enumerate(theme.wrap(self.small,text,box.width-24)[:2]):
-                surface.blit(self.small.render(line,True,theme.GOLD),(box.x+12,box.y+9+i*18))
+            for i,line in enumerate(hint_font.wrap(text,box.width-24)[:2]):
+                surface.blit(hint_font.render(line,True,theme.GOLD),(box.x+12,box.y+8+i*19))
         ready=game.courtyard.kitchen_requests.ready_names
         if ready and game.preferences.notifications:
             text=(ready[0] if len(ready)==1 else str(len(ready))+' kitchens')+' need'+('s' if len(ready)==1 else '')+' cooking help · Courtyard'

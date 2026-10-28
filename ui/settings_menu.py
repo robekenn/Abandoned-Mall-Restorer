@@ -70,15 +70,15 @@ class SettingsMenu:
         if self.tab==0:
             labels=[f'Music  {p.music:.0%}',f'Effects  {p.effects:.0%}','Fullscreen: '+('On' if game.fullscreen else 'Off'),
                     'Guide for new games: '+('On' if p.guide else 'Off'),'Owner favor reminders: '+('On' if p.notifications else 'Off'),'Restore default controls & sound']
-        else:labels=[a.title()+'   '+p.label(a) for a in self.actions()]+[f'Page {self.page+1}/2 · click for next page']
+        else:labels=[a.title()+'   ['+p.label(a)+']' for a in self.actions()]+[f'Page {self.page+1}/2 · click for next page']
         for i,label in enumerate(labels):
             rect=rows[i];theme.frame(game.screen,rect,theme.CARD)
-            game.screen.blit(font.render(label,True,theme.GOLD if self.tab==1 and i<len(self.actions()) and self.capture==self.actions()[i] else theme.TEXT),(rect.x+12,rect.y+8))
+            game.screen.blit(theme.KeycapFont(font).render(label,True,theme.GOLD if self.tab==1 and i<len(self.actions()) and self.capture==self.actions()[i] else theme.TEXT),(rect.x+12,rect.y+8))
             if self.tab==0 and i<2:
                 bar=pygame.Rect(rect.x+240,rect.y+15,rect.width-260,6)
                 pygame.draw.rect(game.screen,theme.BORDER,bar)
                 pygame.draw.circle(game.screen,theme.ACCENT,(bar.x+round(bar.width*(p.music if i==0 else p.effects)),bar.centery),7)
         theme.frame(game.screen,close,theme.CARD)
-        game.screen.blit(small.render('Close · Esc',True,theme.ACCENT),(close.x+10,close.y+7))
-        for i,line in enumerate(theme.wrap(small,self.notice or 'Click a setting. Menu navigation keys stay available.',panel.width-150)[:2]):
-            game.screen.blit(small.render(line,True,theme.MUTED),(panel.x+24,panel.bottom-52+i*18))
+        game.screen.blit(theme.KeycapFont(small).render('Close [Esc]',True,theme.ACCENT),(close.x+10,close.y+7))
+        for i,line in enumerate(theme.KeycapFont(small).wrap(theme.key_hints(self.notice) or 'Click a setting. Menu navigation keys stay available.',panel.width-150)[:2]):
+            game.screen.blit(theme.KeycapFont(small).render(line,True,theme.MUTED),(panel.x+24,panel.bottom-52+i*18))

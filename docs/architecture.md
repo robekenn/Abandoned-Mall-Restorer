@@ -17,9 +17,10 @@ Menu registration doesn't automatically provide rendering or input handlers.
 clicks, and renders hover outlines/cursor feedback over the active panel in both
 scenes. Panel-specific controls still belong to their menus. A held click is
 bound to one visible work marker; button release, focus loss or menus clear it.
-`systems/player_navigation.py` uses a player-sized `Walkways` graph for optional
-floor-click routes. Keyboard movement overrides routes. These routes and mouse
-hold state are transient and never enter a checkpoint.
+Only keyboard input moves the player; empty-floor clicks and right-clicks do
+nothing. Mouse hold state is transient and never enters a checkpoint.
+`ui/theme.py` measures and draws explicit keycap hints, including rebound keys;
+ordinary text and player-provided save names keep normal text rendering.
 
 `Game.update()` handles the welcome transition and pauses before ticking a
 scene. Cooking updates only its active round; settings and pause freeze that

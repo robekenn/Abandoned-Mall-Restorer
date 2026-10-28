@@ -93,14 +93,16 @@ def _exercise_mouse_controls(game):
     if game.journal.open:
         raise RuntimeError('Mouse close button did not return to play')
     game.player.rect.center=(650,720)
-    if not game.mouse_controls.navigation.start(game,(1040,720)):
-        raise RuntimeError('Mouse navigation could not route around the fountain')
+    game.frame_camera(game.screen.get_size())
     before=game.player.rect.center
-    game.update(.05,(0,0))
-    if game.player.rect.center==before:
-        raise RuntimeError('Mouse navigation did not move the player')
+    for button in (1,3):
+        point=game.camera.point((700,760))
+        game.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=button,pos=point))
+        game.handle_event(pygame.event.Event(pygame.MOUSEBUTTONUP,button=button,pos=point))
+        game.update(.05,(0,0))
+        if game.player.rect.center!=before:
+            raise RuntimeError('A floor click moved the player')
     game.draw()
-    game.mouse_controls.cancel()
 
 
 def _exercise_owner_requests(game):

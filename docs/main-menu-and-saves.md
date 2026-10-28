@@ -33,11 +33,13 @@ on return. Startup selects the most recently saved available checkpoint.
 The bottom Journal, Help, Settings and Menu controls are buttons. Other panels
 have visible Back/Close buttons, with hover feedback and a hand cursor. Use the
 shop's paging arrows, display's Undo button and Story's Show keepsakes toggle
-instead of their keyboard shortcuts. Click open floor to walk; right-click
-floor always walks. Nearby objects and the bottom action button can be clicked,
-and timed tasks accept a held left click. Releasing the button stops work.
-Keyboard movement remains available and cancels mouse walking. Menus and focus
-loss cancel the route too. The kitchen's Menu button pauses without losing an
+instead of their keyboard shortcuts. Every Enter action also has a clickable
+button or row, including confirmations, requests, gatherings and kitchen actions.
+Nearby objects and the bottom action button can be clicked, and timed tasks
+accept a held left click. Releasing the button, moving, opening a menu or losing
+focus stops held work. Movement uses the keyboard; floor clicks and right-clicks
+do not move the player. Keyboard hints use outlined keycaps and show custom
+bindings where supported. The kitchen's Menu button pauses without losing an
 ingredient deposit; Close retains the existing abandonment penalty.
 
 If saving fails, the session stays open with a retry/stay choice. Returning

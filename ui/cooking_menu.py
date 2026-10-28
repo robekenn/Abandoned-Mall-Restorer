@@ -178,13 +178,13 @@ class CookingMenu:
             stats=game.courtyard.cooking.get(self.store.name,{'served':0,'best':0,'tips':0,'failed':0})
             self.text(surface,game.hud.small,f"Served: {stats['served']}   Best: {stats['best']}/100   Failed: {stats.get('failed',0)}   Tips: {money(stats['tips'])}",(panel.x+24,panel.y+421),theme.MUTED)
             theme.frame(surface,button,theme.CARD)
-            text='Enter / click: Back to courtyard' if round_.done else 'Enter / click: Accept cooking request'
-            label=game.hud.font.render(text,True,theme.ACCENT);surface.blit(label,label.get_rect(center=button.center))
+            text='[Enter] / click: Back to courtyard' if round_.done else '[Enter] / click: Accept cooking request'
+            label=theme.KeycapFont(game.hud.font).render(text,True,theme.ACCENT);surface.blit(label,label.get_rect(center=button.center))
         else:
             for i,rect in enumerate(self.choice_rects(surface)):
                 theme.frame(surface,rect,theme.CARD)
-                prefix=str(i+1)+'  ' if r.mode=='ingredients' else ''
-                label=game.hud.font.render(prefix+self.choices()[i],True,theme.TEXT);surface.blit(label,label.get_rect(center=rect.center))
+                prefix=f'[{i+1}] ' if r.mode=='ingredients' else ''
+                label=theme.KeycapFont(game.hud.font).render(prefix+(f'[{self.choices()[i]}]' if r.mode in ('stir','fold') else self.choices()[i]),True,theme.TEXT);surface.blit(label,label.get_rect(center=rect.center))
             self.text(surface,game.hud.small,round_.notice or 'Mistakes: -20 score. Three mistakes spoil the order.',(panel.x+24,panel.bottom-62),theme.ACCENT)
-        controls='1–5 / click: ingredient' if r.mode=='ingredients' else 'Arrow keys / click: shape or stir' if r.mode in ('fold','stir') else 'Space / click: stop in gold'
-        self.text(surface,game.hud.small,controls+'   ·   Esc: abandon order' if self.started and not round_.done else 'Esc: close   ·   Next request after 3–10 minutes of play',(panel.x+24,panel.bottom-28),theme.MUTED)
+        controls='[1]–[5] / click: ingredient' if r.mode=='ingredients' else '[Left] / [Right] / click: stir' if r.mode=='stir' else '[Left] [Right] [Up] [Down] / click: fold' if r.mode=='fold' else '[Space] / [Enter] / click: stop in gold'
+        theme.hint_footer(surface,panel,game.hud.small,controls+'   ·   [Esc]: abandon order' if self.started and not round_.done else '[Esc]: close   ·   Next request after 3–10 minutes of play',margin=24)

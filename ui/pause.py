@@ -75,4 +75,4 @@ class PauseMenu:
             text=game.hud.font.render(label,True,theme.TEXT);game.screen.blit(text,text.get_rect(center=row.center))
         for i,line in enumerate(theme.wrap(game.hud.small,self.notice,panel.width-56)[:2]):
             game.screen.blit(game.hud.small.render(line,True,theme.GOLD),(panel.x+28,panel.bottom-65+i*18))
-        game.screen.blit(game.hud.small.render('Up / Down · Enter / click · Esc: return',True,theme.MUTED),(panel.x+28,panel.bottom-26))
+        theme.hint_footer(game.screen,panel,game.hud.small,'[Up] / [Down]: select   [Enter] / click   [Esc]: return',margin=28)

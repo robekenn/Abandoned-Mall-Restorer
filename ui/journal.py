@@ -129,11 +129,11 @@ class Journal:
             elif not court[5]:status='Open this court to bring its neighbors together'
             elif life.cooldowns[key]>0:status='Next gathering in '+theme.clock(life.cooldowns[key])+' of play'
             elif not life.available(game,key):status='Needs 2 regular shops and 50% local cleanliness'
-            else:status='Enter / click to host · Completed '+str(life.completed[key])
-            game.screen.blit(game.hud.small.render(status,True,theme.ACCENT),(row.x+12,row.y+55))
+            else:status='[Enter] / click to host · Completed '+str(life.completed[key])
+            game.screen.blit(theme.KeycapFont(game.hud.small).render(status,True,theme.ACCENT),(row.x+12,row.y+55))
         for n,line in enumerate(theme.wrap(game.hud.small,self.notice or 'Optional gatherings have no deadline. Listen to each neighbor and find a little something they will love.',panel.width-44)[:3]):
             game.screen.blit(game.hud.small.render(line,True,theme.MUTED),(panel.x+22,panel.bottom-85+n*19))
-        game.screen.blit(game.hud.small.render('1–4: tabs   Up/Down: court   Enter: host   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
+        theme.hint_footer(game.screen,panel,game.hud.small,'[1]–[4]: tabs   [Up] / [Down]: court   [Enter] / click: host   [J] / [Esc]: return')
 
     def draw_staff(self, game, panel):
         manager,world=self.staff_context(game)
@@ -163,8 +163,8 @@ class Journal:
                 game.screen.blit(text,text.get_rect(center=button.center))
         if self.notice:
             game.screen.blit(game.hud.small.render(self.notice,True,theme.GOLD),(panel.x+22,panel.bottom-49))
-        caption='1–4: tabs   ↑/↓: court   Enter: hire   C: cleaning   W: walking'
-        game.screen.blit(game.hud.small.render(caption,True,theme.MUTED),(panel.x+22,panel.bottom-27))
+        caption='[1]–[4]: tabs   [Enter]: hire   [C]: clean   [W]: walk   [J] / [Esc]: return'
+        theme.hint_footer(game.screen,panel,game.hud.small,caption)
 
     def draw_story(self, game, panel):
         i=self.chapter;chapter=CHAPTERS[i]
@@ -194,7 +194,7 @@ class Journal:
                 game.screen.blit(text,text.get_rect(topright=(row.right-10,row.y+5)))
         result='The lantern walk is here. Northgate still has stories to share.' if game.story.festival else 'Read the gold community board in each court to begin or finish.'
         game.screen.blit(game.hud.small.render(result,True,theme.GOLD),(panel.x+22,panel.bottom-53))
-        game.screen.blit(game.hud.small.render('1–4: tabs   Left/Right: chapters   R: keepsakes   J / Esc: return',True,theme.MUTED),(panel.x+22,panel.bottom-27))
+        theme.hint_footer(game.screen,panel,game.hud.small,'[1]–[4]: tabs   [Left] / [Right]: chapters   [R]: keepsakes   [J] / [Esc]: return')
 
     def draw(self,game):
         surface=game.screen;theme.dim(surface);panel,close=self.geometry(surface);theme.frame(surface,panel)
@@ -240,5 +240,5 @@ class Journal:
             text=game.hud.small.render(status,True,theme.ACCENT if status in ('New request ready','New favor ready','Needs cooking help') else theme.MUTED)
             surface.blit(text,text.get_rect(topright=(r.right-8,r.y+5)))
         saved=game.save_store.status if game.save_store.enabled else 'Playtest session'
-        surface.blit(game.hud.small.render('Each kitchen has its own cooldown · Countdowns run during play' if outside else 'F5 save · '+saved,True,theme.MUTED),(panel.x+22,panel.bottom-53))
-        surface.blit(game.hud.small.render('1–4: tabs   J / Esc: return   Arrows / scroll: owners',True,theme.MUTED),(panel.x+22,panel.bottom-27))
+        theme.hint(surface,game.hud.small,'Each kitchen has its own cooldown · Countdowns run during play' if outside else '[F5] save · '+saved,(panel.x+22,panel.bottom-53))
+        theme.hint_footer(surface,panel,game.hud.small,'[1]–[4]: tabs   [J] / [Esc]: return   [Left] / [Right] / wheel: owners')
