@@ -3,6 +3,10 @@ from dataclasses import dataclass
 import pygame
 import random
 
+READING_TABLE = 'table_0'
+READING_CHAIRS = ('table_0_seat_0', 'table_0_seat_1')
+READING_FIXTURES = (READING_TABLE, *READING_CHAIRS)
+
 
 @dataclass(frozen=True)
 class Chapter:
@@ -18,14 +22,15 @@ class Chapter:
 
 CHAPTERS=(
     Chapter('north','First lights','Mara',
-        'You used to fold paper lanterns here after school. Yours always leaned a little. '
-        'When the shutters came down, we kept a box of them. The mall did not need a hero. '
-        'It needed someone to begin. Help us remember why we gathered here.',
-        ('A faded photograph shows you beneath a lantern taller than your head. On its back: “First lights, together.”',
-         'An old drawing shows the fountain surrounded by chairs. Nobody drew the shops. They drew the people.',
-         'A folded program lists a reading circle, hot tea and a lantern walk. There was never an admission price.'),
-        'Look at the chairs filling up. You have not rebuilt the whole mall, but you have given us a place to begin again. '
-        'Remy kept a recording of the last lantern walk. Ask him in the east court.',1000,'Reading circle'),
+        'Marty? You always chose the lantern with the crooked handle. I kept it with our reading-circle books. '
+        'I thought we should put everything back exactly as it was. Then a child asked if she could bring her own story. '
+        'Help me reopen Pages and restore the first table and its two chairs by the west seats. Our three keepsakes will help us begin.',
+        ('A faded photograph shows young Marty holding a crooked lantern. A note from Mara reads: “You said it was the best one because it was yours.”',
+         'An old drawing shows the west reading table with mismatched chairs. Someone has penciled in another place: “For whoever comes next.”',
+         'A folded program invites neighbors to bring a favorite story. In the margin: “Leave time for someone we have not met yet.”'),
+        'Look at our reading table, Marty. I left a place for the new story that child wants to bring. '
+        'The old chairs never matched, did they? Somehow I forgot that. '
+        'Remy kept a recording of the last lantern walk. When you reach East, ask him what else he can hear on it.',1000,'Reading circle'),
     Chapter('east','The sound of returning','Remy',
         'I saved the last festival tape. At first I thought the important part was the music. '
         'Listen closer: cups on tables, children laughing, someone calling a friend’s name. '
@@ -132,6 +137,17 @@ class Story:
         return [(store.rect.left+dx,y) for dx in (40,100,store.rect.width-100,store.rect.width-40)]
 
     def requirements(self, game, i):
+        if i == 0:
+            if self.completed[0]:
+                # Older chapters could finish with other fixtures. Keep that achievement.
+                return [("Mara's reading circle gathered", 1, 1)]
+            pages = next(store for store in game.mall.north_stores if store.name == 'Pages Bookshop')
+            decor = game.upgrades.decor
+            return [('Reopen Pages Bookshop', int(pages.restored), 1),
+                    ('Finish the North arcade first sweep', int(game.mall.initial_cleanup_complete), 1),
+                    ('Recover the reading-circle keepsakes', sum(self.memories[0]), 3),
+                    ('Restore North table 1 at Supplies', int(READING_TABLE in decor), 1),
+                    ('Restore its left and right chairs', sum(key in decor for key in READING_CHAIRS), 2)]
         court=game.janitors.courts(game.mall)[i]
         stores=court[3];key=court[0]
         fixture_keys={o.key for category in ('Furniture','Garden') for o in game.upgrades.offers(category,key)}
@@ -144,6 +160,33 @@ class Story:
 
     def ready(self, game, i):
         return i==self.current and self.started[i] and all(n>=goal for _,n,goal in self.requirements(game,i))
+
+    def mara_chat(self, game):
+        """Mara follows the authored project without changing ordinary owner requests."""
+        if self.completed[0]:
+            return 'Someone left a book for next week, Marty. I was so busy remembering our old readers that I nearly forgot to invite the new ones. Remy will be glad to hear the chairs are filling up.'
+        if not self.started[0]:
+            return 'Marty, I kept your crooked lantern with the reading-circle books. There is a note on the gold community board by the west wall. Read it when you have a moment; I have a small idea.'
+        for index, (_, count, goal) in enumerate(self.requirements(game, 0)):
+            if count >= goal:
+                continue
+            return (
+                'The first reading can wait until Pages is open. Finish the North arcade sweep, then reopen the bookshop. I still have the books ready.',
+                'A clear floor will give our readers room to arrive. Finish the first sweep of the North arcade; the circle can wait for you.',
+                'Our photograph, drawing and program are still out there. Look for the gold keepsake marks and ask the neighbor holding one. Your Story journal has the clues.',
+                'Let us use North table 1, by the west seats. Supplies can restore its tabletop from the Furniture page. We can make room for a new story there.',
+                'The tabletop is ready. Supplies sells its left and right chairs separately. Two places to sit will be enough for our first reading.',
+            )[index]
+        return 'The books and places are ready, Marty. Read the gold community board once more and we can invite our first readers. I think I am ready to hear a new story too.'
+
+    def gathering_goals(self, mall, i):
+        """North's first reading uses the existing west table without moving furniture."""
+        if i == 0:
+            table = next(table for table in mall.social_tables if table.fixture_key == READING_TABLE)
+            # Gather on clear approach tiles; ordinary diners can still reserve the chairs.
+            return [seat + pygame.Vector2(0, 64) for seat in table.seats] + [table.position + pygame.Vector2(0, 112)]
+        board = next(point.position for point in self.points if point.chapter == i and point.memory < 0)
+        return [board + pygame.Vector2(dx, dy) for dx, dy in ((-64, 64), (64, 64), (0, 128))]
 
     def action(self, point, game):
         i=point.chapter
@@ -171,15 +214,13 @@ class Story:
             text='First, finish '+CHAPTERS[self.current].title+'. Every court has something to give the next.';action=None
         elif not self.started[i]:text=CHAPTERS[i].opening;action='begin'
         elif self.ready(game,i):text=CHAPTERS[i].ending;action='claim'
-        else:text=CHAPTERS[i].opening;action=None
+        else:text=self.mara_chat(game) if i==0 else CHAPTERS[i].opening;action=None
         game.story_menu.visit(i,text,action);return True
 
     def invite(self, game, i):
         self.update(0,game.mall)
         area=game.janitors.courts(game.mall)[i][2]
-        # Gather around the board, rather than sending neighbors to distant finds.
-        board=next(p.position for p in self.points if p.chapter==i and p.memory<0)
-        goals=[board+pygame.Vector2(dx,dy) for dx,dy in ((-64,64),(64,64),(0,128))]
+        goals=self.gathering_goals(game.mall,i)
         game.shoppers.gather(area,goals,game.mall)
 
     def confirm(self, game, i, action):
@@ -208,6 +249,17 @@ class Story:
         if i>len(game.mall.active_regions):return None
         if not self.started[i]:return CHAPTERS[i].title,'Read the gold community board. J → Story shows where to begin.'
         if self.ready(game,i):return CHAPTERS[i].title,'Return to the community board and gather the neighbors.'
+        if i == 0:
+            instructions = (
+                'Reopen Pages Bookshop after the North arcade first sweep.',
+                'Finish the first North arcade sweep to welcome the readers.',
+                'Find the three gold keepsakes. J → Story has the clues.',
+                'Supplies → Furniture: restore North table 1 by the west seats.',
+                'Supplies → Furniture: restore table 1\'s left and right chairs.',
+            )
+            for instruction, (_, count, goal) in zip(instructions, self.requirements(game, 0)):
+                if count < goal:
+                    return CHAPTERS[0].title, instruction
         requirements=self.requirements(game,i)
         for index in (0,3,4):
             label,count,goal=requirements[index]
@@ -219,8 +271,8 @@ class Story:
         self.celebrations=[max(0,t-dt) for t in self.celebrations]
         # Neighbors meet regularly after a chapter, without generating free income.
         mall.story_markers=[tuple(p.position) for p in self.visible_points(mall) if p.memory<0]
-        mall.community_spots=[tuple(p.position+pygame.Vector2(dx,dy)) for p in self.points if p.memory<0 and self.completed[p.chapter]
-                              and (self.celebrations[p.chapter]>0 or self.elapsed%150<30) for dx,dy in ((-64,64),(64,64),(0,128))]
+        mall.community_spots=[tuple(goal) for i,done in enumerate(self.completed) if done
+                              and (self.celebrations[i]>0 or self.elapsed%150<30) for goal in self.gathering_goals(mall,i)]
 
     def draw(self, game):
         for point in self.visible_points(game.mall):
@@ -272,6 +324,13 @@ class Story:
             game.developer.act('next',game)
         court=game.janitors.courts(game.mall)[i]
         for t in court[4]:game.mall.clean_trash(t)
+        if i == 0:
+            for store in court[3][:2]:store.restored=True
+            game.upgrades.decor.update(READING_FIXTURES)
+            game.mall.refresh_businesses()
+            self.started[0]=True;self.memories[0]=[True]*3
+            game.player.rect.center=next(p.position for p in self.points if p.chapter==0 and p.memory<0)
+            return True
         for s in court[3][:6]:s.restored=True
         owner=next(s for s in court[3] if not s.upgrade_shop and s is not game.owner_requests.store)
         owner.request_level=max(2,owner.request_level);owner.request_bonus=max(1.5,owner.request_bonus)

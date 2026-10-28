@@ -278,7 +278,10 @@ class MallLife:
                    'It is a little untidy out there today. We will get it back together, one small thing at a time.',
                    'I have started putting a spare chair by the door. You never know who might need a moment.',
                    'When you pass another owner, tell them I said hello. We are neighbors before we are shops.')
-        text=personal[stage] if count%2==0 else reactions[(count//2)%len(reactions)]
+        if owner == 'Mara' and (count == 0 or game.story.started[0] and count % 2 == 0):
+            text = game.story.mara_chat(game)
+        else:
+            text=personal[stage] if count%2==0 else reactions[(count//2)%len(reactions)]
         game.say_owner(store,text);game.save_checkpoint();return text
 
     def show_owner(self, store):

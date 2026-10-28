@@ -33,6 +33,8 @@ class StoryMenu:
         caption='[J] → Story: chapter goals and recovered memories'
         theme.hint(game.screen,game.hud.small,caption,(panel.x+24,panel.bottom-112),width=panel.width-48)
         labels={'begin':'Remember Northgate','claim':'Bring the neighbors together','festival':'Begin the lantern walk','gather':'Invite the neighbors again'}
+        if self.chapter == 0:
+            labels.update(begin="Help Mara begin", claim="Gather the first readers", gather="Invite the readers again")
         theme.frame(game.screen,button,theme.CARD)
         text=theme.KeycapFont(game.hud.font).render('[Enter] '+labels.get(self.action,'Back to the mall'),True,theme.ACCENT)
         game.screen.blit(text,text.get_rect(center=button.center))

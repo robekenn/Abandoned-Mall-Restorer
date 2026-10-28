@@ -172,6 +172,8 @@ class Journal:
         status=chapter.gathering if game.story.completed[i] else 'In progress' if game.story.started[i] else 'A chapter to discover'
         game.screen.blit(game.hud.small.render(f'{i+1}/4 · {chapter.speaker} · '+status,True,theme.GOLD),(panel.x+22,panel.y+133))
         description=chapter.ending if game.story.completed[i] else chapter.opening
+        if i == 0 and game.story.started[0] and not game.story.completed[0]:
+            description = game.story.mara_chat(game)
         for n,line in enumerate(theme.wrap(game.hud.small,description,panel.width-44)):
             game.screen.blit(game.hud.small.render(line,True,theme.MUTED),(panel.x+22,panel.y+163+n*21))
         for label,rect in zip(('<','>'),self.page_buttons(game.screen)):
